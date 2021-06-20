@@ -1,0 +1,27 @@
+&global
+  run_type analyze
+  analyze_job power_spectrum
+&end global
+
+&analyze
+  &power_spectrum
+    type hydration_mode
+    traj_vel_file ./UO22+_aimd-vel-1.xyz
+    traj_pos_file ./UO22+_aimd-pos-1.xyz
+    init_step 10000 
+    end_step 50000
+    atom_pair U O
+    hyd_shell_dist 2.5
+    dist_conv 0.3
+    &box
+      A 12.42 0.0 0.0
+      B  0.0 12.42 0.0
+      C  0.0 0.0 12.42
+    &end box
+    max_frame_corr 10000
+    normalize 1
+    start_wave 0
+    end_wave 4000
+    increment_wave 1
+  &end power_spectrum
+&end analyze

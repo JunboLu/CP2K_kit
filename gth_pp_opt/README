@@ -1,0 +1,25 @@
+In general, one could use CP2K to optimize GTH pseudopotentials and MOLOPT basis sets.
+However, it is not easy to realize it! We build a routine approach based on CP2K code.
+
+The reference literatures are:
+1. J.-B. Lu et al. J. Chem. Theory Comput. 2019, 15, 5987−5997. 
+2. J.-B. Lu et al. DOI:10.26434/chemrxiv.13550054.v1
+
+For GTH pseudopotential optimization:
+The procedure is rather easy. Users just need to use the input file in example/gth_pp_opt
+directory, and then change the keywords. Just input an easy command: CP2K_kit input.inp.
+Then the GTH pseudopotential will be automatically optimized. Users could finally find the 
+optimized pseudopotential in work_dir/final directory.
+
+For MOLOPT basis sets optimization:
+It is hard for us to build a automatical approach to optimize MOLOPT basis sets. But we have 
+prepared several scripts and input files. We hope those could help users.
+There are two main procedures to optimize MOLOPT basis sets:
+(1) Optimize gaussian exponents at first
+  The input file to optimize gaussian exponents is in mol_bs/GAU_OPT directory. We would 
+  variate confinment in input file. The script named 'generate_direc.py' is used to generate
+  input file with different confinment. The script named 'check_basis.py' is used to check
+  relatively good gaussian exponents. And then test these choosed gaussian exponents.
+(2) Optimize contraction coefficients
+  The input files to optimize contration coefficients is in mol_bs/COE_OPT.
+

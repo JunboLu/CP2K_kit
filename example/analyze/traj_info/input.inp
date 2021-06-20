@@ -1,0 +1,10 @@
+&global
+  run_type analyze
+  analyze_job traj_info
+&end global
+
+&analyze
+  &traj_info
+    traj_file ./WATER_64H2O-pos-1.xyz
+  &end traj_info
+&end analyze

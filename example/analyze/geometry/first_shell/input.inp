@@ -1,0 +1,22 @@
+&global
+  run_type analyze
+  analyze_job geometry 
+&end global
+
+&analyze
+  &geometry
+    &first_shell
+      traj_file ./UO22+_aimd-pos-1.xyz
+      atom_type_pair U O
+      first_shell_dist 2.5
+      dist_conv 0.2
+      init_step 65000 
+      end_step 69792
+      &box
+        A 12.42 0.0 0.0
+        B 0.0 12.42 0.0
+        C 0.0 0.0 12.42
+      &end box
+    &end first_shell
+  &end geometry
+&end analyze

@@ -1,0 +1,15 @@
+&global
+  run_type analyze
+  analyze_job geometry 
+&end global
+
+&analyze
+  &geometry
+    &bond_angle
+      traj_file ./cp2k-pos-1.xyz
+      atom_pair 2 1 3
+      init_step 0
+      end_step 200
+    &end bond_angle
+  &end geometry
+&end analyze

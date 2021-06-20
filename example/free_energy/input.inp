@@ -1,0 +1,8 @@
+&global
+  run_type free_energy
+&end global
+
+&free_energy
+  method ti
+  ti_file force_cmd
+&end free_energy

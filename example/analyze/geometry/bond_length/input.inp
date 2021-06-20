@@ -1,0 +1,20 @@
+&global
+  run_type analyze
+  analyze_job geometry 
+&end global
+
+&analyze
+  &geometry
+    &bond_length
+      traj_file ./UO2+_aimd-pos-1.xyz
+      atom_pair 1 2
+      init_step 0
+      end_step 7060
+      &box
+        A 12.42 0.0 0.0
+        B 0.0 12.42 0.0
+        C 0.0 0.0 12.42
+      &end box
+    &end bond_length
+  &end geometry
+&end analyze

@@ -1,0 +1,15 @@
+&global
+  run_type analyze
+  analyze_job time_correlation
+&end global
+
+&analyze
+  &time_correlation
+    traj_file ./WATER_64H2O-vel-1.xyz
+    init_step 10000 
+    end_step 50000
+    atom_id 1-192
+    max_frame_corr 20000
+    normalize 1
+  &end time_correlation
+&end analyze

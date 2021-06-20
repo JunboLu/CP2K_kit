@@ -1,0 +1,19 @@
+&global
+  run_type analyze
+  analyze_job arrange_data
+&end global
+
+&analyze
+  &arrange_data
+    &vertical_energy
+      traj_file ./UO2_REDOX_aimd-mix-1.ener
+      row_ox 5
+      row_red 4
+      redox_type oxidation
+      slow_growth 0
+      init_step 10000
+      end_step 20350
+      time_unit ps
+    &end vertical_energy
+  &end arrange_data
+&end analyze

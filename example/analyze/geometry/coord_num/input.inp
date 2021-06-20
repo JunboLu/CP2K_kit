@@ -1,0 +1,18 @@
+&global
+  run_type analyze
+  analyze_job geometry 
+&end global
+
+&analyze
+  &geometry
+    &coord_num
+      traj_file ./WATER_64H2O-pos-1.xyz
+      r_cut 6.0
+      &box
+        A 12.42 0.0 0.0
+        B 0.0 12.42 0.0
+        C 0.0 0.0 12.42
+      &end box
+    &end coord_num
+  &end geometry
+&end analyze

@@ -1,0 +1,37 @@
+#! /bin/bash
+
+export CP2K_kit_path=/home/lujunbo/code/github/CP2K_kit
+export python_exe=/home/lujunbo/bin/deepmd-kit/bin/python3.9
+
+work_dir=`pwd`
+inp_file="$1"
+
+string=`grep 'run_type' ${inp_file}`
+string_split=(${string// / })
+run_type=${string_split[1]}
+
+if [[ $run_type == analyze ]]; then
+string=`grep 'analyze_job' ${inp_file}`
+string_split=(${string// / })
+analyze_job=${string_split[1]}
+fi
+
+if [[ $run_type == thermo_int ]]; then
+string=`grep 'thermo_type' ${inp_file}`
+string_split=(${string// / })
+thermo_type=${string_split[1]}
+fi
+
+if [[ ${run_type} == deepff ]]; then
+${python_exe} ${CP2K_kit_path}/deepff/deepff_run.py ${work_dir} ${inp_file}
+elif [[ ${run_type} == analyze ]]; then
+${python_exe} ${CP2K_kit_path}/analyze/analyze_run.py ${work_dir} ${inp_file} ${analyze_job}
+elif [[ ${run_type} == gth_pp_opt ]]; then
+${python_exe} ${CP2K_kit_path}/gth_pp_opt/gth_pp/gth_pp_opt_run.py ${work_dir} ${inp_file} ${run_type} ${python_exe} ${CP2K_kit_path}
+elif [[ ${run_type} == gen_inp ]]; then
+${python_exe} ${CP2K_kit_path}/gen_inp/gen_inp_run.py ${work_dir} ${inp_file}
+elif [[ ${run_type} == handle_restart ]]; then
+${python_exe} ${CP2K_kit_path}/handle_restart/handle_restart_run.py ${work_dir} ${inp_file} ${run_type}
+elif [[ ${run_type} == thermo_int ]]; then
+${python_exe} ${CP2K_kit_path}/thermo_int/thermo_int_run.py ${work_dir} ${inp_file} ${thermo_type}
+fi

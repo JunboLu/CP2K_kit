@@ -1,0 +1,13 @@
+&global
+  run_type analyze
+  analyze_job arrange_data
+&end global
+
+&analyze
+  &arrange_data
+    &ti_force
+      traj_file ./UO22+_aimd-1.LagrangeMultLog
+      stat_num 100
+    &end ti_force
+  &end arrange_data
+&end analyze

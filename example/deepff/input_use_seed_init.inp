@@ -1,0 +1,102 @@
+&global
+  run_type        deepff
+&end global
+
+&deepff
+  &deepmd
+    &model
+      type_map C O
+      &descriptor
+        type se_a
+        sel 8 16
+        rcut_smth 5.80
+        rcut 6.00
+        neuron 10 20 40
+        resnet_dt false
+        axis_neuron 12
+      &end descriptor
+      &fitting_net
+        resnet_dt true
+      &end fitting_net
+    &end model
+    &learning_rate
+      type exp
+      decay_steps 5000
+      start_lr 0.001
+      stop_lr 3.51e-8
+    &end learning_rate
+    &loss
+      start_pref_e 0.02
+      limit_pref_e 1
+      start_pref_f 1000
+      limit_pref_f 1
+      start_pref_v 0
+      limit_pref_v 0
+    &end loss
+    &training
+　    &system
+        directory ./co2 
+        proj_name cp2k
+      &end system
+      model_type use_seed
+      seed_num 4
+      neuron 120 120 120
+      set_prefix set    
+      stop_batch 40000
+      batch_size auto
+      disp_file lcurve.out
+      disp_freq 100
+      numb_test 5
+      save_freq 1000
+      save_ckpt model.ckpt
+      load_ckpt model.ckpt
+      disp_training true
+      time_training true
+      profiling false
+      profiling_file timeline.json
+    &end training
+  &end deepmd
+
+  &lammps
+    nsteps 100
+    thermo_freq 1
+    dump_freq 1
+    time_step 0.0005
+    temp 50.0 100.0
+    pres 1.0 2.0
+    tau_t 0.1
+    tau_p 0.5
+    &system
+      box ./lmp_init_data/box
+      coord ./lmp_init_data/str.inc
+    &end system
+  &end lammps
+
+  &force_eval
+    choose_new_data_num_limit 100
+    conv_new_data_num 5
+    force_conv 0.01
+    max_iter 100
+    restart_iter 0
+  &end force_eval
+
+  &cp2k
+    basis_set_file_name /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+    basis_level dzvp
+    potential_file_name /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
+    charge 0
+    multiplicity 1
+    cutoff 300
+    xc_functional PBE
+    dftd3 True
+    dftd3_file /home/lujunbo/bin/cp2k-8.2/data/dftd3.dat
+  &end cp2k
+
+  &environ
+    cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
+    cp2k_env_file /home/lujunbo/bin/cp2k-8.2/tools/toolchain/install/setup
+    cp2k_proc_num 4
+    lmp_proc_num 4
+    parallel_exe /home/lujunbo/bin/parallel/bin/parallel
+  &end environ
+&end deepff

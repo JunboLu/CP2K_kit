@@ -1,0 +1,16 @@
+&global
+  run_type gth_pp_opt
+&end global
+
+&gth_pp_opt
+  element Fm
+  elec_config [Xe] 4f14 5d10 6s2 6p6 7s2 5f11 6d1
+  elec_core_config [Xe] 4f14 5d10
+  all_elec_method kohn-sham
+  xc_func pbe
+  relat_method dkh(3)
+  parallel_num 4
+  init_gth_pp_file ./GTH-PARAMETER
+  cp2k_exe /home/lujunbo/bin/cp2k/cp2k-6.1-sopt/cp2k-6.1-Linux-x86_64.sopt
+  parallel_exe /home/lujunbo/bin/parallel/bin/parallel 
+&end gth_pp_opt

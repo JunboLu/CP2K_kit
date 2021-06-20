@@ -1,0 +1,9 @@
+&global
+  run_type handle_restart
+&end global
+
+&handle_restart
+  proj_name test
+  data_dir ./
+  restart_step 66000
+&end handle_restart

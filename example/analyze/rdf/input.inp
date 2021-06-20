@@ -1,0 +1,19 @@
+&global
+  run_type analyze
+  analyze_job rdf
+&end global
+
+&analyze
+  &rdf
+    traj_file ./UO22+_aimd-pos-1.xyz
+    atom_type_pair U O
+    data_num 500
+    init_step 10000
+    end_step 69792
+    &box
+      A 12.42 0.0 0.0
+      B 0.0 12.42 0.0
+      C 0.0 0.0 12.42
+    &end box
+  &end rdf
+&end analyze

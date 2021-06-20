@@ -1,0 +1,14 @@
+&global
+  run_type analyze
+  analyze_job arrange_data
+&end global
+
+&analyze
+  &arrange_data
+    &mulliken
+      traj_file ./Am_TODGA-MULLIKEN-1.mulliken
+      atom_id 1 2
+      time_step 0.5
+    &end mulliken
+  &end arrange_data
+&end analyze
