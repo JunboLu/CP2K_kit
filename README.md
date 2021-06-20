@@ -4,7 +4,7 @@
 CP2K_kit is a code to:  
 (1) Generate CP2K input file  
 (2) Analyze CP2K trajectory  
-(3) Optimize GTH pseudopotentials  
+(3) Optimize GTH pseudopotentials and basis sets  
 (4) Do thermodynamic integration  
 (5) Optimize neural network force field  
 
