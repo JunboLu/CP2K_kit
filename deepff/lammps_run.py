@@ -352,7 +352,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
   #We get sys_num from atoms_num_tot
   sys_num = len(atoms_num_tot)
   #We get model_num from the number of directories in train_dir.
-  model_num = len(call.call_returns_shell(train_dir, 'ls'))
+  model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
   for i in range(sys_num):
     lammps_sys_dir = ''.join((lammps_dir, '/sys_', str(i)))

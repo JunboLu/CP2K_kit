@@ -368,12 +368,12 @@ def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
   import subprocess
 
   train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
-  train_num = len(call.call_returns_shell(train_dir, 'ls'))
+  model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
   if parallel_model:
-    deepmd_parallel(train_dir, train_num, 0, train_num-1, parallel_exe, host)
+    deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host)
   else:
-    for i in range(train_num):
+    for i in range(model_num):
       train_dir_i = ''.join((train_dir, '/', str(i)))
       cmd_1 = 'dp train input.json > out'
       subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
