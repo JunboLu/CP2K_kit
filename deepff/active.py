@@ -252,6 +252,7 @@ def kernel(work_dir, inp_file):
   '''
 
   import os
+  import linecache
   import platform
   import multiprocessing
 

@@ -301,7 +301,7 @@ def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, ho
   host_comb = ''
   if ( len(host) >= parallel_num ):
     for i in range(len(host)):
-      host_comb = host_comb + '-S' + host[i] + ' '
+      host_comb = host_comb + '-S' + ' ' + host[i] + ' '
   else:
     for i in range(len(host)):
       host_comb = host_comb + '-S' + ' ' + host[i] + ' '
@@ -316,26 +316,35 @@ parallel_num=%d
 run_start=%d
 run_end=%d
 parallel_exe=%s
-host_sub=%s
 
-produce() {
+seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {} $direc
+''' %(deepmd_train_dir, parallel_num, start, end, parallel_exe, host_comb)
+
+  dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')[0]
+  dp_path = dp_exe[:-3]
+
+  produce = '''
+#! /bin/bash
+
+export PATH=%s:$PATH
+
 x=$1
 direc=$2
 cd $direc/$x
 dp train input.json > out
 dp freeze -o frozen_model.pb
-}
-
-export -f produce
-
-seq $run_start $run_end | $parallel_exe -S $host_sub -j $parallel_num produce {} $direc
-''' %(deepmd_train_dir, parallel_num, start, end, parallel_exe, host_comb)
+''' %(dp_path)
 
   run_file = ''.join((deepmd_train_dir, '/run.sh'))
   with open(run_file, 'w') as f:
     f.write(run)
 
+  produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
+  with open(produce_file, 'w') as f:
+    f.write(produce)
+
   subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
+  subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
 
 def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
@@ -362,7 +371,7 @@ def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
   train_num = len(call.call_returns_shell(train_dir, 'ls'))
 
   if parallel_model:
-    deepmd_parallel(train_dir, train_num, 0, train_num-1, parallel_exe)
+    deepmd_parallel(train_dir, train_num, 0, train_num-1, parallel_exe, host)
   else:
     for i in range(train_num):
       train_dir_i = ''.join((train_dir, '/', str(i)))
