@@ -38,12 +38,9 @@
         directory ./co2 
         proj_name cp2k
       &end system
-　    &system
-        directory ./co2
-        proj_name cp2k
-      &end system
       model_type use_nodes
       neuron 120 120 120 ... 180 180 180
+      parallel_model false
       set_prefix set    
       stop_batch 40000
       batch_size auto
@@ -98,8 +95,6 @@
   &environ
     cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
     cp2k_env_file /home/lujunbo/bin/cp2k-8.2/tools/toolchain/install/setup
-    cp2k_proc_num 4
-    lmp_proc_num 4
     parallel_exe /home/lujunbo/bin/parallel/bin/parallel
   &end environ
 &end deepff

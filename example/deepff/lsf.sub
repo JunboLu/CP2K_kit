@@ -1,0 +1,24 @@
+#! /bin/bash
+#BSUB -q medium
+#BSUB -n 80
+#BSUB -e %J.err
+#BSUB -o %J.out
+
+cd $LS_SUBCWD
+NP=`cat $LSB_DJOB_HOSTFILE | wc -l`
+echo $NP > hostname
+cat $LSB_DJOB_HOSTFILE | sort | uniq -c >> hostname
+
+#Change environment variables for CP2K_kit and deepmd-kit
+export OMP_NUM_THREADS=1
+export PYTHONPATH=/home/lujunbo/bin:$PYTHONPATH
+export PATH=/home/lujunbo/bin/CP2K_kit/bin:$PATH
+export PATH=/home/lujunbo/bin/deepmd-kit/bin:$PATH
+
+#Change environment variables to use GPU. If you use CPU version of
+#deepmd-kit, please comment or delete it
+module load cuda/10.0
+export KMP_BLOCKTIME=0
+export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
+
+CP2K_kit input.inp > out

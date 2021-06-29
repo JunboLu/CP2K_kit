@@ -82,7 +82,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
   return init_train_data
 
 def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-                  init_train_data, work_dir, max_iter, restart_iter):
+                  init_train_data, work_dir, max_iter, restart_iter, proc_num, host):
 
   '''
   run_iteration : run active learning iterations.
@@ -94,8 +94,8 @@ def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic,
       lammpd_dic contains keywords used in lammps.
     cp2k_dic : dictionary
       cp2k_dic contains keywords used in cp2k.
-    force_eval : dictionary
-      force_eval contains keywords used in force_eval.
+    force_eval_dic : dictionary
+      force_eval_dic contains keywords used in force_eval.
     environ_dic : dictionary
       environ_dic contains keywords used in environment.
     init_train_data : 1-d string list
@@ -106,6 +106,10 @@ def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic,
       max_iter is the maxium iterations for active learning.
     restart_iter : int
       restart_iter is the iteration number of restart.
+    proc_num : int
+      proc_num is the number of processor.
+    host : 1-d string list
+      host is the name of host of computational nodes.
   Returns :
     none
   '''
@@ -177,26 +181,28 @@ def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic,
         fit_seed.append(np.random.randint(100000000))
         tra_seed.append(np.random.randint(100000000))
 
-    deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                               descr_seed, fit_seed, tra_seed, neuron, model_type)
-    deepmd_run.run_deepmd(work_dir, i)
-
-    ##Perform lammps calculation
-    if ( 'lmp_proc_num' in environ_dic.keys() ):
-      lmp_proc_num = int(environ_dic['lmp_proc_num'])
-    else:
-      lmp_proc_num = 1
     if ( 'parallel_exe' in environ_dic.keys() ):
       parallel_exe = environ_dic['parallel_exe']
     else:
       print ('please set parallel_exe in environ')
       exit()
+
+    if ( 'parallel_model' in deepmd_dic['training'].keys() ):
+      parallel_model = list_dic_op.str_to_bool(deepmd_dic['training']['parallel_model'])
+    else:
+      parallel_model = False
+
+    deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
+                               descr_seed, fit_seed, tra_seed, neuron, model_type)
+    deepmd_run.run_deepmd(work_dir, i, parallel_model, parallel_exe, host)
+
+    ##Perform lammps calculation
     atoms_type_dic_tot, atoms_num_tot = \
     lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i)
     sys_num = len(atoms_type_dic_tot)
-    lammps_run.run_lmpmd(work_dir, i, lmp_proc_num)
+    lammps_run.run_lmpmd(work_dir, i, proc_num)
     lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
-    lammps_run.run_lmpfrc(work_dir, i, parallel_exe, lmp_proc_num)
+    lammps_run.run_lmpfrc(work_dir, i, parallel_exe, proc_num)
 
     ##Get force-force correlation and then choose new structures
     force_conv = float(force_eval_dic['force_conv'])
@@ -224,7 +230,7 @@ def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic,
     choose_new_data_num_limit = int(force_eval_dic['choose_new_data_num_limit'])
     cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
                            struct_index, conv_new_data_num, choose_new_data_num_limit, get_stress)
-    cp2k_run.run_cp2kfrc(work_dir, i, environ_dic)
+    cp2k_run.run_cp2kfrc(work_dir, i, environ_dic, proc_num)
 
     ##Get new data of CP2K
     for j in range(sys_num):
@@ -245,6 +251,10 @@ def kernel(work_dir, inp_file):
       inp_file is the deepff input file
   '''
 
+  import os
+  import platform
+  import multiprocessing
+
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
 
   deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
@@ -260,9 +270,24 @@ def kernel(work_dir, inp_file):
   else:
     restart_iter = 0
 
+  host_file = ''.join((work_dir, '/hostname'))
+  if ( os.path.exists(host_file) ):
+    line_num = len(open(host_file).readlines())
+    line_1 = linecache.getline(host_file, 1)
+    proc_num = int(line_1.strip('\n'))
+    host = []
+    for i in range(line_num-1):
+      line_i = linecache.getline(host_file, i+2)
+      line_i_split = list_dic_op.str_split(line_i, ' ')
+      host.append(line_i_split[1].strip('\n'))
+  else:
+    proc_num = int(multiprocessing.cpu_count()/2)
+    host = [platform.node()]
+
   init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter)
 
-  run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, work_dir, max_iter, restart_iter)
+  run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
+                init_train_data, work_dir, max_iter, restart_iter, proc_num, host)
 
 if __name__ == '__main__':
 

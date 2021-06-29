@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-def get_atom_mass(atom):
+def get_atom_mass(atom_name):
 
   '''
   get_atom_mass : get atom number and mass.
 
   Args :
-    atom : string or 1-d string list
-      atom is atom name. Example : 'O'/['O','H']
+    atom_name : string or 1-d string list
+      atom_name is atom name. Example : 'O'/['O','H']
   Returns :
     atom_num : int or 1-d int list
       atom_num is atom number. Example : 6/[6,1]
@@ -37,25 +37,27 @@ def get_atom_mass(atom):
                'Cm':(96,247), 'Bk':(97,247), 'Cf':(98,251), 'Es':(99,252), 'Fm':(100,257),
                'Md':(101,258), 'No':(102,259), 'Lr':(103,262)}
 
-  #atom could be a string list.
-  if ( type(atom) == list ):
+  #atom could be a string list, and we will return float list.
+  if ( isinstance(atom_name, list) ):
     atom_num = []
     atom_mass = []
 
-    for i in range(len(atom)):
-      if ( atom[i] in atom_id_mass ):
-        atom_num.append(atom_id_mass[atom[i]][0])
-        atom_mass.append(atom_id_mass[atom[i]][1])
+    for i in range(len(atom_name)):
+      if ( atom_name[i] in atom_id_mass ):
+        atom_num.append(atom_id_mass[atom_name[i]][0])
+        atom_mass.append(atom_id_mass[atom_name[i]][1])
       else:
-        print ("Doesn't find %s atom in atom_id_mass" % (atom[i]))
+        print ("Doesn't find %s atom in atom_id_mass" % (atom_name[i]))
+        exit()
 
-  #atom could be a string.
-  elif ( type(atom) == str ):
-    if ( atom in atom_id_mass ):
-      atom_num = atom_id_mass[atom][0]
-      atom_mass = atom_id_mass[atom][1]
+  #atom could be a string, and we will return float.
+  elif ( isinstance(atom_name, str) ):
+    if ( atom_name in atom_id_mass ):
+      atom_num = atom_id_mass[atom_name][0]
+      atom_mass = atom_id_mass[atom_name][1]
     else:
-      print ("Doesn't find %s atom in atom_id_mass" %(atom))
+      print ("Doesn't find %s atom in atom_id_mass" %(atom_name))
+      exit()
 
   return atom_num, atom_mass
 
@@ -95,7 +97,7 @@ def get_atom_cov_radius(atom):
                'Md':1.42, 'No':1.42, 'Lr':1.42}
 
   #atom could be string list.
-  if ( type(atom) == list ):
+  if ( isinstance(atom, list) ):
     atom_cov_rad = []
 
     for i in range(len(atom)):
@@ -103,13 +105,15 @@ def get_atom_cov_radius(atom):
         atom_cov_rad.append(atom_id_cov_radius[atom[i]])
       else:
         print ("Doesn't find %s atom in atom_id_cov_radius" % (atom[i]))
+        exit()
 
   #atom could be string.
-  elif ( type(atom) == str ):
+  elif ( isinstance(atom, str) ):
     if ( atom in atom_id_cov_radius ):
       atom_cov_rad = atom_id_cov_radius[atom]
     else:
       print ("Doesn't find %s atom in atom_id_cov_radius" %(atom))
+      exit()
 
   return atom_cov_rad
 
@@ -161,6 +165,7 @@ def get_q_info(atom, q_type='large'):
       q_num = atom_q_large[atom]
     else:
       print ("Doesn't find %s atom in atom_q_large" % (atom))
+      exit()
 
   elif ( q_type == 'medium'):
     if ( atom in atom_q_medium ):
@@ -171,6 +176,7 @@ def get_q_info(atom, q_type='large'):
         q_num = atom_q_large[atom]
       else:
         print ("Doesn't find %s atom in atom_q_large or atom_q_medium" % (atom))
+        exit()
 
   return atom_q_large[atom]
 

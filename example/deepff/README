@@ -2,12 +2,6 @@ We provide three input files:
 (1) input_use_node_init.inp: We use different number of neurons for different models.
 (2) input_use_seed_init.inp: We use different initial values in different models.
 (3) input_mtd.inp: We use metadynamics trajectory in lammps for model deviation.
-We runing deepff calculation, please be careful to set environment. We recommend add
-these lines in submition script:
-export OMP_NUM_THREADS=1
-export PATH=deepmd-kit_path/bin:$PATH
-If you want to use GPU in deepmd-kit, please add these lines in submition script:
-module load cuda/10.0 (We use module to add environment of cuda. For your systems, 
-                       please change it if you do not module tool.)
-export KMP_BLOCKTIME=0
-export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
+
+When runing deepff calculation, please be careful to set environment. We have provided
+submition scripts for PBS (pbs.sub), SLURM (slurm.sub) and LSF (lsf.sub) systems.

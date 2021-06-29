@@ -1,0 +1,18 @@
+&global
+  run_type model
+  model_type droplet
+&end global
+
+&model
+  &droplet
+    traj_file ./supercell.xyz
+    center_id 2536-2538
+    group_atom O H H
+    len_conv 8.0
+    &box
+      A 37.26 0.0 0.0
+      B 0.0 37.26 0.0
+      C 0.0 0.0 37.26
+    &end box
+  &end droplet
+&end model

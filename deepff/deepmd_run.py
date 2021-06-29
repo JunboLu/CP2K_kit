@@ -251,6 +251,9 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   if ( 'seed_num' in deepmd_param['training'].keys() ):
     deepmd_param['training'].pop('seed_num')
 
+  if ( 'parallel_model' in deepmd_param['training'].keys() ):
+    deepmd_param['training'].pop('parallel_model')
+
   deepmd_param['training']['systems'] = data_dir
 
   new_deepmd_param = revise_deepmd_dic(deepmd_param)
@@ -283,7 +286,59 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((train_dir, '/', str(i), '/', 'input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def run_deepmd(work_dir, iter_id):
+def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, host):
+
+  '''
+  deepmd_parallel : run deepmd calculation in parallel.
+
+  '''
+
+  import subprocess
+
+  #run lammps in 1 thread. Here we just run force, it is a single
+  #point calculation.
+
+  host_comb = ''
+  if ( len(host) >= parallel_num ):
+    for i in range(len(host)):
+      host_comb = host_comb + '-S' + host[i] + ' '
+  else:
+    for i in range(len(host)):
+      host_comb = host_comb + '-S' + ' ' + host[i] + ' '
+    for i in range(parallel_num-len(host)):
+      host_comb = host_comb + '-S' + ' ' + host[len(host)-1] + ' '
+
+  run = '''
+#! /bin/bash
+
+direc=%s
+parallel_num=%d
+run_start=%d
+run_end=%d
+parallel_exe=%s
+host_sub=%s
+
+produce() {
+x=$1
+direc=$2
+cd $direc/$x
+dp train input.json > out
+dp freeze -o frozen_model.pb
+}
+
+export -f produce
+
+seq $run_start $run_end | $parallel_exe -S $host_sub -j $parallel_num produce {} $direc
+''' %(deepmd_train_dir, parallel_num, start, end, parallel_exe, host_comb)
+
+  run_file = ''.join((deepmd_train_dir, '/run.sh'))
+  with open(run_file, 'w') as f:
+    f.write(run)
+
+  subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
+  subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+
+def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
 
   '''
   run_deepmd : kernel function to run deepmd.
@@ -293,19 +348,28 @@ def run_deepmd(work_dir, iter_id):
       work_dir is working directory of CP2K_kit.
     iter_id : int
       iter_id is the iteration id.
+    parallel_model: bool
+      parallel_model defines whether we fit different model in parallel.
+    parallel_exe: str
+      parallel_exe is the executable file parallel.
   Returns :
     none
   '''
 
   import subprocess
+
   train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
   train_num = len(call.call_returns_shell(train_dir, 'ls'))
-  for i in range(train_num):
-    train_dir_i = ''.join((train_dir, '/', str(i)))
-    cmd_1 = 'dp train input.json > out'
-    subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
-    cmd_2 = 'dp freeze -o frozen_model.pb'
-    subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
+
+  if parallel_model:
+    deepmd_parallel(train_dir, train_num, 0, train_num-1, parallel_exe)
+  else:
+    for i in range(train_num):
+      train_dir_i = ''.join((train_dir, '/', str(i)))
+      cmd_1 = 'dp train input.json > out'
+      subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
+      cmd_2 = 'dp freeze -o frozen_model.pb'
+      subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import deepmd_run

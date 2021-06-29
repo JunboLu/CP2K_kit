@@ -22,6 +22,12 @@ string_split=(${string// / })
 thermo_type=${string_split[1]}
 fi
 
+if [[ $run_type == model ]]; then
+string=`grep 'model_type' ${inp_file}`
+string_split=(${string// / })
+model_type=${string_split[1]}
+fi
+
 if [[ ${run_type} == deepff ]]; then
 ${python_exe} ${CP2K_kit_path}/deepff/deepff_run.py ${work_dir} ${inp_file}
 elif [[ ${run_type} == analyze ]]; then
@@ -34,4 +40,6 @@ elif [[ ${run_type} == handle_restart ]]; then
 ${python_exe} ${CP2K_kit_path}/handle_restart/handle_restart_run.py ${work_dir} ${inp_file} ${run_type}
 elif [[ ${run_type} == thermo_int ]]; then
 ${python_exe} ${CP2K_kit_path}/thermo_int/thermo_int_run.py ${work_dir} ${inp_file} ${thermo_type}
+elif [[ ${run_type} == model ]]; then
+${python_exe} ${CP2K_kit_path}/model/model_run.py ${work_dir} ${inp_file} ${model_type}
 fi

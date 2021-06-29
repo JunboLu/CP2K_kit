@@ -486,7 +486,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
             frc_in_file.close()
 
-def run_lmpmd(work_dir, iter_id, lmp_proc_num):
+def run_lmpmd(work_dir, iter_id, proc_num):
 
   '''
   rum_lmpmd : kernel function to run lammps md.
@@ -496,8 +496,8 @@ def run_lmpmd(work_dir, iter_id, lmp_proc_num):
       work_dir is working directory of CP2K_kit.
     iter_id : int
       iter_id is the iteration id.
-    lmp_proc_num : int
-      lmp_proc_num is the process number of lammps.
+    proc_num : int
+      proc_num is the process number of lammps.
   Returns :
     none
   '''
@@ -517,7 +517,7 @@ def run_lmpmd(work_dir, iter_id, lmp_proc_num):
     for j in range(task_num):
       lammps_sys_task_dir = ''.join((lammps_sys_dir, '/task_', str(j)))
 
-      cmd = "mpirun -np %d lmp < ./md_in.lammps > out" %(lmp_proc_num)
+      cmd = "mpirun -np %d lmp < ./md_in.lammps > out" %(proc_num)
       subprocess.run(cmd, shell=True, cwd=lammps_sys_task_dir)
 
 def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe):
@@ -573,7 +573,7 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
 
-def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_proc_num):
+def run_lmpfrc(work_dir, iter_id, parallel_exe, proc_num):
 
   '''
   rum_lmpfrc : kernel function to run lammps force calculation.
@@ -585,8 +585,8 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_proc_num):
       iter_id is the iteration id.
     parallel_exe : string
       parallel_exe is parallel exacutable file.
-    lmp_proc_num : int
-      lmp_proc_num is the process number of lammps.
+    proc_num : int
+      proc_num is the process number of lammps.
   Returns :
     none
   '''
@@ -623,18 +623,20 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_proc_num):
         traj_num = len(call.call_returns_shell(model_dir, cmd))
 
         start = 0
-        end = start+lmp_proc_num-1
-        cycle = math.ceil(traj_num/lmp_proc_num)
+        end = start+proc_num-1
+        cycle = math.ceil(traj_num/proc_num)
 
+        parallel_num = proc_num
         for l in range(cycle):
           if ( use_metad and k == 0 ):
-            lmpfrc_parallel(model_dir, lmp_proc_num, start, end, parallel_exe)
+            lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe)
           if ( k != 0 ):
-            lmpfrc_parallel(model_dir, lmp_proc_num, start, end, parallel_exe)
-          start = start+lmp_proc_num
-          end = end+lmp_proc_num
+            lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe)
+          start = start+proc_num
+          end = end+proc_num
           if ( end > traj_num-1 ):
             end = traj_num-1
+            parallel_num = end-start+1
 
 if __name__ == '__main__':
   from CP2K_kit.tools import read_input

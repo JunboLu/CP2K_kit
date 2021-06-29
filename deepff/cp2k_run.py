@@ -290,7 +290,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
 
     gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, get_stress)
 
-def run_cp2kfrc(work_dir, iter_id, environ_dic):
+def run_cp2kfrc(work_dir, iter_id, environ_dic, proc_num):
 
   '''
   run_force : perform cp2k force calculation
@@ -312,11 +312,6 @@ def run_cp2kfrc(work_dir, iter_id, environ_dic):
     print ('These is no cp2k executable file')
     exit()
 
-  if ( 'cp2k_proc_num' in environ_dic.keys() ):
-    cp2k_proc_num = int(environ_dic['cp2k_proc_num'])
-  else:
-    cp2k_proc_num = 1
-
   if ( 'cp2k_env_file' in environ_dic.keys() ):
     cp2k_env = environ_dic['cp2k_env_file']
   else:
@@ -336,7 +331,7 @@ def run_cp2kfrc(work_dir, iter_id, environ_dic):
 source %s
 
 mpirun -np %d %s input.inp 1> cp2k.out 2> cp2k.err
-''' %(cp2k_env, cp2k_proc_num, cp2k_exe)
+''' %(cp2k_env, proc_num, cp2k_exe)
 
     for j in range(task_num):
       cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
