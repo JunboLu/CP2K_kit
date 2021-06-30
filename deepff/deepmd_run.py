@@ -296,14 +296,8 @@ def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, ho
   #point calculation.
 
   host_comb = ''
-  if ( len(host) >= parallel_num ):
-    for i in range(len(host)):
-      host_comb = host_comb + '-S' + ' ' + host[i] + ' '
-  else:
-    for i in range(len(host)):
-      host_comb = host_comb + '-S' + ' ' + host[i] + ' '
-    for i in range(parallel_num-len(host)):
-      host_comb = host_comb + '-S' + ' ' + host[len(host)-1] + ' '
+  for i in range(len(host)):
+    host_comb = host_comb + '-S' + ' ' + host[i] + ' '
 
   run = '''
 #! /bin/bash
