@@ -187,14 +187,9 @@ def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic,
       print ('please set parallel_exe in environ')
       exit()
 
-    if ( 'parallel_model' in deepmd_dic['training'].keys() ):
-      parallel_model = list_dic_op.str_to_bool(deepmd_dic['training']['parallel_model'])
-    else:
-      parallel_model = False
-
     deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                descr_seed, fit_seed, tra_seed, neuron, model_type)
-    deepmd_run.run_deepmd(work_dir, i, parallel_model, parallel_exe, host)
+    deepmd_run.run_deepmd(work_dir, i, parallel_exe, host)
 
     ##Perform lammps calculation
     atoms_type_dic_tot, atoms_num_tot = \

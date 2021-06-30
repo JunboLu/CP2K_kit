@@ -41,7 +41,6 @@
       model_type use_seed
       seed_num 4
       neuron 120 120 120
-      parallel_model false
       set_prefix set    
       stop_batch 40000
       batch_size auto

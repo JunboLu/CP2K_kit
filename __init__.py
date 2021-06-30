@@ -6,3 +6,4 @@ from CP2K_kit import gen_inp
 from CP2K_kit import handle_restart
 from CP2K_kit import lib
 from CP2K_kit import tools
+from CP2K_kit import model

@@ -251,9 +251,6 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   if ( 'seed_num' in deepmd_param['training'].keys() ):
     deepmd_param['training'].pop('seed_num')
 
-  if ( 'parallel_model' in deepmd_param['training'].keys() ):
-    deepmd_param['training'].pop('parallel_model')
-
   deepmd_param['training']['systems'] = data_dir
 
   new_deepmd_param = revise_deepmd_dic(deepmd_param)
@@ -347,7 +344,7 @@ dp freeze -o frozen_model.pb
   subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
 
-def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
+def run_deepmd(work_dir, iter_id, parallel_exe, host):
 
   '''
   run_deepmd : kernel function to run deepmd.
@@ -357,8 +354,6 @@ def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
       work_dir is working directory of CP2K_kit.
     iter_id : int
       iter_id is the iteration id.
-    parallel_model: bool
-      parallel_model defines whether we fit different model in parallel.
     parallel_exe: str
       parallel_exe is the executable file parallel.
   Returns :
@@ -370,7 +365,7 @@ def run_deepmd(work_dir, iter_id, parallel_model, parallel_exe, host):
   train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
   model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
-  if parallel_model:
+  if ( len(host) > 1 ):
     deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host)
   else:
     for i in range(model_num):
