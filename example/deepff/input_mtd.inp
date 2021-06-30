@@ -97,6 +97,7 @@
   &environ
     cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
     cp2k_env_file /home/lujunbo/bin/cp2k-8.2/tools/toolchain/install/setup
+    cuda_dir none
     parallel_exe /home/lujunbo/bin/parallel/bin/parallel
   &end environ
 &end deepff

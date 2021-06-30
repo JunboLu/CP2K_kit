@@ -283,7 +283,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((train_dir, '/', str(i), '/', 'input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, host):
+def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, host, cuda_dir):
 
   '''
   deepmd_parallel : run deepmd calculation in parallel.
@@ -314,7 +314,26 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {}
   dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')[0]
   dp_path = dp_exe[:-3]
 
-  produce = '''
+  if ( cuda_dir != 'none' ):
+    produce = '''
+#! /bin/bash
+
+export PATH=%s:$PATH
+
+export PATH=%s/bin:$PATH
+export LD_LIBRARY_PATH=%s/lib64:$LD_LIBRARY_PATH
+
+export KMP_BLOCKTIME=0
+export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
+
+x=$1
+direc=$2
+cd $direc/$x
+dp train input.json > out
+dp freeze -o frozen_model.pb
+''' %(dp_path, cuda_dir)
+  else:
+    produce = '''
 #! /bin/bash
 
 export PATH=%s:$PATH
@@ -338,7 +357,7 @@ dp freeze -o frozen_model.pb
   subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
 
-def run_deepmd(work_dir, iter_id, parallel_exe, host):
+def run_deepmd(work_dir, iter_id, parallel_exe, host, cuda_dir):
 
   '''
   run_deepmd : kernel function to run deepmd.
@@ -360,14 +379,33 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host):
   model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
   if ( len(host) > 1 ):
-    deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host)
+    deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host, cuda_dir)
   else:
     for i in range(model_num):
       train_dir_i = ''.join((train_dir, '/', str(i)))
-      cmd_1 = 'dp train input.json > out'
-      subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
-      cmd_2 = 'dp freeze -o frozen_model.pb'
-      subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
+      if ( cuda_dir != 'none' ):
+        run = '''
+#! /bin/bash
+
+export PATH=%s/bin:$PATH
+export LD_LIBRARY_PATH=%s/lib64:$LD_LIBRARY_PATH
+
+export KMP_BLOCKTIME=0
+export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
+
+dp train input.json > out
+dp freeze -o frozen_model.pb
+''' %(cuda_dir)
+        run_file = ''.join((train_dir_i, '/run.sh'))
+        with open(run_file, 'w') as f:
+          f.write(run)
+        subprocess.run('chmod +x run.sh', cwd=train_dir_i, shell=True)
+        subprocess.run("bash -c './run.sh'", cwd=train_dir_i, shell=True)
+      else:
+        cmd_1 = 'dp train input.json > out'
+        subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
+        cmd_2 = 'dp freeze -o frozen_model.pb'
+        subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import deepmd_run
