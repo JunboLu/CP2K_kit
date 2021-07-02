@@ -106,7 +106,7 @@ contains
     do i=1,n
       freq_in_hz=freq_array(i)*wave_num_to_hz
       sum_value=0.0
-      do j=1,m-1
+      do j=1,m
         sum_value=sum_value+data_tcf(j)*cos(2*pi*freq_in_hz*time_in_s(j))*time_step
       end do
       intensity_array(i)=sum_value

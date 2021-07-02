@@ -81,11 +81,11 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
 
   return init_train_data
 
-def run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
+def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
                   init_train_data, work_dir, max_iter, restart_iter, proc_num, host):
 
   '''
-  run_iteration : run active learning iterations.
+  run_iter : run active learning iterations.
 
   Args :
     deepmd_dic : dictionary
@@ -287,7 +287,7 @@ def kernel(work_dir, inp_file):
 
   init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter)
 
-  run_iteration(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
+  run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
                 init_train_data, work_dir, max_iter, restart_iter, proc_num, host)
 
 if __name__ == '__main__':

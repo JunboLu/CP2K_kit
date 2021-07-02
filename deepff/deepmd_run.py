@@ -320,8 +320,9 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {}
 
 export PATH=%s:$PATH
 
-export PATH=%s/bin:$PATH
-export LD_LIBRARY_PATH=%s/lib64:$LD_LIBRARY_PATH
+CUDA_DIR=%s
+export PATH=$CUDA_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
 
 export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
@@ -387,8 +388,9 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, cuda_dir):
         run = '''
 #! /bin/bash
 
-export PATH=%s/bin:$PATH
-export LD_LIBRARY_PATH=%s/lib64:$LD_LIBRARY_PATH
+CUDA_DIR=%s
+export PATH=$CUDA_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
 
 export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
