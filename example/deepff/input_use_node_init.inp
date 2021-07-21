@@ -37,6 +37,10 @@
 　    &system
         directory ./co2 
         proj_name cp2k
+        start_frame 0
+        end_frame 200
+        choosed_frame_num 100
+        set_parts 1
       &end system
       model_type use_nodes
       neuron 120 120 120 ... 180 180 180

@@ -9,6 +9,10 @@ from CP2K_kit.analyze import center
 from CP2K_kit.analyze import geometry
 from CP2K_kit.analyze import diffusion
 from CP2K_kit.analyze import spectrum
+from CP2K_kit.analyze import file_trans
+from CP2K_kit.analyze import lmp2cp2k
+from CP2K_kit.analyze import dp_test
+from CP2K_kit.analyze import v_hartree
 from CP2K_kit.analyze import free_energy
 from CP2K_kit.analyze import arrange_data
 from CP2K_kit.analyze import time_correlation
@@ -56,3 +60,15 @@ elif ( analyze_job == 'time_correlation' ):
 
 elif ( analyze_job == 'power_spectrum' ):
   spectrum.power_spectrum_run(job_type_param[0], work_dir)
+
+elif ( analyze_job == 'lmp2cp2k' ):
+  lmp2cp2k.lmp2cp2k_run(job_type_param[0], work_dir)
+
+elif ( analyze_job == 'v_hartree' ):
+  v_hartree.v_hartree_run(job_type_param[0], work_dir)
+
+elif ( analyze_job == 'file_trans' ):
+  file_trans.file_trans_run(job_type_param[0], work_dir)
+
+elif ( analyze_job == 'dp_test' ):
+  dp_test.dp_test_run(job_type_param[0], work_dir)

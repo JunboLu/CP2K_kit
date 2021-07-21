@@ -517,8 +517,20 @@ def run_lmpmd(work_dir, iter_id, proc_num):
     for j in range(task_num):
       lammps_sys_task_dir = ''.join((lammps_sys_dir, '/task_', str(j)))
 
-      cmd = "mpirun -np %d lmp < ./md_in.lammps > out" %(proc_num)
-      subprocess.run(cmd, shell=True, cwd=lammps_sys_task_dir)
+      run = '''
+#! /bin/bash
+
+export OMP_NUM_THREADS=%d
+
+mpirun -np %d lmp < ./md_in.lammps > out
+''' %(int(proc_num/4), proc_num)
+
+      run_file = ''.join((lammps_sys_task_dir, '/run.sh'))
+      with open(run_file, 'w') as f:
+        f.write(run)
+
+      subprocess.run('chmod +x run.sh', cwd=lammps_sys_task_dir, shell=True)
+      subprocess.run("bash -c './run.sh'", cwd=lammps_sys_task_dir, shell=True)
 
 def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe):
 
@@ -650,7 +662,7 @@ if __name__ == '__main__':
   #Test gen_lmpmd_task function
   atoms_type_dic_tot, atoms_num_tot = \
   lammps_run.gen_lmpmd_task(lammps_dic, work_dir, 0)
-  print (atoms_type_dic_tot, atoms_num_tot)
+  #print (atoms_type_dic_tot, atoms_num_tot)
 
   #Test run_lmpmd function
   lammps_run.run_lmpmd(work_dir, 0, 4)

@@ -137,13 +137,13 @@ def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, st
 
   for i in range(stat_num):
     time.append(time_step*each*i)
-    line_i_1 = linecache.getline(new_file_name, (frames_num-stat_num+i)*(atoms_num+2)+atom_1_id+base)
+    line_i_1 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_1_id+base)
     line_i_1_split = list_dic_op.str_split(line_i_1, ' ')
     coord_atom_1[i,0] = float(line_i_1_split[1])
     coord_atom_1[i,1] = float(line_i_1_split[2])
     coord_atom_1[i,2] = float(line_i_1_split[3].strip('\n'))
 
-    line_i_2 = linecache.getline(new_file_name, (frames_num-stat_num+i)*(atoms_num+2)+atom_2_id+base)
+    line_i_2 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_2_id+base)
     line_i_2_split = list_dic_op.str_split(line_i_2, ' ')
     coord_atom_2[i,0] = float(line_i_2_split[1])
     coord_atom_2[i,1] = float(line_i_2_split[2])
@@ -209,7 +209,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
 
   for i in range(stat_num):
     time.append(time_step*i*each)
-    a_atom_1 = linecache.getline(file_name, (frames_num-stat_num+i)*(atoms_num+2)+atom_1_id+base)
+    a_atom_1 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_1_id+base)
     b_atom_1 = a_atom_1.split(' ')
     c_atom_1 = []
     for j in range(len(b_atom_1)):
@@ -219,7 +219,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
     coord_atom_1[i,1] = float(c_atom_1[2])
     coord_atom_1[i,2] = float(c_atom_1[3].strip('\n'))
 
-    a_atom_2 = linecache.getline(file_name, (frames_num-stat_num+i)*(atoms_num+2)+atom_2_id+base)
+    a_atom_2 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_2_id+base)
     b_atom_2 = a_atom_2.split(' ')
     c_atom_2 = []
     for j in range(len(b_atom_2)):
@@ -229,7 +229,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
     coord_atom_2[i,1] = float(c_atom_2[2])
     coord_atom_2[i,2] = float(c_atom_2[3].strip('\n'))
 
-    a_atom_3 = linecache.getline(file_name, (frames_num-stat_num+i)*(atoms_num+2)+atom_3_id+base)
+    a_atom_3 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_3_id+base)
     b_atom_3 = a_atom_3.split(' ')
     c_atom_3 = []
     for j in range(len(b_atom_3)):
@@ -282,7 +282,6 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
 
   order_list = []
 
-  print (group_tot)
   for i in range(len(group_tot)):
     atom_id = group_tot[i]['atom_id']
     atom_id_list = list_dic_op.get_id_list(atom_id)

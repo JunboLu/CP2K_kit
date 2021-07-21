@@ -6,11 +6,11 @@
 &analyze
   &power_spectrum
     type general
-    traj_vel_file ./WATER-vel-1.xyz
-    init_step 10000 
-    end_step 50000
+    traj_vel_file ./cp2k-vel-1.xyz
+    init_step 50000 
+    end_step 90000
     atom_id 1-192
-    max_frame_corr 5000
+    max_frame_corr 10000
     normalize 1
     start_wave 0
     end_wave 4000

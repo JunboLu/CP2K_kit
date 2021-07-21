@@ -3,5 +3,7 @@ We provide three input files:
 (2) input_use_seed_init.inp: We use different initial values in different models.
 (3) input_mtd.inp: We use metadynamics trajectory in lammps for model deviation.
 
+We also provide the cp2k input file, user could use this input module to run AIMD simulation.
+
 When runing deepff calculation, please be careful to set environment. We have provided
 submition scripts for PBS (pbs.sub), SLURM (slurm.sub) and LSF (lsf.sub) systems.

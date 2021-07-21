@@ -6,3 +6,4 @@ from CP2K_kit.tools import numeric
 from CP2K_kit.tools import read_input
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import traj_tools
+from CP2K_kit.tools import read_lmp

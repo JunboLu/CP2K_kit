@@ -295,12 +295,16 @@ def deepmd_parallel(deepmd_train_dir, parallel_num, start, end, parallel_exe, ho
   #run lammps in 1 thread. Here we just run force, it is a single
   #point calculation.
 
-  host_comb = ''
-  for i in range(len(host)):
-    host_comb = host_comb + '-S' + ' ' + host[i] + ' '
+  if ( len(host) > 1 ):
+    host_comb = ''
+    for i in range(len(host)):
+      host_comb = host_comb + '-S' + ' ' + host[i] + ' '
 
-  run = '''
+    run = '''
 #! /bin/bash
+
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 
 direc=%s
 parallel_num=%d
@@ -310,6 +314,22 @@ parallel_exe=%s
 
 seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {} $direc
 ''' %(deepmd_train_dir, parallel_num, start, end, parallel_exe, host_comb)
+
+  else:
+    run = '''
+#! /bin/bash
+
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+
+direc=%s
+parallel_num=%d
+run_start=%d
+run_end=%d
+parallel_exe=%s
+
+seq $run_start $run_end | $parallel_exe -j $parallel_num $direc/produce.sh {} $direc
+''' %(deepmd_train_dir, parallel_num, start, end, parallel_exe)
 
   dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')[0]
   dp_path = dp_exe[:-3]
@@ -379,35 +399,35 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, cuda_dir):
   train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
   model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
-  if ( len(host) > 1 ):
-    deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host, cuda_dir)
-  else:
-    for i in range(model_num):
-      train_dir_i = ''.join((train_dir, '/', str(i)))
-      if ( cuda_dir != 'none' ):
-        run = '''
-#! /bin/bash
-
-CUDA_DIR=%s
-export PATH=$CUDA_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
-
-export KMP_BLOCKTIME=0
-export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
-
-dp train input.json > out
-dp freeze -o frozen_model.pb
-''' %(cuda_dir)
-        run_file = ''.join((train_dir_i, '/run.sh'))
-        with open(run_file, 'w') as f:
-          f.write(run)
-        subprocess.run('chmod +x run.sh', cwd=train_dir_i, shell=True)
-        subprocess.run("bash -c './run.sh'", cwd=train_dir_i, shell=True)
-      else:
-        cmd_1 = 'dp train input.json > out'
-        subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
-        cmd_2 = 'dp freeze -o frozen_model.pb'
-        subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
+#  if ( len(host) > 1 ):
+  deepmd_parallel(train_dir, model_num, 0, model_num-1, parallel_exe, host, cuda_dir)
+#  else:
+#    for i in range(model_num):
+#      train_dir_i = ''.join((train_dir, '/', str(i)))
+#      if ( cuda_dir != 'none' ):
+#        run = '''
+##! /bin/bash
+#
+#CUDA_DIR=%s
+#export PATH=$CUDA_DIR/bin:$PATH
+#export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
+#
+#export KMP_BLOCKTIME=0
+#export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
+#
+#dp train input.json > out
+#dp freeze -o frozen_model.pb
+#''' %(cuda_dir)
+#        run_file = ''.join((train_dir_i, '/run.sh'))
+#        with open(run_file, 'w') as f:
+#          f.write(run)
+#        subprocess.run('chmod +x run.sh', cwd=train_dir_i, shell=True)
+#        subprocess.run("bash -c './run.sh'", cwd=train_dir_i, shell=True)
+#      else:
+#        cmd_1 = 'dp train input.json > out'
+#        subprocess.run(cmd_1, shell=True, cwd=train_dir_i)
+#        cmd_2 = 'dp freeze -o frozen_model.pb'
+#        subprocess.run(cmd_2, shell=True, cwd=train_dir_i)
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import deepmd_run

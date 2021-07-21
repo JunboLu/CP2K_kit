@@ -1,0 +1,22 @@
+&global
+  run_type analyze
+  analyze_job center
+&end global
+
+&analyze
+  &center
+    type center_box
+    traj_file ./water-pos-1.xyz
+    &box
+      A 12.42 0.0 0.0
+      B 0.0 12.42 0.0
+      C 0.0 0.0 12.42
+    &end box
+    &connect
+      &group
+        atom_id 1-192
+        group_atom O H H
+      &end group
+    &end connect
+  &end center
+&end analyze

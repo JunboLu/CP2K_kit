@@ -1,0 +1,14 @@
+&global
+  run_type analyze
+  analyze_job dp_test
+&end global
+
+&analyze
+  &dp_test
+    learn_type active_learning
+    lmp_traj_file ./atom.dump
+    lmp_log_file ./log.lammps
+    cp2k_inp_file ./cp2k.inp
+    atom_label 1:O 2:H
+  &end dp_test
+&end analyze

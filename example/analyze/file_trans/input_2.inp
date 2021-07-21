@@ -1,0 +1,11 @@
+&global
+  run_type analyze
+  analyze_job file_trans
+&end global
+
+&analyze
+  &file_trans
+    file_name ./file.xyz
+    trans_type xyz2pdb
+  &end file_trans
+&end analyze

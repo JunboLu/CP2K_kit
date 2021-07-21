@@ -53,6 +53,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
 
       log_file = ''.join((lammps_sys_task_dir, '/log.lammps'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
+      atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file)
 
       force_corr_dist_file_name = ''.join((lammps_sys_task_dir, '/force_corr_devi.out'))
       force_corr_dist_file = open(force_corr_dist_file_name, 'w')
@@ -117,7 +118,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
           force_devi_avg.append(sum_value/len(force_devi))
 
         max_force = max(force_devi_avg)
-        force_corr_dist_file.write('%d            %f\n' %(k, max_force))
+        force_corr_dist_file.write('%d            %f\n' %(k*each, max_force))
 
         vec_a, vec_b, vec_c = get_cell.get_triclinic_cell_six(box)
         atoms_type_dist = calc_dist(atoms, coord, vec_a, vec_b, vec_c)

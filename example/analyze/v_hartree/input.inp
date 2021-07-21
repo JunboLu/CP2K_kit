@@ -1,0 +1,11 @@
+&global
+  run_type analyze
+  analyze_job v_hartree
+&end global
+
+&analyze
+  &v_hartree
+    cube_file ./Eu-VH-v_hartree-1_0.cube
+    surface 0 0 1
+  &end v_hartree
+&end analyze

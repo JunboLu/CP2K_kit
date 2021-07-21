@@ -204,6 +204,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
   '''
 
   #copy should be done at first, because the following operators will change it!
+  print (struct_index)
   cp2k_param = copy.deepcopy(cp2k_dic)
 
   iter_dir = ''.join((work_dir + '/', 'iter_', str(iter_id)))
@@ -233,7 +234,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
       pass
     else:
       for i in range(len(choosed_index_num)):
-        choosed_index_num[i]=int(choosed_index_num_copy[i]/sum(choosed_index_num_copy)*100)
+        choosed_index_num[i]=int(choosed_index_num_copy[i]/sum(choosed_index_num_copy)*choose_new_data_num_limit)
 
     for i in range(len(choosed_task)):
       #data file is from model0 lammps md calculation.

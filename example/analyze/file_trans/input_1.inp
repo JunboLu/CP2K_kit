@@ -1,0 +1,11 @@
+&global
+  run_type analyze
+  analyze_job file_trans
+&end global
+
+&analyze
+  &file_trans
+    file_name ./amcl3.pdb
+    trans_type pdb2xyz
+  &end file_trans
+&end analyze

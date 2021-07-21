@@ -98,7 +98,7 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
 
   return distance, atom_id_1, atom_id_2
 
-def rdf(distance, a_vec, b_vec, c_vec, data_num, atom_1_num, atom_2_num, work_dir):
+def rdf(distance, a_vec, b_vec, c_vec, r_increment, work_dir):
 
   '''
   rdf : get rdf between atom_1 and atom_2
@@ -114,12 +114,8 @@ def rdf(distance, a_vec, b_vec, c_vec, data_num, atom_1_num, atom_2_num, work_di
     c_vec : 1d float list, dim = 3
       c_vec is the cell vector c.
       Example : [0.0, 0.0, 12.42]
-    data_num : int
-      data_num is the number of grids inside the r_max.
-    atom_1_num : int
-      atom_1_num is the number of atom_1.
-    atom_2_num : int
-      atom_2_num is the number of atom_2.
+    r_increment: float
+      r_increment is the increment of r.
     work_dir : string
       work_dir is working directory of CP2K_kit.
   Returns :
@@ -128,18 +124,19 @@ def rdf(distance, a_vec, b_vec, c_vec, data_num, atom_1_num, atom_2_num, work_di
 
   vec = a_vec+b_vec+c_vec
   r_max = np.sqrt(np.dot(vec, vec))/2.0
-  vol = 4.0/3.0*np.pi*r_max**3
-  increment_r = r_max/data_num
+  #vol = 4.0/3.0*np.pi*r_max**3
+  vol = np.dot(a_vec, np.cross(b_vec, c_vec))
+  data_num = int(r_max/r_increment)
 
   rdf_value, integral_value = \
-  geometry_mod.geometry.rdf(distance, increment_r, vol, atom_1_num, atom_2_num, data_num)
+  geometry_mod.geometry.rdf(distance, r_increment, vol, data_num)
 
   rdf_file = ''.join((work_dir, '/rdf_integral.csv'))
   with open(rdf_file ,'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['distance', 'rdf', 'int'])
-    for i in range(data_num):
-      writer.writerow([increment_r*(i+1), rdf_value[i], integral_value[i]])
+    for i in range(data_num-1):
+      writer.writerow([r_increment*(i+1), rdf_value[i], integral_value[i]])
 
 def rdf_run(rdf_param, work_dir):
 
@@ -205,12 +202,12 @@ def rdf_run(rdf_param, work_dir):
   else:
     end_step = start_frame_id + each
 
-  if ( 'data_num' in rdf_param.keys() ):
-    data_num = int(rdf_param['data_num'])
+  if ( 'r_increment' in rdf_param.keys() ):
+    r_increment = float(rdf_param['r_increment'])
   else:
-    data_num = 500
+    r_increment = 0.1
 
   dist, atom_1, atom_2 = distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
                                   end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_file, work_dir)
 
-  rdf(dist, a_vec, b_vec, c_vec, data_num, len(atom_1), len(atom_2), work_dir)
+  rdf(dist, a_vec, b_vec, c_vec, r_increment, work_dir)

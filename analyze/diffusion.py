@@ -4,11 +4,13 @@ import os
 import csv
 import linecache
 import numpy as np
+from CP2K_kit.tools import atom
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import dynamic_mod
 
-def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, atom_id, file_name, method, work_dir):
+def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end, \
+              time_num, atom_id, file_name, method, remove_com, work_dir):
 
   '''
   diffusion : calculate diffusion coefficient for choosed atoms.
@@ -55,23 +57,34 @@ def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end
   frames_num_stat = int((end-start)/each+1)
   if (method == 'einstein_sum'):
     coord = np.asfortranarray(np.zeros((frames_num_stat, len(atom_id), 3)), dtype='float32')
+
     #Dump coordinate
     for i in range(frames_num_stat):
       for j in range(len(atom_id)):
-        line_ij = linecache.getline(file_name, (atoms_num+base)*(int((start-file_start)/each)+i)+base+atom_id[j])
+        line_ij = linecache.getline(file_name, (atoms_num+base)*(int((start-file_start)/each)+i)+pre_base+base+atom_id[j])
         line_ij_split = list_dic_op.str_split(line_ij, ' ')
         coord[i,j,0] = float(line_ij_split[1])
         coord[i,j,1] = float(line_ij_split[2])
         coord[i,j,2] = float(line_ij_split[3].strip('\n'))
+
+    if remove_com:
+      #Dump atom mass
+      atom_mass = []
+      for i in range(len(atom_id)):
+        line_i = linecache.getline(file_name, atom_id[i]+pre_base+base)
+        line_i_split = list_dic_op.str_split(line_i, ' ')
+        atom_mass.append(atom.get_atom_mass(line_i_split[0])[1])
+      atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
+      coord = dynamic_mod.dynamic.remove_coord_com(coord,atom_mass_array)
 
     einstein_sum = dynamic_mod.dynamic.diffusion_einstein_sum(coord, time_num)
 
     msd_file = ''.join((work_dir, '/msd.csv'))
     with open(msd_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['time', 'msd'])
+      writer.writerow(['time(ps)', 'msd(Angstrom^2)'])
       for i in range(len(einstein_sum)):
-        writer.writerow([i*time_step*each, einstein_sum[i]])
+        writer.writerow([i*time_step*each*0.001, einstein_sum[i]])
 
   if (method == 'green_kubo'):
     vel = np.asfortranarray(np.zeros((frames_num_stat, len(atom_id), 3)), dtype='float32')
@@ -92,7 +105,10 @@ def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end
     for i in range(len(vel_tcf)):
       sum_value = sum_value+vel_tcf[i]*time_step*each*1.0E-15
     Diff_coeff = sum_value/3.0
-    print ("The diffusion coefficient by vel_tcf is %f cm^2/s" %Diff_coeff)
+    diff_file_name = ''.join((work_dir, '/diffusion'))
+    diff_file = open(diff_file_name, 'w')
+    diff_file.write("The diffusion coefficient by vel_tcf is %f cm^2/s" %Diff_coeff)
+    diff_file.close()
 
 def diffusion_run(diffusion_param, work_dir):
 
@@ -145,5 +161,10 @@ def diffusion_run(diffusion_param, work_dir):
   else:
     max_frame_corr = int(frame_num/2)
 
+  if ( 'remove_com' in diffusion_param.keys() ):
+    remove_com = list_dic_op.str_to_bool(diffusion_param['remove_com'])
+  else:
+    remove_com = False
+
   diffusion(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, \
-            end_step, max_frame_corr, atom_id, traj_file, method, work_dir)
+            end_step, max_frame_corr, atom_id, traj_file, method, remove_com, work_dir)

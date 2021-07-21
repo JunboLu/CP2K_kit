@@ -76,8 +76,8 @@ def time_corr_func(atoms_num, base, pre_base, each, file_start, time_step, start
   if return_func:
     return data_tcf
 
-def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, \
-                        cluster_group_id, pos_file, vel_file, work_dir, normalize=1, return_func=False):
+def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, cluster_group_id,\
+                         pos_file, vel_file, a_vec, b_vec, c_vec, work_dir, normalize=1, return_func=False):
 
   '''
   time_corr_mode_func : calculate mode time correlation function.
@@ -101,8 +101,8 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
       end is the ending frame used to analyze.
     time_num : int
       time_num is the max correlation frame number.
-    cluster_group_id : 1-d int list
-      cluster_group_id is the id of first atoms in the molecules in the group.
+    cluster_group_id : 3-d int list
+      cluster_group_id is the id of atoms in the molecule group.
     pos_file : string
       pos_file is the position trajectory file.
     vel_file : string
@@ -136,7 +136,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
       element = []
       for k in range(len(cluster_group_id[i][j])):
         #Dump coordinate
-        line_k = linecache.getline(pos_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base)
+        line_k = linecache.getline(pos_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
         line_k_split = list_dic_op.str_split(line_k, ' ')
         element.append(line_k_split[0])
         pos_data[k,0] = float(line_k_split[1])
@@ -144,7 +144,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
         pos_data[k,2] = float(line_k_split[3].strip('\n'))
 
         #Dump velocity
-        line_k = linecache.getline(vel_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base)
+        line_k = linecache.getline(vel_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
         line_k_split = list_dic_op.str_split(line_k, ' ')
         vel_data[k,0] = float(line_k_split[1])
         vel_data[k,1] = float(line_k_split[2])
@@ -152,7 +152,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
 
       atom_number, atom_mass = atom.get_atom_mass(element)
       mass_array = np.asfortranarray(atom_mass, dtype='float32')
-      q1, q2, q3 = statistic_mod.statistic.data_mode(pos_data,vel_data,mass_array)
+      q1, q2, q3 = statistic_mod.statistic.data_mode(pos_data,vel_data,a_vec,b_vec,c_vec,mass_array)
       Q1_data[i,j,0] = q1[0]
       Q1_data[i,j,1] = q1[1]
       Q1_data[i,j,2] = q1[2]

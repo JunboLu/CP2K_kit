@@ -1,3 +1,0 @@
-#! /usr/env/bin python
-
-

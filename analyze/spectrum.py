@@ -86,7 +86,7 @@ def power_spectrum(atoms_num, base, pre_base, each, file_start, time_step, start
       writer.writerow([wave_num[i], intensity[i], intensity_fit[i]])
 
 def power_spectrum_mode(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, cluster_group_id,
-                        lower_wave, upper_wave, increment_wave, pos_file, vel_file, normalize, work_dir):
+                        lower_wave, upper_wave, increment_wave, pos_file, vel_file, a_vec, b_vec, c_vec, normalize, work_dir):
 
   #Reference literature: Chem. Phys. 1986, 106, 205-212.
 
@@ -134,8 +134,8 @@ def power_spectrum_mode(atoms_num, base, pre_base, each, file_start, time_step, 
   '''
 
   Q1_vel_tcf, Q2_vel_tcf, Q3_vel_tcf = \
-  time_correlation.time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, \
-                                       cluster_group_id, pos_file, vel_file, work_dir, normalize, return_func=True)
+  time_correlation.time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, start, end, time_num, cluster_group_id, \
+                                       pos_file, vel_file, a_vec, b_vec, c_vec, work_dir, normalize, return_func=True)
 
   data_num = int((upper_wave-lower_wave)/increment_wave+1)
   wave_num = np.asfortranarray(np.zeros(data_num),dtype='float32')
@@ -280,6 +280,26 @@ def power_spectrum_run(spectrum_param, work_dir):
     atoms_num_v, base_v, pre_base_v, frame_num_v, each_v, start_id_v, end_id_v, time_step_v = \
     traj_info.get_traj_info(traj_vel_file)
 
+    if ( 'box' in spectrum_param.keys() ):
+      A_exist = 'A' in spectrum_param['box'].keys()
+      B_exist = 'B' in spectrum_param['box'].keys()
+      C_exist = 'C' in spectrum_param['box'].keys()
+    else:
+      print ('No box information found, please set box')
+      exit()
+
+    if ( A_exist and B_exist and C_exist):
+      box_A = spectrum_param['box']['A']
+      box_B = spectrum_param['box']['B']
+      box_C = spectrum_param['box']['C']
+    else:
+      print ('Box information wrong, please check')
+      exit()
+
+    a_vec = [float(x) for x in box_A]
+    b_vec = [float(x) for x in box_B]
+    c_vec = [float(x) for x in box_C]
+
     if ( spec_type == 'water_mode' ):
       if (start_id_v > start_id_p):
         atoms_num, base, pre_base, frame_num, each, start_id, end_id, \
@@ -296,8 +316,8 @@ def power_spectrum_run(spectrum_param, work_dir):
         for j in range(len(group_atom_1_id[0])):
           cluster_frame_id.append([group_atom_1_id[0][j], group_atom_1_id[0][j]+1, group_atom_1_id[0][j]+2])
         cluster_id.append(cluster_frame_id)
-      power_spectrum_mode(atoms_num, base, pre_base, each, start_id, time_step, init_step, end_step, max_frame_corr, \
-                          cluster_id, start_wave, end_wave, increment_wave, traj_pos_file, traj_vel_file, normalize, work_dir)
+      power_spectrum_mode(atoms_num, base, pre_base, each, start_id, time_step, init_step, end_step, max_frame_corr, cluster_id, \
+                          start_wave, end_wave, increment_wave, traj_pos_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)
 
     elif ( spec_type == 'hydration_mode' ):
       if (start_id_v > start_id_p):
@@ -326,26 +346,6 @@ def power_spectrum_run(spectrum_param, work_dir):
         print ('No atom pair found, please set atom_pair')
         exit()
 
-      if ( 'box' in spectrum_param.keys() ):
-        A_exist = 'A' in spectrum_param['box'].keys()
-        B_exist = 'B' in spectrum_param['box'].keys()
-        C_exist = 'C' in spectrum_param['box'].keys()
-      else:
-        print ('No box information found, please set box')
-        exit()
-
-      if ( A_exist and B_exist and C_exist):
-        box_A = spectrum_param['box']['A']
-        box_B = spectrum_param['box']['B']
-        box_C = spectrum_param['box']['C']
-      else:
-        print ('Box information wrong, please check')
-        exit()
-
-      a_vec = [float(x) for x in box_A]
-      b_vec = [float(x) for x in box_B]
-      c_vec = [float(x) for x in box_C]
-
       first_shell_id, dist = geometry.first_shell(atoms_num, base, pre_base, start_id, frames_num, each, init_step, end_step, \
                                                   atom_1, atom_2, a_vec, b_vec, c_vec, traj_pos_file, hyd_shell_dist, dist_conv)
 
@@ -363,5 +363,5 @@ def power_spectrum_run(spectrum_param, work_dir):
           cluster_frame_id.append(group_id)
         cluster_id.append(cluster_frame_id)
 
-      power_spectrum_mode(atoms_num, base, pre_base, each, start_id, time_step, init_step, end_step, max_frame_corr,
-                          cluster_id, start_wave, end_wave, increment_wave, traj_pos_file, traj_vel_file, normalize, work_dir)
+      power_spectrum_mode(atoms_num, base, pre_base, each, start_id, time_step, init_step, end_step, max_frame_corr, cluster_id, \
+                          start_wave, end_wave, increment_wave, traj_pos_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)

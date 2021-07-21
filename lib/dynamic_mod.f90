@@ -1,5 +1,42 @@
+include 'vector.f90'
+
 module dynamic
+use vector
 contains
+
+  subroutine remove_coord_com(coord,atom_mass,l,m,n)
+
+    integer::l,m,n
+    integer::i,j,k
+    real(kind=4),dimension(n)::coord_com
+    real(kind=4),dimension(m)::atom_mass
+    real(kind=4),dimension(m,n)::coord_temp
+    real(kind=4),dimension(l,m,n)::coord
+    real(kind=4),dimension(l,m,n)::coord_sub_com
+
+    !f2py intent(in)::l,m,n
+    !f2py intent(in)::atom_mass
+    !f2py intent(in)::coord
+    !f2py intent(out)::coord_sub_com
+
+    do i=1,l
+      do j=1,m
+        do k=1,n
+          coord_temp(j,k) = coord(i,j,k)
+        end do
+      end do
+      call center_of_mass(atom_mass, coord_temp, coord_com, m, n)
+      do j=1,m
+        do k=1,n
+          coord_sub_com(i,j,k) = coord(i,j,k) - coord_com(k)
+        end do
+      end do
+    end do
+
+    return
+
+  end subroutine
+
   subroutine diffusion_einstein_sum(coord,sum_array,u,l,m,n)
 
     integer::l,m,n,u
@@ -15,7 +52,7 @@ contains
     !f2py intent(in)::coord
     !f2py intent(out)::sum_array
 
-    do i=1,u
+    do i=0,u-1
       sum_value_1=0.0
       do j=1,m
         sum_value_2=0.0
@@ -24,10 +61,10 @@ contains
         end do
         sum_value_1=sum_value_1+sum_value_2/(l-i)
       end do
-      sum_array_x(i)=sum_value_1/m
+      sum_array_x(i+1)=sum_value_1/m
     end do
 
-    do i=1,u
+    do i=0,u-1
       sum_value_1=0.0
       do j=1,m
         sum_value_2=0.0
@@ -36,10 +73,10 @@ contains
         end do
         sum_value_1=sum_value_1+sum_value_2/(l-i)
       end do
-      sum_array_y(i)=sum_value_1/m
+      sum_array_y(i+1)=sum_value_1/m
     end do
 
-    do i=1,u
+    do i=0,u-1
       sum_value_1=0.0
       do j=1,m
         sum_value_2=0.0
@@ -48,7 +85,7 @@ contains
         end do
         sum_value_1=sum_value_1+sum_value_2/(l-i)
       end do
-      sum_array_z(i)=sum_value_1/m
+      sum_array_z(i+1)=sum_value_1/m
     end do
 
     sum_array=sum_array_x+sum_array_y+sum_array_z
@@ -74,13 +111,14 @@ contains
     !f2py intent(out)::data_tcf_norm
     !f2py intent(in)::normalize
 
+    !The velocity in CP2K is bohr/fs
     do i=1,l
       do j=1,m
         do k=1,n
           if (normalize == 1) then
             new_data_array(i,j,k)=data_array(i,j,k)
           else
-            new_data_array(i,j,k)=data_array(i,j,k)*100.0*0.529*(1.0E-10)/(2.42*1.0E-17)
+            new_data_array(i,j,k)=data_array(i,j,k)*100.0*0.529*(1.0E-10)/(2.4188843265857*1.0E-17)
           end if
         end do
       end do

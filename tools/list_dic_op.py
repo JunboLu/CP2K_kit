@@ -249,12 +249,21 @@ def get_id_list(id_str):
 
   id_list = []
   for i in range(len(a)):
-    if ('-' in a[i]):
+    if ( '-' in a[i] and ':' not in a[i] ):
       b = a[i].index('-')
       start_id = int(a[i][:b])
       end_id = int(a[i][(b+1):])
       for j in range(end_id-start_id+1):
         id_list.append(start_id+j)
+    elif ( '-' in a[i] and ':' in a[i] ):
+      b = a[i].index('-')
+      c = a[i].index(':')
+      start_id = int(a[i][:b])
+      end_id = int(a[i][b+1:c])
+      increment = int(a[i][c+1:])
+      num = int((end_id-start_id)/increment)+1
+      for j in range(num):
+        id_list.append(start_id+j*increment)
     else:
       id_list.append(int(a[i]))
 

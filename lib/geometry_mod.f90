@@ -9,6 +9,7 @@ contains
     integer::m, n
     integer::i, j
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
+    real(kind=4)::sign_value_a,sign_value_b,sign_value_c
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
     real(kind=4),dimension(n)::distance_xyz
     real(kind=4),dimension(n)::a_vec, b_vec, c_vec
@@ -58,9 +59,9 @@ contains
         distance_xyz(j) = coord_1(i,j) - coord_2(i,j)
       end do
 
-      call project_vec(distance_xyz, a_vec_basis, n, proj_a_vec)
-      call project_vec(distance_xyz, b_vec_basis, n, proj_b_vec)
-      call project_vec(distance_xyz, c_vec_basis, n, proj_c_vec)
+      call project_vec(distance_xyz, a_vec_basis, n, proj_a_vec, sign_value_a)
+      call project_vec(distance_xyz, b_vec_basis, n, proj_b_vec, sign_value_b)
+      call project_vec(distance_xyz, c_vec_basis, n, proj_c_vec, sign_value_c)
 
       call get_vec_len(proj_a_vec, proj_a_vec_len, n)
       call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -68,17 +69,20 @@ contains
 
       if ( proj_a_vec_len > a_vec_len/2 ) then
         proj_a_vec_len = a_vec_len - proj_a_vec_len
+        sign_value_a = -sign_value_a
       end if
       if ( proj_b_vec_len > b_vec_len/2 ) then
         proj_b_vec_len = b_vec_len - proj_b_vec_len
+        sign_value_b = -sign_value_b
       end if
       if ( proj_c_vec_len > c_vec_len/2 ) then
         proj_c_vec_len = c_vec_len - proj_c_vec_len
+        sign_value_c = -sign_value_c
       end if
 
-      distance_xyz = proj_a_vec_len*a_vec_basis + &
-                     proj_b_vec_len*b_vec_basis + &
-                     proj_c_vec_len*c_vec_basis
+      distance_xyz = proj_a_vec_len*a_vec_basis*sign_value_a + &
+                     proj_b_vec_len*b_vec_basis*sign_value_b + &
+                     proj_c_vec_len*c_vec_basis*sign_value_c
 
       call get_vec_len(distance_xyz, calc_distance(i), n)
 
@@ -120,6 +124,7 @@ contains
 
     integer::m, n
     integer::i, j
+    real(kind=4)::sign_value_a,sign_value_b,sign_value_c
     real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
     real(kind=4),dimension(n)::coord_temp
@@ -172,9 +177,9 @@ contains
     call center_of_mass(atoms_mass, coord, coord_center_mass, m, n) 
     shift = box_center_vec - coord_center_mass
 
-    call project_vec(shift, a_vec_basis, n, proj_a_vec)
-    call project_vec(shift, b_vec_basis, n, proj_b_vec)
-    call project_vec(shift, c_vec_basis, n, proj_c_vec)
+    call project_vec(shift, a_vec_basis, n, proj_a_vec, sign_value_a)
+    call project_vec(shift, b_vec_basis, n, proj_b_vec, sign_value_b)
+    call project_vec(shift, c_vec_basis, n, proj_c_vec, sign_value_c)
 
     call get_vec_len(proj_a_vec, proj_a_vec_len, n)
     call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -217,6 +222,7 @@ contains
     integer::m, n, l, x, y, z
     integer::i, j, k, q, a
     integer::trans_type
+    real(kind=4)::sign_value_a,sign_value_b,sign_value_c
     real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
@@ -284,9 +290,9 @@ contains
           coord_temp(j) = coord(a,j)
         end do
 
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec)
+        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
 
         call get_vec_len(proj_a_vec, proj_a_vec_len, n)
         call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -324,9 +330,9 @@ contains
           a=group_atom_1_id(i,j)
           call center_of_mass(group_atoms_mass(i,:), coord(a:(a+z-1),:), coord_center_mass, z, n)
           
-          call project_vec(coord_center_mass, a_vec_basis, n, proj_a_vec)
-          call project_vec(coord_center_mass, b_vec_basis, n, proj_b_vec)
-          call project_vec(coord_center_mass, c_vec_basis, n, proj_c_vec)
+          call project_vec(coord_center_mass, a_vec_basis, n, proj_a_vec, sign_value_a)
+          call project_vec(coord_center_mass, b_vec_basis, n, proj_b_vec, sign_value_b)
+          call project_vec(coord_center_mass, c_vec_basis, n, proj_c_vec, sign_value_c)
 
           call get_vec_len(proj_a_vec, proj_a_vec_len, n)
           call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -367,9 +373,9 @@ contains
         do j=1,n
           coord_temp(j) = coord(i,j)
         end do
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec)
+        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
 
         call get_vec_len(proj_a_vec, proj_a_vec_len, n)
         call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -409,6 +415,7 @@ contains
     integer::m, n, l, x, y, z
     integer::i, j, k, q, a
     integer::trans_type
+    real(kind=4)::sign_value_a, sign_value_b, sign_value_c
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
     real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
@@ -480,9 +487,9 @@ contains
           coord_temp(j) = coord(a,j) - center_coord(j)
         end do
 
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec)
+        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
 
         call get_vec_len(proj_a_vec, proj_a_vec_len, n)
         call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -534,9 +541,9 @@ contains
             coord_temp(k) = group_center_coord(k) - center_coord(k)
           end do
 
-          call project_vec(coord_temp, a_vec_basis, n, proj_a_vec)
-          call project_vec(coord_temp, b_vec_basis, n, proj_b_vec)
-          call project_vec(coord_temp, c_vec_basis, n, proj_c_vec)
+          call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+          call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+          call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
 
           call get_vec_len(proj_a_vec, proj_a_vec_len, n)
           call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -596,9 +603,9 @@ contains
           coord_temp(j) = coord(i,j) - center_coord(j)
         end do
 
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec)
+        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
 
         call get_vec_len(proj_a_vec, proj_a_vec_len, n)
         call get_vec_len(proj_b_vec, proj_b_vec_len, n)
@@ -642,18 +649,113 @@ contains
 
   end subroutine
 
-  subroutine rdf(distance, increment, vol, total_num_1, total_num_2, data_num, rdf_value_final, integral_value_final, u, v, w)
+  subroutine unwrap_coord(coord, a_vec, b_vec, c_vec, new_coord, u, v, w, n)
+
+    integer::u, v, w, n
+    integer::i, j, k
+    real(kind=4)::a_vec_len, b_vec_len, c_vec_len
+    real(kind=4)::sign_value_a, sign_value_b, sign_value_c
+    real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
+    real(kind=4),dimension(n)::coord_temp
+    real(kind=4),dimension(n)::a_vec, b_vec, c_vec
+    real(kind=4),dimension(n)::a_vec_basis, b_vec_basis, c_vec_basis
+    real(kind=4),dimension(n)::proj_a_vec, proj_b_vec, proj_c_vec
+    real(kind=4),dimension(u,v,w)::coord
+    real(kind=4),dimension(u,v,w)::new_coord
+
+    !f2py intent(in)::u, v, w, n
+    !f2py intent(in)::a_vec, b_vec, c_vec
+    !f2py intent(in)::coord
+    !f2py intent(out)::new_coord
+
+    do i=1,u
+      do j=1,v
+        do k=1,w
+          new_coord(i,j,k) = coord(i,j,k)
+        end do
+      end do
+    end do
+
+    shift_a_len = 0.0
+    shift_b_len = 0.0
+    shift_c_len = 0.0
+
+    call get_vec_len(a_vec, a_vec_len, n)
+    call get_vec_len(b_vec, b_vec_len, n)
+    call get_vec_len(c_vec, c_vec_len, n)
+
+    call norm_vec(a_vec, a_vec_basis, n)
+    call norm_vec(b_vec, b_vec_basis, n)
+    call norm_vec(c_vec, c_vec_basis, n)
+
+    do i=2,u
+      do j=1,v
+        do k=1,w
+          coord_temp(k) = coord(i,j,k)-coord(i-1,j,k)
+        end do
+        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
+        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
+        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
+
+        call get_vec_len(proj_a_vec, proj_a_vec_len, n)
+        call get_vec_len(proj_b_vec, proj_b_vec_len, n)
+        call get_vec_len(proj_c_vec, proj_c_vec_len, n)
+
+        if ( DOT_PRODUCT(coord_temp,a_vec_basis) < 0 .and. proj_a_vec_len > a_vec_len/2.0 ) then
+          shift_a_len = a_vec_len
+        end if
+        if ( DOT_PRODUCT(coord_temp,a_vec_basis) > 0 .and. proj_a_vec_len > a_vec_len/2.0 ) then
+          shift_a_len = -a_vec_len
+        end if
+
+        if ( DOT_PRODUCT(coord_temp,b_vec_basis) < 0 .and. proj_b_vec_len > b_vec_len/2.0 ) then
+          shift_b_len = b_vec_len
+        end if
+        if ( DOT_PRODUCT(coord_temp,b_vec_basis) > 0 .and. proj_b_vec_len > b_vec_len/2.0 ) then
+          shift_b_len = -b_vec_len
+        end if
+
+        if ( DOT_PRODUCT(coord_temp,c_vec_basis) < 0 .and. proj_c_vec_len > c_vec_len/2.0 ) then
+          shift_c_len = c_vec_len
+        end if
+        if ( DOT_PRODUCT(coord_temp,c_vec_basis) > 0 .and. proj_c_vec_len > c_vec_len/2.0 ) then
+          shift_c_len = -c_vec_len
+        end if
+
+        do k=1,n
+          coord_temp(k) = new_coord(i,j,k)
+          !coord_temp(k) = coord(i,j,k)
+        end do
+        coord_temp = coord_temp + shift_a_len*a_vec_basis + &
+                     shift_b_len*b_vec_basis + shift_c_len*c_vec_basis
+
+        do k=1,n
+          coord(i,j,k) = coord_temp(k)
+          new_coord(i,j,k) = coord_temp(k)
+        end do
+
+        shift_a_len = 0.0
+        shift_b_len = 0.0
+        shift_c_len = 0.0
+      end do
+    end do
+
+    return
+
+  end subroutine unwrap_coord
+
+  subroutine rdf(distance, increment, vol, data_num, rdf_value_final, integral_value_final, u, v, w)
 
     integer::data_num
     integer::u, v, w
     integer::i, j, k, l
-    integer::total_num_1, total_num_2
     integer::num_2_r
     real(kind=4)::density
     real(kind=4)::increment
     real(kind=4)::sum_value_1, sum_value_2
     real(kind=4)::pi
     real(kind=4)::vol
+    real(kind=4)::r_value
     real(kind=4),dimension(data_num)::rdf_value_final
     real(kind=4),dimension(data_num)::integral_value_final
     real(kind=4),dimension(u,v,w)::distance
@@ -664,7 +766,6 @@ contains
     !f2py intent(in)::distance
     !f2py intent(in)::vol
     !f2py intent(in)::increment
-    !f2py intent(in)::total_num_1, total_num_2
     !f2py intent(out)::rdf_value_final, integral_value_final
 
     i = 0
@@ -675,35 +776,36 @@ contains
     sum_value_2 = 0.0
     pi=3.1415926
 
-    density = total_num_2/vol
+    density = v/vol
 
     do i=1,u
       do j=1,v
-        do k=1,data_num
+        do k=1,data_num-1
           num_2_r = 0
+          r_value = k*increment
           do l=1,w
-            if ( distance(i,j,l) > k*increment .and. distance(i,j,l) <= (k+1)*increment ) then
+            if ( distance(i,j,l) > r_value .and. distance(i,j,l) <= r_value+increment ) then
               num_2_r = num_2_r+1
             end if
           end do
-          rdf_value(i,j,k) = num_2_r/(4*pi*density*((k+1)*increment)**2*increment*total_num_1)
+          rdf_value(i,j,k) = num_2_r/(4*pi*density*r_value**2*increment)
         end do
       end do
     end do
 
     do i=1,u
       do j=1,v
-        do k=1,data_num
+        do k=1,data_num-1
           sum_value_1 = 0.0
           do l=1,k
-            sum_value_1 = sum_value_1+4*pi*density*(increment*(l+1))**2*rdf_value(i,j,l)*increment
+            sum_value_1 = sum_value_1+4*pi*density*(increment*l)**2*rdf_value(i,j,l)*increment
           end do
           integral_value(i,j,k) = sum_value_1
         end do
       end do
     end do
 
-    do i=1,data_num
+    do i=1,data_num-1
       sum_value_1 = 0.0
       do j=1,u
         sum_value_2 = 0.0
@@ -715,7 +817,7 @@ contains
       rdf_value_final(i) = sum_value_1/u
     end do
 
-    do i=1,data_num
+    do i=1,data_num-1
       sum_value_1 = 0.0
       do j=1,u
         sum_value_2 = 0.0

@@ -1,0 +1,20 @@
+&global
+  run_type analyze
+  analyze_job lmp2cp2k
+&end global
+
+&analyze
+  &lmp2cp2k
+    lmp_log_file ../log.lammps
+    lmp_traj_file ../water.dump
+    lmp_unit metal
+    atom_label 1:O 2:H
+    time_step 0.5
+    unwrap True
+    &box
+      A 12.42 0.0 0.0
+      B 0.0 12.42 0.0
+      C 0.0 0.0 12.42
+    &end box
+  &end lmp2cp2k
+&end analyze

@@ -116,13 +116,74 @@ contains
 
   end subroutine fourier_transform
 
-  subroutine data_mode(cluster_pos,cluster_vel,mass,Q_mode_1,Q_mode_2,Q_mode_3,m,n)
+  subroutine matrix_element_sum(matrix, index_1, index_2, sum_dim, matrix_sum, u, v, w)
+
+    integer::i,j,k
+    integer::u,v,w
+    integer::sum_dim
+    integer::index_1,index_2
+    real(kind=4)::sum_value
+    real(kind=4),dimension(sum_dim)::matrix_sum
+    real(kind=4),dimension(u,v,w)::matrix
+
+    !f2py intent(in)::u,v,w
+    !f2py intent(in)::sum_dim
+    !f2py intent(in)::index_1, index_2
+    !f2py intent(in)::matrix
+    !f2py intent(out)::matrix_sum
+
+    if ( index_1 == 1 .and. index_2 == 2 ) then
+      do i=1,w
+        sum_value = 0.0
+        do j=1,u
+          do k=1,v
+            sum_value = sum_value + matrix(j,k,i)
+          end do
+        end do
+        matrix_sum(i) = sum_value/(u*v)
+     end do
+
+    elseif ( index_1 == 1 .and. index_2 == 3 ) then
+      do i=1,v
+        sum_value = 0.0
+        do j=1,u
+          do k=1,w
+            sum_value = sum_value + matrix(j,i,k)
+          end do
+        end do
+        matrix_sum(i) = sum_value/(u*w)
+     end do
+
+    elseif ( index_1 == 2 .and. index_2 == 3 ) then
+      do i=1,u
+        sum_value = 0.0
+        do j=1,v
+          do k=1,w
+            sum_value = sum_value + matrix(i,j,k)
+          end do
+        end do
+        matrix_sum(i) = sum_value/(v*w)
+      end do
+    end if
+
+    return
+
+  end subroutine matrix_element_sum
+
+  subroutine data_mode(cluster_pos,cluster_vel,a_vec,b_vec,c_vec,mass,Q_mode_1,Q_mode_2,Q_mode_3,m,n)
 
     ! Reference: P. Bopp, Chem. Phys. 1986, 106, 205-212
 
-    integer::i
+    integer::i,j
     integer::m,n
+    real(kind=4)::sign_value_a,sign_value_b,sign_value_c
+    real(kind=4)::a_vec_len,b_vec_len,c_vec_len
+    real(kind=4)::proj_a_vec_len,proj_b_vec_len,proj_c_vec_len
     real(kind=4),dimension(n)::v1,v2
+    real(kind=4),dimension(n)::distance_xyz
+    real(kind=4),dimension(n)::a_vec,b_vec,c_vec
+    real(kind=4),dimension(n)::a_vec_basis,b_vec_basis,c_vec_basis
+    real(kind=4),dimension(n)::proj_a_vec,proj_b_vec,proj_c_vec
     real(kind=4),dimension(n)::v1_norm,v2_norm
     real(kind=4),dimension(n)::cross_1,cross_1_norm
     real(kind=4),dimension(n)::vel_com
@@ -133,22 +194,70 @@ contains
     real(kind=4),dimension(n)::vel2_proj_u1,vel3_proj_u2
     real(kind=4),dimension(n)::vel2_proj_w1,vel3_proj_w2
     real(kind=4),dimension(m)::mass
+    real(kind=4),dimension(2,n)::vec
     real(kind=4),dimension(m,n)::cluster_pos
     real(kind=4),dimension(m,n)::cluster_vel
     real(kind=4),dimension(n)::Q_mode_1,Q_mode_2,Q_mode_3
 
     !f2py intent(in)::m,n
     !f2py intent(in)::mass
+    !f2py intent(in)::a_vec,b_vec,c_vec
     !f2py intent(in)::cluster_pos,cluster_vel
     !f2py intent(out)::Q_mode_1,Q_mode_2,Q_mode_3
 
-    do i=1,n
-      v1(i)=cluster_pos(2,i)-cluster_pos(1,i)
+    call get_vec_len(a_vec, a_vec_len, n)
+    call get_vec_len(b_vec, b_vec_len, n)
+    call get_vec_len(c_vec, c_vec_len, n)
+
+    call norm_vec(a_vec, a_vec_basis, n)
+    call norm_vec(b_vec, b_vec_basis, n)
+    call norm_vec(c_vec, c_vec_basis, n)
+
+    do i=1,2
+      do j=1,n
+        distance_xyz(j) = cluster_pos(i+1,j)-cluster_pos(1,j)
+      end do
+
+      call project_vec(distance_xyz, a_vec_basis, n, proj_a_vec, sign_value_a)
+      call project_vec(distance_xyz, b_vec_basis, n, proj_b_vec, sign_value_b)
+      call project_vec(distance_xyz, c_vec_basis, n, proj_c_vec, sign_value_c)
+
+      call get_vec_len(proj_a_vec, proj_a_vec_len, n)
+      call get_vec_len(proj_b_vec, proj_b_vec_len, n)
+      call get_vec_len(proj_c_vec, proj_c_vec_len, n)
+
+      if ( proj_a_vec_len > a_vec_len/2 ) then
+        proj_a_vec_len = a_vec_len - proj_a_vec_len
+        sign_value_a = -sign_value_a
+      end if
+      if ( proj_b_vec_len > b_vec_len/2 ) then
+        proj_b_vec_len = b_vec_len - proj_b_vec_len
+        sign_value_b = -sign_value_b
+      end if
+      if ( proj_c_vec_len > c_vec_len/2 ) then
+        proj_c_vec_len = c_vec_len - proj_c_vec_len
+        sign_value_c = -sign_value_c
+      end if
+
+      distance_xyz = proj_a_vec_len*a_vec_basis*sign_value_a + &
+                     proj_b_vec_len*b_vec_basis*sign_value_b + &
+                     proj_c_vec_len*c_vec_basis*sign_value_c
+
+      do j=1,n
+        vec(i,j) = distance_xyz(j)
+      end do
     end do
 
     do i=1,n
-      v2(i)=cluster_pos(3,i)-cluster_pos(1,i)
+      v1(i)=vec(1,i)
+      v2(i)=vec(2,i)
     end do
+
+!    do i=1,n
+!      v1(i) = cluster_pos(2,i)-cluster_pos(1,i)
+!      v2(i) = cluster_pos(3,i)-cluster_pos(1,i)
+!    end do
+!    write(*,*)v1,v2
 
     call norm_vec(v1, v1_norm, n)
     call norm_vec(v2, v2_norm, n)
@@ -165,19 +274,21 @@ contains
     vel2_sub_com=cluster_vel_2-vel_com
     vel3_sub_com=cluster_vel_3-vel_com
 
-    call project_vec(vel2_sub_com,cross_1_norm,n,vel2_per)
-    call project_vec(vel3_sub_com,cross_1_norm,n,vel3_per)
+    call project_vec(vel2_sub_com,cross_1_norm,n,vel2_per,sign_value_a)
+    call project_vec(vel3_sub_com,cross_1_norm,n,vel3_per,sign_value_b)
 
     vel2_plane=vel2_sub_com-vel2_per
     vel3_plane=vel3_sub_com-vel3_per
 
-    call project_vec(vel2_plane,v1_norm,n,vel2_proj_u1)
+    call project_vec(vel2_plane,v1_norm,n,vel2_proj_u1,sign_value_a)
     vel2_proj_w1=vel2_plane-vel2_proj_u1
-    call project_vec(vel3_plane,v2_norm,n,vel3_proj_u2)
+    call project_vec(vel3_plane,v2_norm,n,vel3_proj_u2,sign_value_b)
     vel3_proj_w2=vel3_plane-vel3_proj_u2
 
+!    Q_mode_1 = vel2_proj_u1*sign_value_a+vel3_proj_u2*sign_value_b
     Q_mode_1 = vel2_proj_u1+vel3_proj_u2
     Q_mode_2 = vel2_proj_w1+vel3_proj_w2
+!    Q_mode_3 = vel2_proj_u1*sign_value_a-vel3_proj_u2*sign_value_b
     Q_mode_3 = vel2_proj_u1-vel3_proj_u2
 
     return

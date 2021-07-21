@@ -37,9 +37,13 @@
 　    &system
         directory ./co2 
         proj_name cp2k
+        start_frame 0
+        end_frame 200
+        choosed_frame_num 100
+        set_parts 1
       &end system
       model_type use_seed
-      seed_num 4
+      seed_num 2
       neuron 120 120 120
       set_prefix set    
       stop_batch 40000

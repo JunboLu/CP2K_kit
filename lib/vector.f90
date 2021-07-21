@@ -52,11 +52,12 @@ contains
 
   end subroutine norm_vec
 
-  subroutine project_vec(vec_1,vec_2,m,vec_1_proj_vec_2)
+  subroutine project_vec(vec_1,vec_2,m,vec_1_proj_vec_2,sign_value)
   ! project vec_1 on the basis of vec_2
 
     integer,intent(in)::m
     real(kind=4)::a,b
+    real(kind=4),intent(out)::sign_value
     real(kind=4),intent(in),dimension(m)::vec_1,vec_2
     real(kind=4),intent(out),dimension(m)::vec_1_proj_vec_2
 
@@ -64,6 +65,12 @@ contains
     b=DOT_PRODUCT(vec_2,vec_2)
     vec_1_proj_vec_2=a*vec_2/b
 
+    if ( a<0.0 ) then
+      sign_value=-1.0
+    else
+      sign_value=1.0
+    end if
+ 
     return
 
   end subroutine project_vec

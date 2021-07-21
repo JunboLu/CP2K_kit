@@ -6,6 +6,7 @@ export python_exe=/home/lujunbo/bin/deepmd-kit/bin/python3.9
 work_dir=`pwd`
 inp_file="$1"
 
+if [ "$inp_file" ]; then
 string=`grep 'run_type' ${inp_file}`
 string_split=(${string// / })
 run_type=${string_split[1]}
@@ -42,4 +43,7 @@ elif [[ ${run_type} == thermo_int ]]; then
 ${python_exe} ${CP2K_kit_path}/thermo_int/thermo_int_run.py ${work_dir} ${inp_file} ${thermo_type}
 elif [[ ${run_type} == model ]]; then
 ${python_exe} ${CP2K_kit_path}/model/model_run.py ${work_dir} ${inp_file} ${model_type}
+fi
+else
+echo "CP2K_kit need a input file!"
 fi
