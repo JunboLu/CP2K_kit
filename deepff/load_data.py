@@ -12,7 +12,7 @@ from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
 
 hartree_to_ev = 27.211396641308
-ang_to_bohr = 1.889716164632
+ang_to_bohr = 1.8897259886
 
 def load_data_from_sepfile(file_dir, file_prefix, proj_name):
 
@@ -231,7 +231,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
         print ('choosed_frame_num is larger than max choosed_frame_num, please check!')
         exit()
       else:
-        random.shuffle(total_index)
+        #random.shuffle(total_index)
         choosed_index = total_index[0:choosed_num]
 
   #Dump box information
@@ -538,7 +538,7 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
 
   frames_num = len(energy_array)
   index = list(range(frames_num))
-  random.shuffle(index)
+#  random.shuffle(index)
   part_num = math.ceil(frames_num/parts)
   index_parts = []
   index_temp = list_dic_op.list_split(index, part_num)

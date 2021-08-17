@@ -31,6 +31,29 @@ def gen_list(start, end, incre):
 
   return list_num
 
+def comb_list_2_str(list_temp, space_char):
+
+  '''
+  comb_list_2_str : combine list element as string
+  Transfer [1,2,3,4,5] to '1 2 3 4 5'
+
+  Args :
+    list_temp : 1-d list
+      list_temp is the list needed to be combined.
+    space_char : string
+      space_char is the space element.
+  Returns :
+    comb_str : string
+      comb_str is the combined string.
+  '''
+
+  comb_str = ''
+  for i in range(len(list_temp)):
+    comb_str = comb_str + str(list_temp[i]) + ' '
+  comb_str.strip(space_char)
+
+  return comb_str
+
 def str_split(str_temp, space_char):
 
   '''
@@ -97,7 +120,7 @@ def order_list(list_temp, order_index):
   #The dims of list_temp and order_index should be same.
 
   '''
-  list_order : order the list with an ordered index
+  order_list : order the list with an ordered index
 
   Args :
     list_temp : 1-d list
@@ -309,4 +332,11 @@ def str_to_bool(str_temp):
     bool_str = False
 
   return bool_str
+
+if __name__ == '__main__':
+  from CP2K_kit.tools import list_dic_op
+  #Test comb_list_2_str:
+  list_temp = [1,2,3,4,5]
+  comb_str = list_dic_op.comb_list_2_str(list_temp, ' ')
+  print (comb_str)
 

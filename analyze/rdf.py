@@ -52,6 +52,7 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
       work_dir is working directory of CP2K_kit.
   Returns :
     distance : 3-d float list, dim = frames_num*(number of atom_1)*(number of atom_2)
+               if atom_type_1 = atom_type_2, dim = frames_num*(number of atom_1 - 1)*(number of atom_2 - 1)
     atom_id_1 : 1-d int list
       atom_id_1 contains atom id of atom_type_1.
     atom_id_2 : 1-d int list
@@ -85,7 +86,7 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
         for k in range(atoms_num):
           line_k = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+base)+k+base+1)
           line_k_split = list_dic_op.str_split(line_k, ' ')
-          if ( line_k_split[0] == atom_type_2 ):
+          if ( line_k_split[0] == atom_type_2 and j != k ):
             coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3].strip('\n'))])
             coord_2.append([float(line_k_split[1]),float(line_k_split[2]),float(line_k_split[3].strip('\n'))])
         dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
@@ -207,7 +208,7 @@ def rdf_run(rdf_param, work_dir):
   else:
     r_increment = 0.1
 
-  dist, atom_1, atom_2 = distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
+  dist, atom_id_1, atom_id_2 = distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
                                   end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_file, work_dir)
 
   rdf(dist, a_vec, b_vec, c_vec, r_increment, work_dir)

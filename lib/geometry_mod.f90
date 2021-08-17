@@ -216,6 +216,42 @@ contains
 
   end subroutine trans_box_center
 
+  subroutine expand_cell(coord, a_vec, b_vec, c_vec, a_exp, b_exp, c_exp, new_coord, m, n, u)
+
+    integer::m, n, u
+    integer::a_exp, b_exp, c_exp
+    integer::h, i, j, k, l
+    real(kind=4),dimension(n)::coord_temp
+    real(kind=4),dimension(n)::a_vec, b_vec, c_vec
+    real(kind=4),dimension(m,n)::coord
+    real(kind=4),dimension(u,n)::new_coord
+
+    !f2py intent(in):m,n,u
+    !f2py intent(in)::a_exp, b_exp, c_exp
+    !f2py intent(in)::a_vec, b_vec, c_vec
+    !f2py intent(in)::coord
+    !f2py intent(out)::new_coord
+
+    do h=1,m
+      do i=1,n
+        coord_temp(i) = coord(h,i)
+      end do
+      do j=0,a_exp-1
+        do k=0,b_exp-1
+          do l=0,c_exp-1
+            coord_temp = coord_temp + j*a_vec + k*b_vec + l*c_vec
+            do i=1,n
+              new_coord(h+(j*a_exp**2+k*b_exp+l)*m,i) = coord_temp(i)
+            end do
+          end do
+        end do
+      end do
+    end do
+
+    return
+
+  end subroutine expand_cell
+
   subroutine periodic_center_box(coord, a_vec, b_vec, c_vec, trans_type, exclude_group_id, &
                                  group_atom_1_id, group_atoms_mass, new_coord, m, n, l, x, y, z)
 

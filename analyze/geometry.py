@@ -72,6 +72,64 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
 
   return atoms_type, atoms_type_coord_num
 
+def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp, b_exp, c_exp, work_dir):
+
+  '''
+  expand_cell : expand the cell as super cell
+
+  Args :
+   atoms_num : int
+      atoms_num is the number of atoms of the system.
+    base : int
+      base is the number of lines before structure in a structure block.
+    pre_base : int
+      pre_base is the number of lines before block of trajectory file.
+    file_name : string
+      file_name is the name of trajectory file used to analyze.
+    a_vec : 1d float list, dim = 3
+      a_vec is the cell vector a.
+      Example : [12.42, 0.0, 0.0]
+    b_vec : 1d float list, dim = 3
+      b_vec is the cell vector b.
+      Example : [0.0, 12.42, 0.0]
+    c_vec : 1d float list, dim = 3
+      c_vec is the cell vector c.
+      Example : [0.0, 0.0, 12.42]
+    a_exp, b_exp, c_exp : int
+      a_exp, b_exp and c_exp are the size of super cell.
+      Example : 3*3*3
+    work_dir : string
+      work_dir is working directory of CP2K_kit.
+  Returns :
+    none
+  '''
+
+  atom = []
+  coord_atom = np.asfortranarray(np.zeros((atoms_num,3)),dtype='float32')
+  for i in range(atoms_num):
+    line_i = linecache.getline(file_name, i+base+pre_base+1)
+    line_i_split = list_dic_op.str_split(line_i, ' ')
+    coord_atom[i,0] = float(line_i_split[1])
+    coord_atom[i,1] = float(line_i_split[2])
+    coord_atom[i,2] = float(line_i_split[3].strip('\n'))
+    atom.append(line_i_split[0])
+
+  coord_atom_exp = geometry_mod.geometry.expand_cell(np.asfortranarray(coord_atom, dtype='float32'), \
+                                                     np.asfortranarray(a_vec, dtype='float32'), \
+                                                     np.asfortranarray(b_vec, dtype='float32'), \
+                                                     np.asfortranarray(c_vec, dtype='float32'), \
+                                                     a_exp, b_exp, c_exp)
+
+  super_cell_file_name = ''.join((work_dir, '/super_cell.xyz'))
+  super_cell_file = open(super_cell_file_name, 'w')
+  super_atom = atom*(a_exp*b_exp*c_exp)
+
+  super_cell.write('%d\n' %(len(super_atom)))
+  for i in range(len(super_atom)):
+    super_cell_file.write('%3s%21.10f%20.10f%20.10f\n' %(super_atom[i], \
+    coord_atom_exp[i], coord_atom_exp[i], coord_atom_exp[i]))
+
+
 def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, start, end, time_step,
                      file_name, a_vec, b_vec, c_vec, atom_1_id, atom_2_id, work_dir):
 

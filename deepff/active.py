@@ -1,5 +1,6 @@
 #! /usr/env/bin python
 
+import os
 import subprocess
 import numpy as np
 from collections import OrderedDict
@@ -12,6 +13,7 @@ from CP2K_kit.deepff import deepmd_run
 from CP2K_kit.deepff import lammps_run
 from CP2K_kit.deepff import force_eval
 from CP2K_kit.deepff import cp2k_run
+from CP2K_kit.deepff import sysinfo
 from CP2K_kit.analyze import dp_test
 
 def dump_input(work_dir, inp_file, f_key):
@@ -71,6 +73,8 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
   if ( restart_iter == 0 ):
     call.call_simple_shell(work_dir, cmd)
   train_dic = deepmd_dic['training']
+  if ( 'set_data_dir' in train_dic.keys() ):
+    set_data_dir = train_dic['set_data_dir']
   for key in train_dic:
     if ( 'system' in key):
       if ( 'directory' in train_dic[key].keys() ):
@@ -106,6 +110,9 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
       i = i+1
+
+  if 'set_data_dir' in locals():
+    init_train_data.append(os.path.abspath(set_data_dir))
 
   return init_train_data
 
@@ -293,7 +300,7 @@ def write_active_data(work_dir, conv_iter):
 #                       frc_y_cp2k, force_y_lmp, frc_z_cp2k, force_z_lmp, sys_dir)
 
 def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-             init_train_data, work_dir, max_iter, restart_iter, proc_num, host):
+             init_train_data, work_dir, max_iter, restart_iter, proc_num, host, device, usage):
 
   '''
   run_iter : run active learning iterations.
@@ -321,6 +328,8 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
       proc_num is the number of processor.
     host : 1-d string list
       host is the name of host of computational nodes.
+    ssh : bool
+      ssh is whether we need to ssh.
   Returns :
     none
   '''
@@ -405,7 +414,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
 
     deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                descr_seed, fit_seed, tra_seed, neuron, model_type)
-    deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, cuda_dir)
+    deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, device, usage, cuda_dir)
 
     ##Perform lammps calculation
     atoms_type_dic_tot, atoms_num_tot = \
@@ -499,14 +508,18 @@ def kernel(work_dir, inp_file):
       line_i = linecache.getline(host_file, i+2)
       line_i_split = list_dic_op.str_split(line_i, ' ')
       host.append(line_i_split[1].strip('\n'))
+    ssh = True
   else:
     proc_num = int(multiprocessing.cpu_count()/2)
     host = [platform.node()]
+    ssh = False
+
+  device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 
   init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter)
 
-  run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-                init_train_data, work_dir, max_iter, restart_iter, proc_num, host)
+  run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, \
+           work_dir, max_iter, restart_iter, proc_num, host, device, usage)
 
 if __name__ == '__main__':
 
