@@ -1,5 +1,6 @@
 #! /usr/env/bin python
 
+import math
 import json
 import copy
 import subprocess
@@ -320,9 +321,6 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, us
     run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 direc=%s
 parallel_num=%d
 run_start=%d
@@ -335,6 +333,8 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num $direc/produce.sh {} $d
     produce = '''
 #! /bin/bash
 
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 export PATH=%s:$PATH
 
 x=$1
@@ -361,16 +361,13 @@ dp freeze -o frozen_model.pb
     host_list = []
     for i in range(len(host)):
       host_list.append('-S' + ' ' + host[i])
-    if ( len(host) < parallel_num ):
-      host_list = host_list*math.ceil(parallel_num/len(host))
+    if ( len(host) < model_num ):
+      host_list = host_list*math.ceil(model_num/len(host))
     host_list = host_list[0:model_num]
     host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
 
     run = '''
 #! /bin/bash
-
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
 
 direc=%s
 parallel_num=%d
@@ -384,6 +381,8 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {}
     produce = '''
 #! /bin/bash
 
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 export PATH=%s:$PATH
 
 x=$1
@@ -442,9 +441,6 @@ dp freeze -o frozen_model.pb
       run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 model="%s"
 device="%s"
 direc=%s
@@ -456,7 +452,7 @@ device_arr=(${device///})
 
 num=${#model_arr[*]}
 
-for ((i=1;i<=num;i++));
+for ((i=0;i<=num-1;i++));
 do
 model_device_arr[i]="${model_arr[i]} ${device_arr[i]}"
 done
@@ -477,12 +473,13 @@ export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
 x=$1
-y=$2
-direc=$3
+direc=$2
 
-export CUDA_VISIBLE_DEVICE=$y
+x_arr=(${x///})
 
-cd $direc/$x
+export CUDA_VISIBLE_DEVICES=${x_arr[1]}
+
+cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb
 ''' %(dp_path, cuda_dir)
@@ -509,9 +506,6 @@ dp freeze -o frozen_model.pb
         run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 model="%s"
 device="%s"
 direc=%s
@@ -523,7 +517,7 @@ device_arr=(${device///})
 
 num=${#model_arr[*]}
 
-for ((i=1;i<=num;i++));
+for ((i=0;i<=num-1;i++));
 do
 model_device_arr[i]="${model_arr[i]} ${device_arr[i]}"
 done
@@ -544,13 +538,14 @@ export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
 x=$1
-y=$2
-direc=$3
+direc=$2
 
-export CUDA_VISIBLE_DEVICE=$y
+x_arr=(${x///})
 
-cd $direc/$x
-dp train input.json > out
+export CUDA_VISIBLE_DEVICES=${x_arr[1]}
+
+cd $direc/${x_arr[0]}
+dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb
 ''' %(dp_path, cuda_dir)
 
@@ -572,7 +567,7 @@ dp freeze -o frozen_model.pb
           run_end = end
 
   #Case 5
-  if ( len(host) > 1 and not all(len(i) == 0 for i in device) ):
+  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(list_dic_op.list_replicate(device)) == 1 ):
 
     host_exp = []
     for i in range(len(host)):
@@ -594,9 +589,6 @@ dp freeze -o frozen_model.pb
       run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 model="%s"
 device="%s"
 direc=%s
@@ -608,7 +600,7 @@ device_arr=(${device///})
 
 num=${#model_arr[*]}
 
-for ((i=1;i<=num;i++));
+for ((i=0;i<=num-1;i++));
 do
 model_device_arr[i]="${model_arr[i]} ${device_arr[i]}"
 done
@@ -629,12 +621,11 @@ export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
 x=$1
-y=$2
-direc=$3
+direc=$2
 
-export CUDA_VISIBLE_DEVICE=$y
+export CUDA_VISIBLE_DEVICE=${x_arr[1]}
 
-cd $direc/$x
+cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb
 ''' %(dp_path, cuda_dir)
@@ -666,9 +657,6 @@ dp freeze -o frozen_model.pb
         run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 model="%s"
 device="%s"
 direc=%s
@@ -680,7 +668,7 @@ device_arr=(${device///})
 
 num=${#model_arr[*]}
 
-for ((i=1;i<=num;i++));
+for ((i=0;i<=num-1;i++));
 do
 model_device_arr[i]="${model_arr[i]} ${device_arr[i]}"
 done
@@ -701,12 +689,13 @@ export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
 x=$1
-y=$2
-direc=$3
+direc=$2
 
-export CUDA_VISIBLE_DEVICE=$y
+x_arr=(${x///})
 
-cd $direc/$x
+export CUDA_VISIBLE_DEVICE=${x_arr[1]}
+
+cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb
 ''' %(dp_path, cuda_dir)
@@ -726,6 +715,111 @@ dp freeze -o frozen_model.pb
         run_start = run_start + len(device[0])
         run_end = run_end + len(device[0])
         if ( run_end > end):
+          run_end = end
+
+  #Case 6
+  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(list_dic_op.list_replicate(device)) != 1 ):
+    host_true = []
+    for i in range(len(host)):
+      if ( len(device[i]) != 0 ):
+        host_true.append(host[i])
+    if ( len(host_true) > model_num ):
+      host_list = []
+      for i in range(model_num):
+        host_list.append('-S' + ' ' + host_true[j])
+      host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+
+      run = '''
+#! /bin/bash
+
+direc=%s
+parallel_num=%d
+run_start=%d
+run_end=%d
+parallel_exe=%s
+
+seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {} $direc
+''' %(deepmd_train_dir, model_num, start, end, parallel_exe, host_comb)
+
+      produce = '''
+#! /bin/bash
+
+CUDA_DIR=%s
+export PATH=$CUDA_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
+
+export PATH=%s:$PATH
+
+x=$1
+direc=$2
+cd $direc/$x
+dp train input.json 1> log.out 2> log.err
+dp freeze -o frozen_model.pb
+''' %(cuda_dir, dp_path)
+
+      run_file = ''.join((deepmd_train_dir, '/run.sh'))
+      with open(run_file, 'w') as f:
+        f.write(run)
+
+      produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
+      with open(produce_file, 'w') as f:
+        f.write(produce)
+
+      subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
+      subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
+      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+    else:
+      run_start = 0
+      run_end = run_start+len(host_true)-1
+      cycle = math.ceil(model_num/len(host_true))
+      for i in range(cycle):
+        host_list = []
+        for j in range(run_end-run_start+1):
+          host_list.append('-S' + ' ' + host_true[j])
+        host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+        run = '''
+#! /bin/bash
+
+direc=%s
+parallel_num=%d
+run_start=%d
+run_end=%d
+parallel_exe=%s
+
+seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {} $direc
+''' %(deepmd_train_dir, run_end-run_start+1, run_start, run_end, parallel_exe, host_comb)
+
+        produce = '''
+#! /bin/bash
+
+CUDA_DIR=%s
+export PATH=$CUDA_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
+
+export PATH=%s:$PATH
+
+x=$1
+direc=$2
+cd $direc/$x
+dp train input.json 1> log.out 2> log.err
+dp freeze -o frozen_model.pb
+''' %(cuda_dir, dp_path)
+
+        run_file = ''.join((deepmd_train_dir, '/run.sh'))
+        with open(run_file, 'w') as f:
+          f.write(run)
+
+        produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
+        with open(produce_file, 'w') as f:
+          f.write(produce)
+
+        subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
+        subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
+        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+
+        run_start = run_start + len(host_true)
+        run_end = run_end + len(host_true)
+        if ( run_end > end ):
           run_end = end
 
 def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):

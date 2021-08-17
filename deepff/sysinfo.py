@@ -66,29 +66,33 @@ def analyze_gpu(host, ssh, work_dir):
   for i in range(len(host)):
     gpuinfo_file = ''.join((work_dir, '/gpuinfo_', host[i]))
     if ssh:
-      login = '''
+      check_gpu = '''
 #! /bin/bash
 
 ssh %s
 nvidia-smi > %s
-logout
+exit
 ''' %(host[i], gpuinfo_file)
 
-      login_file = ''.join((work_dir, '/login.sh'))
-      with open(login_file, 'w') as f:
-        f.write(login)
-
-      subprocess.run('chmod +x login.sh', cwd=work_dir, shell=True)
-      subprocess.run("bash -c './login.sh'", cwd=work_dir, shell=True)
     else:
-      cmd = "nvidia-smi > %s" %(gpuinfo_file)
-      subprocess.run(cmd, cwd=work_dir, shell=True)
+      check_gpu = '''
+#! /bin/bash
+
+nvidia-smi > %s
+''' %(gpuinfo_file)
+
+    check_gpu_file = ''.join((work_dir, '/check_gpu.sh'))
+    with open(check_gpu_file, 'w') as f:
+      f.write(check_gpu)
+
+    subprocess.run('chmod +x check_gpu.sh', cwd=work_dir, shell=True)
+    subprocess.run("bash -c './check_gpu.sh'", cwd=work_dir, shell=True)
 
     device_i, usage_i = read_gpuinfo(work_dir, gpuinfo_file)
     device.append(device_i)
     usage.append(usage_i)
 
-    return device, usage
+  return device, usage
 
 
 
