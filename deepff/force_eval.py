@@ -31,6 +31,8 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
   '''
 
   struct_index = OrderedDict()
+  success_frames = []
+  tot_frames = []
   lammps_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
   sys_num = len(atoms_type_dic_tot)
 
@@ -49,7 +51,8 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       model_num = len(call.call_returns_shell(lammps_sys_task_dir, cmd))
 
       cmd = "ls | grep %s" % ('data_')
-      tot_frame = len(call.call_returns_shell(data_dir, cmd))
+      frames = len(call.call_returns_shell(data_dir, cmd))
+      tot_frames.append(frames)
 
       log_file = ''.join((lammps_sys_task_dir, '/log.lammps'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
@@ -65,7 +68,8 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       choosed_index = []
 
       #Get box parameter, we will calculate distance later.
-      for k in range(tot_frame):
+      success_frames_ij = 0
+      for k in range(frames):
         box = []
         cmd_a = "grep -n %s %s" % ("'Lx Ly Lz Xy Xz Yz'", log_file)
         a = call.call_returns_shell(lammps_sys_task_dir, cmd_a)
@@ -132,19 +136,22 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
         if ( max_force < force_conv ):
-          pass
+          success_frames_ij = success_frames_ij + 1
         else:
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
           if ( min_dist > atom_cov_radii_plus*0.6 ):
             choosed_index.append(k)
 
+      success_frames.append(success_frames_ij)
       struct_index_i[j] = choosed_index
       force_corr_dist_file.close()
 
     struct_index[i] = struct_index_i
 
-  return struct_index
+  success_ratio = float(float(sum(success_frames))/float(sum(tot_frames)))
+
+  return struct_index, success_ratio
 
 def calc_dist(atoms, coord, a_vec, b_vec, c_vec):
 

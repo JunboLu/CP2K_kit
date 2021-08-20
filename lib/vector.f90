@@ -1,5 +1,5 @@
 module vector
-
+implicit none
 contains
   subroutine get_vec_cross(v1, v2, m, cross)
 
@@ -36,6 +36,7 @@ contains
   subroutine norm_vec(vec,new_vec,m)
 
     integer::i
+    integer,intent(in)::m
     real(kind=4)::sum_value
     real(kind=4),intent(in),dimension(m)::vec
     real(kind=4),intent(out),dimension(m)::new_vec
@@ -77,7 +78,7 @@ contains
 
   subroutine center_of_mass(mass,data_array,data_center,n,m)
 
-    integer::i
+    integer::i,j
     integer,intent(in)::n,m
     real(kind=4)::sum_value
     real(kind=4)::sum_value_mass

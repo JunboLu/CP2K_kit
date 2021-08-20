@@ -2,6 +2,7 @@ include 'vector.f90'
 
 module statistic
 use vector
+implicit none
 contains
   !This subroutine need revision, we will use end, start, each, rather than stat_num.
   subroutine ensemble_average(data_array,energy_array,temp,stat_num,average_value,m,n)
@@ -82,6 +83,7 @@ contains
 
     integer::m,n
     integer::i,j
+    real(kind=4)::pi
     real(kind=4)::sum_value
     real(kind=4)::time_step
     real(kind=4)::freq_in_hz

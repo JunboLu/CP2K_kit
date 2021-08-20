@@ -3,6 +3,7 @@
 import sys
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import read_input
+from CP2K_kit.tools import log_info
 from CP2K_kit.analyze import rdf
 from CP2K_kit.analyze import rmsd
 from CP2K_kit.analyze import center
@@ -22,20 +23,25 @@ work_dir = str(sys.argv[1])
 inp_file = str(sys.argv[2])
 analyze_job = str(sys.argv[3])
 
+log_info.log_logo()
+
+print (list_dic_op.str_wrap('ANALYZE| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
+print ('ANALYZE| Input file name %s\n' %(inp_file), flush=True)
+
 job_type_param = read_input.dump_info(work_dir, inp_file, [analyze_job])
 
-#People could do traj_info at first as it will help them to know the 
+#One could do traj_info at first as it will help them to know the 
 #basis information of the trajectory.
 if ( analyze_job == 'traj_info' ):
   traj_info_param = job_type_param[0]
   atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
   traj_info.get_traj_info(traj_info_param['traj_file'])
-  print ('The number of atoms is %d' % (atoms_num))
-  print ('The number of frames is %d' % (frames_num))
-  print ('The printing frequency is %d' % (each))
-  print ('The staring frame is %d' % (start_frame_id))
-  print ('The endding frame is %d' % (end_frame_id))
-  print ('The time step is %f fs' % (time_step))
+  print ('The number of atoms is %d' % (atoms_num), flush=True)
+  print ('The number of frames is %d' % (frames_num), flush=True)
+  print ('The printing frequency is %d' % (each), flush=True)
+  print ('The staring frame is %d' % (start_frame_id), flush=True)
+  print ('The endding frame is %d' % (end_frame_id), flush=True)
+  print ('The time step is %f fs' % (time_step), flush=True)
 
 elif ( analyze_job == 'center' ):
   center.center_run(job_type_param[0], work_dir)

@@ -6,6 +6,7 @@ import linecache
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import get_cell
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
@@ -564,7 +565,7 @@ def geometry_run(geometry_param, work_dir):
     if ( 'traj_file' in coord_num_param.keys() ):
       traj_file = coord_num_param['traj_file']
     else:
-      print ('No trajectory file found, please choose the traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/geometry/coord_num/traj_file')
       exit()
 
     if ( 'r_cut' in coord_num_param.keys() ):
@@ -577,7 +578,7 @@ def geometry_run(geometry_param, work_dir):
       B_exist = 'B' in coord_num_param['box'].keys()
       C_exist = 'C' in coord_num_param['box'].keys()
     else:
-      print ('No box information found, please set box')
+      log_info.log_error('No box found, please set analyze/geometry/coord_num/box')
       exit()
 
     if ( A_exist and B_exist and C_exist):
@@ -585,7 +586,7 @@ def geometry_run(geometry_param, work_dir):
       box_B = coord_num_param['box']['B']
       box_C = coord_num_param['box']['C']
     else:
-      print ('Box information wrong, please check')
+      log_info.log_error('Box setting error, please check analyze/geometry/coord_num/box')
       exit()
 
     a_vec = [float(x) for x in box_A]
@@ -618,7 +619,7 @@ def geometry_run(geometry_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('No trajectory file found, please choose the traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/geometry/bond_length/traj_file')
       exit()
 
     if ( 'atom_pair' in bond_length_param.keys() ):
@@ -626,7 +627,7 @@ def geometry_run(geometry_param, work_dir):
       atom_1 = atom_pair[0]
       atom_2 = atom_pair[1]
     else:
-      print ('No atom pair used to calculate bond length found, please set atom_pair')
+      log_info.log_error('No atom pair found, please set analyze/geometry/bond_length/atom_pair')
       exit()
 
     if ( 'init_step' in bond_length_param.keys() ):
@@ -644,7 +645,7 @@ def geometry_run(geometry_param, work_dir):
       B_exist = 'B' in bond_length_param['box'].keys()
       C_exist = 'C' in bond_length_param['box'].keys()
     else:
-      print ('No box information found, please set box')
+      log_info.log_error('No box found, please set analyze/geometry/bond_length/box')
       exit()
 
     if ( A_exist and B_exist and C_exist):
@@ -652,7 +653,7 @@ def geometry_run(geometry_param, work_dir):
       box_B = bond_length_param['box']['B']
       box_C = bond_length_param['box']['C']
     else:
-      print ('Box information wrong, please check')
+      log_info.log_error('Box setting error, please check analyze/geometry/bond_length/box')
       exit()
 
     a_vec = [float(x) for x in box_A]
@@ -670,7 +671,7 @@ def geometry_run(geometry_param, work_dir):
       for i in range(len(distance)):
         writer.writerow([time[i], distance[i]])
 
-    print ("The averaged bond length is %f (A) and standard error is %f (A)" %(distance_avg, sigma))
+    print ("The averaged bond length is %f (A) and standard error is %f (A)" %(distance_avg, sigma), flush=True)
 
   elif ( 'bond_angle' in geometry_param ):
     bond_angle_param = geometry_param['bond_angle']
@@ -680,7 +681,7 @@ def geometry_run(geometry_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('No trajectory file found, please choose the traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/geometry/bond_angle/traj_file')
       exit()
 
     if ( 'atom_pair' in bond_angle_param.keys() ):
@@ -689,7 +690,7 @@ def geometry_run(geometry_param, work_dir):
       atom_2 = atom_pair[1]
       atom_3 = atom_pair[2]
     else:
-      print ('No atom pair used to calculate bond length found, please set atom_pair')
+      log_info.log_error('No atom pair found, please set analyze/geometry/bond_angle/atom_pair')
       exit()
 
     if ( 'init_step' in bond_angle_param.keys() ):
@@ -713,7 +714,7 @@ def geometry_run(geometry_param, work_dir):
       for i in range(len(angle)):
         writer.writerow([time[i], angle[i]])
 
-    print ("The averaged angle is %f (rad) and standard error is %f (rad)" %(angle_avg, sigma))
+    print ("The averaged angle is %f (rad) and standard error is %f (rad)" %(angle_avg, sigma), flush=True)
 
   elif (  'first_shell' in geometry_param ):
     first_shell_param = geometry_param['first_shell']
@@ -724,10 +725,10 @@ def geometry_run(geometry_param, work_dir):
         atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_file)
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose the traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/geometry/first_shell/traj_file')
       exit()
 
     if ( 'atom_type_pair' in first_shell_param.keys() ):
@@ -735,13 +736,13 @@ def geometry_run(geometry_param, work_dir):
       atom_1 = atom_type_pair[0]
       atom_2 = atom_type_pair[1]
     else:
-      print ('No atom type pair found, please set atom_type_pair')
+      log_info.log_error('No atom pair found, please set analyze/geometry/first_shell/atom_pair')
       exit()
 
     if ( 'first_shell_dist' in first_shell_param.keys() ):
       first_shell_dist = float(first_shell_param['first_shell_dist'])
     else:
-      print ('No first shell distance found, please run rdf and then set first_shell_dist')
+      log_info.log_error('No first shell distance found, please set analyze/geometry/first_shell/first_shell_dist')
       exit()
 
     if ( 'dist_conv' in first_shell_param.keys() ):
@@ -764,7 +765,7 @@ def geometry_run(geometry_param, work_dir):
       B_exist = 'B' in first_shell_param['box'].keys()
       C_exist = 'C' in first_shell_param['box'].keys()
     else:
-      print ('No box information found, please set box')
+      log_info.log_error('No box found, please set analyze/geometry/first_shell/box')
       exit()
 
     if ( A_exist and B_exist and C_exist):
@@ -772,7 +773,7 @@ def geometry_run(geometry_param, work_dir):
       box_B = first_shell_param['box']['B']
       box_C = first_shell_param['box']['C']
     else:
-      print ('Box information wrong, please check')
+      log_info.log_error('Box setting error, please check analyze/geometry/first_shell/box')
       exit()
 
     a_vec = [float(x) for x in box_A]
@@ -794,7 +795,7 @@ def geometry_run(geometry_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('No trajectory file found, please choose the traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/geometry/choose_structure/traj_file')
       exit()
 
     if ( 'init_step' in choose_str_param.keys() ):
@@ -810,7 +811,7 @@ def geometry_run(geometry_param, work_dir):
     if ( 'atom_id' in choose_str_param.keys() ):
       atom_id = list_dic_op.get_id_list(choose_str_param['atom_id'])
     else:
-      print ('No atom id found, please set atom_id')
+      log_info.log_error('No atom id found, please set analyze/geometry/choose_structure/atom_id')
 
     traj_tools.choose_str(atoms_num, pre_base, base, each, init_step, end_step, \
                           start_frame_id, traj_file, atom_id, work_dir)

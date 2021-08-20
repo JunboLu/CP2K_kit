@@ -4,6 +4,7 @@ import sys
 import math
 import copy
 from CP2K_kit.tools import call
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import read_input
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.gth_pp_opt.gth_pp import gen_atom_inp
@@ -40,6 +41,11 @@ inp_file = str(sys.argv[2])
 run_type = str(sys.argv[3])
 python_exe = str(sys.argv[4])
 get_min_index = ''.join((str(sys.argv[5]), '/gth_pp_opt/gth_pp/get_index.py'))
+
+log_info.log_logo()
+
+print (list_dic_op.str_wrap('GTH_PP_OPT| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
+print ('GTH_PP_OPT| Input file name %s\n' %(inp_file), flush=True)
 
 job_type_param = read_input.dump_info(work_dir, inp_file, [run_type])
 

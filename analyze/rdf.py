@@ -5,6 +5,7 @@ import csv
 import math
 import linecache
 import numpy as np
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.analyze import center
 from CP2K_kit.tools import traj_info
@@ -159,10 +160,10 @@ def rdf_run(rdf_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('Cannot find %s file' % (traj_file))
+      log_info.log_error('%s file does not exist' %(traj_file))
       exit()
   else:
-    print ('No trajectory file found, please choose the traj_file')
+    log_info.log_error('No trajectory file found, please set analyze/rdf/traj_file')
     exit()
 
   if ( 'atom_type_pair' in rdf_param.keys() ):
@@ -170,7 +171,7 @@ def rdf_run(rdf_param, work_dir):
     atom_1 = atom_type_pair[0]
     atom_2 = atom_type_pair[1]
   else:
-    print ('No atom pair used to calculate bond length found, please set atom_pair')
+    log_info.log_error('No atom type pair found, please set analyze/rdf/atom_pair')
     exit()
 
   if ( 'box' in rdf_param.keys() ):
@@ -178,7 +179,7 @@ def rdf_run(rdf_param, work_dir):
     B_exist = 'B' in rdf_param['box'].keys()
     C_exist = 'C' in rdf_param['box'].keys()
   else:
-    print ('No box information found, please set box')
+    log_info.log_error('No box found, please set analyze/rdf/box')
     exit()
 
   if ( A_exist and B_exist and C_exist):
@@ -186,7 +187,7 @@ def rdf_run(rdf_param, work_dir):
     box_B = rdf_param['box']['B']
     box_C = rdf_param['box']['C']
   else:
-    print ('Box information wrong, please check')
+    log_info.log_error('Box setting error, please check analzye/rdf/box')
     exit()
 
   a_vec = [float(x) for x in box_A]

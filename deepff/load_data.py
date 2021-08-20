@@ -10,6 +10,7 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import numeric
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
+from CP2K_kit.tools import log_info
 
 hartree_to_ev = 27.211396641308
 ang_to_bohr = 1.8897259886
@@ -212,7 +213,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
     atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
     traj_info.get_traj_info(md_pos_file)
   else:
-    print ('There is no position trajectory file in %s' %(proj_dir))
+    log_info.log_error('There is no position trajectory file in %s' %(proj_dir))
     exit()
 
   if ( start == 0 and end == 0 and choosed_num == 0 ):
@@ -222,13 +223,13 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
 
   if ( start != 0 or end != 0 ):
     if ( start >= end ):
-      print ('End frame id is less than end frame id, please check!')
+      log_info.log_error('End frame id is less than end frame id for trajectory in %s, please check!' %(proj_dir))
       exit()
     else:
       total_index = list_dic_op.gen_list(start, end, each)
       max_choosed_num = int((end-start)/each)+1
       if ( choosed_num > max_choosed_num ):
-        print ('choosed_frame_num is larger than max choosed_frame_num, please check!')
+        log_info.log_error('choosed_frame_num is larger than max choosed_frame_num for trajectory in %s, please check!' %(proj_dir))
         exit()
       else:
         #random.shuffle(total_index)
@@ -268,7 +269,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
       for i in range(len(choosed_index)):
         box_file.write(frame_str)
     else:
-      print ('Cannot find box')
+      log_info.log_error('Cannot find box')
       exit()
 
   box_file.close()
@@ -343,7 +344,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
       frame_str = ''.join((frame_str, '\n'))
       force_file.write(frame_str)
   else:
-    print (('There is no force trajectory file in %s' %(proj_dir)))
+    log_info.log_error('There is no force trajectory file in %s' %(proj_dir))
     exit()
 
   force_file.close()

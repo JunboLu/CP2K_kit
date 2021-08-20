@@ -49,10 +49,57 @@ def comb_list_2_str(list_temp, space_char):
 
   comb_str = ''
   for i in range(len(list_temp)):
-    comb_str = comb_str + str(list_temp[i]) + ' '
-  comb_str.strip(space_char)
+    comb_str = comb_str + str(list_temp[i]) + space_char
 
-  return comb_str
+  return comb_str.strip(space_char)
+
+def eval_str(str_tmp):
+
+  '''
+  eval_str: evaluate string
+
+  Args:
+    str_tmp: string
+      str_tmp is the string needed to be evaluated.
+  Returns:
+    if the string is evaluated as string, return 0.
+    if the string is evaluated as int, return 1.
+    if the string is evaluated as float, return 2.
+  '''
+
+  try:
+    int(str_tmp)
+    return 1
+  except ValueError:
+    try:
+      float(str_tmp)
+      return 2
+    except ValueError:
+      return 0
+
+def str_wrap(str_tmp, max_width, indent_char=''):
+
+  '''
+  str_wrap : wrap the string
+
+  Args :
+    str_temp : string
+      str_temp is the string needed to be wrapped.
+    max_width : int
+      max_width is the maximum width.
+  Returns :
+    str_wrap : string
+  '''
+
+  if ( len(str_tmp) <= max_width ):
+    return indent_char+str_tmp
+  else:
+    max_width = max_width - len(indent_char)
+    list_tmp = [str_tmp[i:i+max_width] for i in range(0, len(str_tmp), max_width)]
+    for i in range(len(list_tmp)):
+      list_tmp[i] = indent_char + list_tmp[i]
+    str_wrap = '\n'.join(list_tmp)
+    return str_wrap
 
 def str_split(str_temp, space_char):
 
@@ -328,10 +375,12 @@ def str_to_bool(str_temp):
 
   if ( str_temp == 'true' or str_temp == 'True' or str_temp == 'TRUE'):
     bool_str = True
-  if ( str_temp == 'false' or str_temp == 'False' or str_temp == 'FALSE'):
+    return bool_str
+  elif ( str_temp == 'false' or str_temp == 'False' or str_temp == 'FALSE'):
     bool_str = False
-
-  return bool_str
+    return bool_str
+  else:
+    return str_tmp
 
 if __name__ == '__main__':
   from CP2K_kit.tools import list_dic_op

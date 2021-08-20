@@ -1,195 +1,14 @@
 #! /usr/env/bin python
 
+import os
 import math
 import json
 import copy
 import subprocess
 from collections import OrderedDict
 from CP2K_kit.tools import call
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
-
-def revise_deepmd_dic(deepmd_param):
-
-  '''
-  revise_deepmd_dic : transfrom the deepmd keyword in a proper format.
-
-  Args :
-    deepmd_param : dictionary
-      deepmd_param contains keywords used in deepmd.
-  Returns :
-    new_deepmd_param : dictionary
-      new_deepmd_param is the new deepmd_param.
-  '''
-
-  new_deepmd_param = copy.deepcopy(deepmd_param)
-
-  ##revise model descriptor part
-  #####################################################################################
-  if ( 'sel' in new_deepmd_param['model']['descriptor'].keys() ):
-    sel = new_deepmd_param['model']['descriptor']['sel']
-    new_deepmd_param['model']['descriptor']['sel'] = [int(x) for x in sel]
-  else:
-    print ('Cannot find sel, please set sel in model')
-    exit()
-
-  if ( 'rcut_smth' in new_deepmd_param['model']['descriptor'].keys() ):
-    rcut_smth = new_deepmd_param['model']['descriptor']['rcut_smth']
-    new_deepmd_param['model']['descriptor']['rcut_smth'] = float(rcut_smth)
-  else:
-    new_deepmd_param['model']['descriptor']['rcut_smth'] = 5.0
-
-  if ( 'rcut' in new_deepmd_param['model']['descriptor'].keys() ):
-    rcut = new_deepmd_param['model']['descriptor']['rcut']
-    new_deepmd_param['model']['descriptor']['rcut'] = float(rcut)
-  else:
-    new_deepmd_param['model']['descriptor']['rcut'] = 6.0
-
-  if ( 'neuron' in new_deepmd_param['model']['descriptor'].keys() ):
-    neuron_encode = new_deepmd_param['model']['descriptor']['neuron']
-    new_deepmd_param['model']['descriptor']['neuron'] = [int(x) for x in neuron_encode]
-  else:
-    new_deepmd_param['model']['descriptor']['neuron'] = [25, 50, 100]
-
-  if ( 'resnet_dt' in new_deepmd_param['model']['descriptor'].keys() ):
-    resnet_dt = new_deepmd_param['model']['descriptor']['resnet_dt']
-    resnet_dt_bool = list_dic_op.str_to_bool(resnet_dt)
-    new_deepmd_param['model']['descriptor']['resnet_dt'] = resnet_dt_bool
-  else:
-    new_deepmd_param['model']['descriptor']['resnet_dt'] = False
-
-  if ( 'axis_neuron' in new_deepmd_param['model']['descriptor'].keys() ):
-    axis_neuron =new_deepmd_param['model']['descriptor']['axis_neuron']
-    new_deepmd_param['model']['descriptor']['axis_neuron'] = int(axis_neuron)
-  else:
-    new_deepmd_param['model']['descriptor']['axis_neuron'] = 16
-
-  ##################################################################################### 
-
-  ##revise model fitting_net part
-  #####################################################################################
-  if ( 'resnet_dt' in new_deepmd_param['model']['fitting_net'].keys() ):
-    resnet_dt = new_deepmd_param['model']['fitting_net']['resnet_dt']
-    resnet_dt_bool = list_dic_op.str_to_bool(resnet_dt)
-    new_deepmd_param['model']['fitting_net']['resnet_dt'] = resnet_dt_bool
-  else:
-    new_deepmd_param['model']['fitting_net']['resnet_dt'] = True
-
-  ##revise learning_rate part
-  #####################################################################################
-  if ( 'decay_steps' in new_deepmd_param['learning_rate'].keys() ):
-    decay_steps = new_deepmd_param['learning_rate']['decay_steps']
-    new_deepmd_param['learning_rate']['decay_steps'] = int(decay_steps)
-  else:
-    new_deepmd_param['learning_rate']['decay_steps'] = 5000
-
-  if ( 'start_lr' in new_deepmd_param['learning_rate'].keys() ):
-    start_lr = new_deepmd_param['learning_rate']['start_lr']
-    new_deepmd_param['learning_rate']['start_lr'] = float(start_lr)
-  else:
-    new_deepmd_param['learning_rate']['start_lr'] = 0.001
-
-  if ( 'stop_lr' in new_deepmd_param['learning_rate'].keys() ):
-    stop_lr = new_deepmd_param['learning_rate']['stop_lr']
-    new_deepmd_param['learning_rate']['stop_lr'] = float(stop_lr)
-  else:
-    new_deepmd_param['learning_rate']['stop_lr'] = 1e-8
-  #####################################################################################
-
-  ##revise loss part
-  #####################################################################################
-  if ( 'start_pref_e' in new_deepmd_param['loss'].keys() ):
-    start_pref_e = new_deepmd_param['loss']['start_pref_e']
-    new_deepmd_param['loss']['start_pref_e'] = float(start_pref_e)
-  else:
-    new_deepmd_param['loss']['start_pref_e'] = 0.02
-
-  if ( 'limit_pref_e' in new_deepmd_param['loss'].keys() ):
-    limit_pref_e = new_deepmd_param['loss']['limit_pref_e']
-    new_deepmd_param['loss']['limit_pref_e'] = float(limit_pref_e)
-  else:
-    new_deepmd_param['loss']['limit_pref_e'] = 1.0
-
-  if ( 'start_pref_f' in new_deepmd_param['loss'].keys() ):
-    start_pref_f = new_deepmd_param['loss']['start_pref_f']
-    new_deepmd_param['loss']['start_pref_f'] = float(start_pref_f)
-  else:
-    new_deepmd_param['loss']['start_pref_f'] = 1000.0
-
-  if ( 'limit_pref_f' in new_deepmd_param['loss'].keys() ):
-    limit_pref_f = new_deepmd_param['loss']['limit_pref_f']
-    new_deepmd_param['loss']['limit_pref_f'] = float(limit_pref_f)
-  else:
-    new_deepmd_param['loss']['limit_pref_f'] = 1.0
-
-  if ( 'start_pref_v' in new_deepmd_param['loss'].keys() ):
-    start_pref_v = new_deepmd_param['loss']['start_pref_v']
-    new_deepmd_param['loss']['start_pref_v'] = float(start_pref_v)
-  else:
-    new_deepmd_param['loss']['start_pref_v'] = 0.0
-
-  if ( 'limit_pref_v' in new_deepmd_param['loss'].keys() ):
-    limit_pref_v = new_deepmd_param['loss']['limit_pref_v']
-    new_deepmd_param['loss']['limit_pref_v'] = float(limit_pref_v)
-  else:
-    new_deepmd_param['loss']['limit_pref_v'] = 0.0
-  ######################################################################################
-
-  ##revise training part
-  ######################################################################################
-  if ( 'stop_batch' in new_deepmd_param['training'].keys() ):
-    stop_batch = new_deepmd_param['training']['stop_batch']
-    new_deepmd_param['training']['stop_batch'] = int(stop_batch)
-  else:
-    new_deepmd_param['training']['stop_batch'] = 40000
-
-  if ( 'batch_size' in new_deepmd_param['training'].keys() ):
-    batch_size = new_deepmd_param['training']['batch_size']
-    if ( batch_size.isdigit() ):
-      new_deepmd_param['training']['batch_size'] = int(batch_size)
-  else:
-    new_deepmd_param['training']['batch_size'] = 1
-
-  if ( 'disp_freq' in new_deepmd_param['training'].keys() ):
-    disp_freq = new_deepmd_param['training']['disp_freq']
-    new_deepmd_param['training']['disp_freq'] = int(disp_freq)
-  else:
-    new_deepmd_param['training']['disp_freq'] = 100
-
-  if ( 'numb_test' in new_deepmd_param['training'].keys() ):
-    numb_test = new_deepmd_param['training']['numb_test']
-    new_deepmd_param['training']['numb_test'] = int(numb_test)
-  else:
-    new_deepmd_param['training']['numb_test'] = 5
-
-  if ( 'save_freq' in new_deepmd_param['training'].keys() ):
-    save_freq = new_deepmd_param['training']['save_freq']
-    new_deepmd_param['training']['save_freq'] = int(save_freq)
-  else:
-    new_deepmd_param['training']['save_freq'] = 1000
-
-  if ( 'disp_training' in new_deepmd_param['training'].keys() ):
-    disp_training = new_deepmd_param['training']['disp_training']
-    disp_training_bool = list_dic_op.str_to_bool(disp_training)
-    new_deepmd_param['training']['disp_training'] = disp_training_bool
-  else:
-    new_deepmd_param['training']['disp_training'] = True
-
-  if ( 'time_training' in new_deepmd_param['training'].keys() ):
-    time_training = new_deepmd_param['training']['time_training']
-    time_training_bool = list_dic_op.str_to_bool(time_training)
-    new_deepmd_param['training']['time_training'] = time_training_bool
-  else:
-    new_deepmd_param['training']['time_training'] = True
-
-  if ( 'profiling' in new_deepmd_param['training'].keys() ):
-    profiling = new_deepmd_param['training']['profiling']
-    profiling_bool = list_dic_op.str_to_bool(profiling)
-    new_deepmd_param['training']['profiling'] = profiling_bool
-  else:
-    new_deepmd_param['training']['profiling'] = False
-  #####################################################################################
-
-  return new_deepmd_param
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
                     descr_seed, fit_seed, tra_seed, neuron, model_type):
@@ -213,7 +32,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
     neuron : 1-d int list or int
       neuron is the number of nodes in neural network.
     model_type : string
-      model_type has two choices: 'use_seed', 'use_nodes'
+      model_type has two choices: 'use_seed', 'use_node'
   Returns :
     none
   '''
@@ -255,13 +74,11 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
 
   deepmd_param['training']['systems'] = data_dir
 
-  new_deepmd_param = revise_deepmd_dic(deepmd_param)
-
   if ( model_type == 'use_seed' ):
     for i in range(len(descr_seed)):
       cmd = "mkdir %s" % (str(i))
       call.call_simple_shell(train_dir, cmd)
-      deepmd_param_i = copy.deepcopy(new_deepmd_param)
+      deepmd_param_i = copy.deepcopy(deepmd_param)
       deepmd_param_i['model']['descriptor']['seed'] = descr_seed[i]
       deepmd_param_i['model']['fitting_net']['seed'] = fit_seed[i]
       deepmd_param_i['training']['seed'] = tra_seed[i]
@@ -271,11 +88,11 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((train_dir, '/', str(i), '/', 'input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-  elif ( model_type == 'use_nodes' ):
+  elif ( model_type == 'use_node' ):
     for i in range(len(neuron)):
       cmd = "mkdir %s" % (str(i))
       call.call_simple_shell(train_dir, cmd)
-      deepmd_param_i = copy.deepcopy(new_deepmd_param)
+      deepmd_param_i = copy.deepcopy(deepmd_param)
       deepmd_param_i['model']['descriptor']['seed'] = descr_seed[i]
       deepmd_param_i['model']['fitting_net']['seed'] = fit_seed[i]
       deepmd_param_i['training']['seed'] = tra_seed[i]
@@ -341,7 +158,7 @@ x=$1
 direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -389,7 +206,7 @@ x=$1
 direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -420,7 +237,7 @@ export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
 dp train input.json 1> out 2> err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir)
     for i in range(model_num):
       deepmd_train_i_dir = ''.join((deepmd_train_dir, '/', str(i)))
@@ -481,7 +298,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -546,7 +363,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -623,11 +440,11 @@ export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 x=$1
 direc=$2
 
-export CUDA_VISIBLE_DEVICE=${x_arr[1]}
+export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -693,11 +510,11 @@ direc=$2
 
 x_arr=(${x///})
 
-export CUDA_VISIBLE_DEVICE=${x_arr[1]}
+export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -723,7 +540,7 @@ dp freeze -o frozen_model.pb
     for i in range(len(host)):
       if ( len(device[i]) != 0 ):
         host_true.append(host[i])
-    if ( len(host_true) > model_num ):
+    if ( len(host_true) >= model_num ):
       host_list = []
       for i in range(model_num):
         host_list.append('-S' + ' ' + host_true[j])
@@ -754,7 +571,7 @@ x=$1
 direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(cuda_dir, dp_path)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -802,7 +619,7 @@ x=$1
 direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
-dp freeze -o frozen_model.pb
+dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(cuda_dir, dp_path)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -843,7 +660,40 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
   train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
   model_num = len(call.call_returns_shell(train_dir, "ls -ll |awk '/^d/ {print $NF}'"))
 
+  #Check generating deepmd tasks
+  check_deepmd_gen = []
+  for i in range(model_num):
+    inp_file = ''.join((train_dir, '/', str(i), '/input.json'))
+    if ( os.path.exists(inp_file) and os.path.getsize(inp_file) != 0 ):
+      check_deepmd_gen.append(0)
+    else:
+      check_deepmd_gen.append(1)
+
+  if ( len(check_deepmd_gen) != 0 and all(i == 0 for i in check_deepmd_gen) ):
+    str_tmp = 'Success: generate deepmd-kit tasks in %s' %(train_dir)
+    str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+    print (str_tmp, flush=True)
+  else:
+    log_info.log_error('Generating deepmd-kit tasks error, please check iteration %d' %(iter_id))
+    exit()
+
+  #Run deepmd-kit tasks
   deepmd_parallel(train_dir, 0, model_num-1, parallel_exe, host, device, usage, cuda_dir)
+
+  #Check the deepmd tasks.
+  check_deepmd_run = []
+  for i in range(model_num):
+    ff_file = ''.join((train_dir, '/', str(i), '/frozen_model.pb'))
+    if ( os.path.exists(ff_file) and os.path.getsize(ff_file) ):
+      check_deepmd_run.append(0)
+    else:
+      check_deepmd_run.append(1)
+
+  if ( len(check_deepmd_run) != 0 and all(i == 0 for i in check_deepmd_run) ):
+    print ('  Success: train %d models by deepmd-kit' %(model_num), flush=True)
+  else:
+    log_info.log_error('deepmd-kit running error, please check iteration %d' %(iter_id))
+    exit()
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import deepmd_run

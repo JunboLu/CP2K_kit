@@ -4,6 +4,7 @@ import os
 import csv
 import linecache
 import numpy as np
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.lib import rmsd_mod
@@ -107,29 +108,29 @@ def rmsd_run(rmsd_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('Cannot find %s file' % (traj_file))
+      log_info.log_error('%s file does not exist' %(traj_file))
   else:
-    print ('No trajectory file found, please choose the traj_file')
+    log_info.log_error('No trajectory found, please set analyze/rmsd/traj_file')
     exit()
 
   if ( 'atom_id' in rmsd_param.keys() ):
     atom_id = rmsd_param['atom_id']
     atom_id_list = list_dic_op.get_id_list(atom_id)
   else:
-    print ('No atom id found, please set atom_id')
+    log_info.log_error('No atom id found, please set analyze/rmsd/atom_id')
     exit()
 
   if ( 'ref_frame' in rmsd_param.keys() ):
     ref_frame = int(rmsd_param['ref_frame'])
   else:
-    print ('No reference frame found, please set ref_frame')
+    log_info.log_error('No reference frame found, please set analyze/rmsd/ref_frame')
     exit()
 
   if ( 'compare_frame' in rmsd_param.keys() ):
     compare_frame = rmsd_param['compare_frame']
     compare_frame_list = list_dic_op.get_id_list(compare_frame)
   else:
-    print ('No compare frame found, please set compare_frame')
+    log_info.log_error('No compare frame found, please set analyze/rmsd/compare_frame')
     exit()
 
   rmsd_value = rmsd(atoms_num, base, pre_base, each, atom_id_list, \

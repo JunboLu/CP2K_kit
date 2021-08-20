@@ -92,8 +92,9 @@ nvidia-smi > %s
     device.append(device_i)
     usage.append(usage_i)
 
+  cmd_1 = 'rm check_gpu.sh'
+  call.call_simple_shell(work_dir, cmd_1)
+  cmd_2 = 'rm gpuinfo_*'
+  call.call_simple_shell(work_dir, cmd_2)
+
   return device, usage
-
-
-
-

@@ -5,6 +5,7 @@ import csv
 import linecache
 import numpy as np
 from CP2K_kit.tools import atom
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import dynamic_mod
@@ -130,9 +131,9 @@ def diffusion_run(diffusion_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('Cannot find %s file' % (traj_file))
+      log_info.log_error('%s file does not exist' %(traj_file))
   else:
-    print ('No trajectory file found, please choose the traj_file')
+    log_info.log_error('No trajectory file found, please set analyze/diffusion/traj_file')
     exit()
 
   if ( 'method' in diffusion_param.keys() ):
@@ -143,7 +144,7 @@ def diffusion_run(diffusion_param, work_dir):
   if ( 'atom_id' in diffusion_param.keys() ):
     atom_id = list_dic_op.get_id_list(diffusion_param['atom_id'])
   else:
-    print ('No atom id found, please set atom_id')
+    log_info.log_error('No atom id found, please set analyze/diffusion/atom_id')
     exit()
 
   if ( 'init_step' in diffusion_param.keys() ):

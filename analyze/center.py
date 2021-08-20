@@ -5,6 +5,7 @@ import linecache
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import atom
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.lib import geometry_mod
@@ -129,7 +130,7 @@ def center_run(center_param, work_dir):
   if ( 'type' in center_param.keys() ):
     center_type = center_param['type']
   else:
-    print ('No center type found, please choose the type')
+    log_info.log_error('No center type found, please set analyze/center/type')
     exit()
 
   if ( 'center_atom_id' in center_param.keys() ):
@@ -143,9 +144,10 @@ def center_run(center_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('Cannot find %s file' % (traj_file))
+      log_info.log_error('%s file does not exist')
+      exit()
   else:
-    print ('No trajectory file found, please choose the traj_file')
+    log_info.log_error('No trajectory file found, please set analyze/center/traj_file')
     exit()
 
   if ( 'box' in center_param.keys() ):
@@ -153,7 +155,7 @@ def center_run(center_param, work_dir):
     B_exist = 'B' in center_param['box'].keys()
     C_exist = 'C' in center_param['box'].keys()
   else:
-    print ('No box information found, please set box')
+    log_info.log_error('No box found, please set analyze/center/box')
     exit()
 
   if ( A_exist and B_exist and C_exist):
@@ -161,7 +163,7 @@ def center_run(center_param, work_dir):
     box_B = center_param['box']['B']
     box_C = center_param['box']['C']
   else:
-    print ('Box information wrong, please check')
+    log_info.log_error('Box setting error, please check analyze/center/box')
     exit()
 
   a_vec = [float(x) for x in box_A]

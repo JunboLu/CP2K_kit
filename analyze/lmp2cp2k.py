@@ -1,9 +1,11 @@
 #! /usr/env/bin python
 
+import os
 import linecache
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.lib.geometry_mod import geometry
 
@@ -128,13 +130,13 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
   if ( 'id' in line_split_part ):
     traj_item_id['id'] = line_split_part.index('id')
   else:
-    print ('Could not find id of atom in lammps trajectory')
+    log_info.log_error('Could not find id of atom in lammps trajectory')
     exit()
 
   if ( 'type' in line_split_part ):
     traj_item_id['type'] = line_split_part.index('type')
   else:
-    print ('Could not find type of atom in lammps trajectory')
+    log_info.log_error('Could not find type of atom in lammps trajectory')
     exit()
 
   if ( 'x' in line_split_part and 'y' in line_split_part and 'z' in line_split_part ):
@@ -296,14 +298,22 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
 
   if ( 'lmp_log_file' in lmp2cp2k_param.keys() ):
     lmp_log_file = lmp2cp2k_param['lmp_log_file']
+    if ( os.path.exists(lmp_log_file) ):
+      pass
+    else:
+      log_info.log_error('%s file does not exist' %(lmp_log_file))
   else:
-    print ('Could not find lammps outfile, please set lmp_log_file')
+    log_info.log_error('No lammps output file found, please set analyze/lmp2cp2k/lmp_log_file')
     exit()
 
   if ( 'lmp_traj_file' in lmp2cp2k_param.keys() ):
     lmp_traj_file = lmp2cp2k_param['lmp_traj_file']
+    if ( os.path.exists(lmp_traj_file) ):
+      pass
+    else:
+      log_info.log_error('%s file does not exist' %(lmp_traj_file))
   else:
-    print ('Could not find lammps trajectory file, please set lmp_traj_file')
+    log_info.log_error('No lammps trajectory file found, please set analyze/lmp2cp2k/lmp_traj_file')
     exit()
 
   if ( 'atom_label' in lmp2cp2k_param.keys() ):
@@ -313,19 +323,19 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
       lable_split = list_dic_op.str_split(atom_label[i], ':')
       atom_label_dic[int(lable_split[0])] = lable_split[1]
   else:
-    print ('Could not find atom lable, please set atom_label')
+    log_info.log_error('No atom lable found, please set analyze/lmp2cp2k/atom_lable')
     exit()
 
   if ( 'time_step' in lmp2cp2k_param.keys() ):
     time_step = float(lmp2cp2k_param['time_step'])
   else:
-    print ('Could not find time step, please set time_step')
+    log_info.log_error('No time step found, please set analyze/lmp2cp2k/time_step')
     exit()
 
   if ( 'lmp_unit' in lmp2cp2k_param.keys() ):
     lmp_unit = lmp2cp2k_param['lmp_unit']
   else:
-    print ('Could not find lammps unit, please set lmp_unit')
+    log_info.log_error('No lammps unit found, please set analyze/lmp2cp2k/lmp_unit')
     exit()
 
   if ( 'unwrap' in lmp2cp2k_param.keys() ):
@@ -338,7 +348,7 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
     B_exist = 'B' in lmp2cp2k_param['box'].keys()
     C_exist = 'C' in lmp2cp2k_param['box'].keys()
   else:
-    print ('No box information found, please set box')
+    log_info.log_error('No box found, please set analyze/lmp2cp2k/box')
     exit()
 
   if ( A_exist and B_exist and C_exist):
@@ -346,7 +356,7 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
     box_B = lmp2cp2k_param['box']['B']
     box_C = lmp2cp2k_param['box']['C']
   else:
-    print ('Box information wrong, please check')
+    log_info.log_error('Box setting error, please check analzye/lmp2cp2k/box')
     exit()
 
   a_vec = [float(x) for x in box_A]

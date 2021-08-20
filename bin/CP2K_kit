@@ -43,7 +43,11 @@ elif [[ ${run_type} == thermo_int ]]; then
 ${python_exe} ${CP2K_kit_path}/thermo_int/thermo_int_run.py ${work_dir} ${inp_file} ${thermo_type}
 elif [[ ${run_type} == model ]]; then
 ${python_exe} ${CP2K_kit_path}/model/model_run.py ${work_dir} ${inp_file} ${model_type}
+else
+echo "************************************Error**************************************"
+echo "The run_type in input is wrong, please set or check global/run_type"
 fi
 else
+echo "************************************Error**************************************"
 echo "CP2K_kit need a input file!"
 fi

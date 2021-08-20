@@ -1,3 +1,4 @@
+from CP2K_kit.deepff import check_deepff
 from CP2K_kit.deepff import sysinfo
 from CP2K_kit.deepff import active
 from CP2K_kit.deepff import load_data

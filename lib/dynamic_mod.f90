@@ -2,6 +2,7 @@ include 'vector.f90'
 
 module dynamic
 use vector
+implicit none
 contains
 
   subroutine remove_coord_com(coord,atom_mass,l,m,n)

@@ -5,6 +5,7 @@ import csv
 import linecache
 import numpy as np
 from CP2K_kit.tools import atom
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import statistic_mod
@@ -211,17 +212,17 @@ def time_corr_run(time_corr_param, work_dir):
       atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
       traj_info.get_traj_info(traj_file)
     else:
-      print ('Cannot find %s file' % (traj_file))
+      log_info.log_error('%s file does not exists' %(traj_file))
       exit()
   else:
-    print ('No trajectory file found, please choose the traj_file')
+    log_info.log_error('No trajectory file found, please set analyze/time_correlation/traj_file')
     exit()
 
   if ( 'atom_id' in time_corr_param.keys() ):
     atom_id = time_corr_param['atom_id']
     atom_id_list = list_dic_op.get_id_list(atom_id)
   else:
-    print ('No atom id found, please set atom_id')
+    log_info.log_error('No atom id found, please set analyze/time_correlation/atom_id')
     exit()
 
   if ( 'max_frame_corr' in time_corr_param.keys() ):

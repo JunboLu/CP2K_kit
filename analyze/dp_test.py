@@ -1,5 +1,6 @@
 #! /usr/env/bin python
 
+import os
 import csv
 import linecache
 import subprocess
@@ -10,6 +11,7 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import get_cell
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import read_lmp
+from CP2K_kit.tools import log_info
 from CP2K_kit.deepff import lammps_run
 
 hartree_to_ev = 27.2114
@@ -296,7 +298,7 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label,
   atoms, energy, coord, vel, frc, cell = \
   read_lmp.read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label, [], True, True, False, True, True)
 
-  cp2k_inp_split = list_dic_op.str_split(cp2k_inp_file, '/')
+  cp2k_inp_split = list_dic_op.str_split(os.path.abspath(cp2k_inp_file), '/')
   cp2k_inp_file = cp2k_inp_split[len(cp2k_inp_split)-1]
 
   for i in range(frames_num):
@@ -394,29 +396,29 @@ def dp_test_run(dp_test_param, work_dir):
   if ( 'learn_type' in dp_test_param.keys() ):
     learn_type = dp_test_param['learn_type']
   else:
-    print ('Could not find learning type, please set learn_type')
+    log_info.log_error('No learning type found, please set analyze/dp_test/learn_type')
     exit()
 
   if ( learn_type == 'supervised' ):
     if ( 'cp2k_frc_file' in dp_test_param.keys() ):
       cp2k_frc_file = dp_test_param['cp2k_frc_file']
     else:
-      print ('Could not find cp2k force trajectory, please set cp2k_frc_file')
+      log_info.log_error('No cp2k force trajectory found, please set analyze/dp_test/cp2k_frc_file')
       exit()
     if ( 'cp2k_pos_file' in dp_test_param.keys() ):
       cp2k_pos_file = dp_test_param['cp2k_pos_file']
     else:
-      print ('Could not find cp2k position trajectory, please set cp2k_pos_file')
+      log_info.log_error('No cp2k position trajectory found, please set analyze/dp_test/cp2k_pos_file')
       exit()
     if ( 'cp2k_cell_file' in dp_test_param.keys() ):
       cp2k_cell_file = dp_test_param['cp2k_cell_file']
     else:
-      print ('Could not find cp2k cell trajectory, please set cp2k_cell_file')
+      log_info.log_error('No cp2k cell trajectory found, please set analyze/dp_test/cp2k_cell_file')
       exit()
     if ( 'dpff_file' in dp_test_param.keys() ):
       dpff_file = dp_test_param['dpff_file']
     else:
-      print ('Could not find deepmd force field file, please set dpff_file')
+      log_info.log_error('No deepmd-kit force field file found, please set analyze/dp_test/dpff_file')
       exit()
     if ( 'atom_label' in dp_test_param.keys() ):
       atom_label = dp_test_param['atom_label']
@@ -425,7 +427,7 @@ def dp_test_run(dp_test_param, work_dir):
         lable_split = list_dic_op.str_split(atom_label[i], ':')
         atom_label_dic[int(lable_split[0])] = lable_split[1]
     else:
-      print ('Could not find atom lable, please set atom_label')
+      log_info.log_error('No atom lable found, please set analyze/dp_test/atom_lable')
       exit()
 
     supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label_dic, work_dir)
@@ -434,17 +436,17 @@ def dp_test_run(dp_test_param, work_dir):
     if ( 'lmp_traj_file' in dp_test_param.keys() ):
       lmp_traj_file = dp_test_param['lmp_traj_file']
     else:
-      print ('Could not find lammps trajectory file, please set lmp_traj_file')
+      log_info.log_error('No lammps trajectory found, please set analyze/dp_test/lmp_traj_file')
       exit()
     if ( 'lmp_log_file' in dp_test_param.keys() ):
       lmp_log_file = dp_test_param['lmp_log_file']
     else:
-      print ('Could not find lammps output file, please set lmp_log_file')
+      log_info.log_error('No lammps output file found, please set analyze/dp_test/lmp_log_file')
       exit()
     if ( 'cp2k_inp_file' in dp_test_param.keys() ):
       cp2k_inp_file = dp_test_param['cp2k_inp_file']
     else:
-      print ('Could not find cp2k input file, please set cp2k_inp_file')
+      log_info.log_error('No cp2k input file found, please set analyze/dp_test/cp2k_inp_file')
       exit()
     if ( 'atom_label' in dp_test_param.keys() ):
       atom_label = dp_test_param['atom_label']
@@ -453,10 +455,10 @@ def dp_test_run(dp_test_param, work_dir):
         lable_split = list_dic_op.str_split(atom_label[i], ':')
         atom_label_dic[int(lable_split[0])] = lable_split[1]
     else:
-      print ('Could not find atom lable, please set atom_label')
+      log_info.log_error('No atom label found, please set analyze/dp_test/atom_lable')
       exit()
     active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label_dic, work_dir)
 
   else:
-    print ('Could not recognize learn_type, please check')
+    log_info.log_error('Could not recognize learn_type, please check')
     exit()

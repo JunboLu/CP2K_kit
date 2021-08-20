@@ -1,6 +1,7 @@
 #! /usr/env/bin python
 
 import linecache
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 
 def xyz2pdb(file_name, work_dir):
@@ -17,7 +18,7 @@ def xyz2pdb(file_name, work_dir):
     none
   '''
 
-  print ('The transfered pdb file is a crude file, please revise it in detail!')
+  print ('The transfered pdb file is a crude file, please revise it in detail!', flush=True)
 
   line = linecache.getline(file_name, 1)
   atoms_num = int(line.strip('\n'))
@@ -99,13 +100,13 @@ def file_trans_run(file_trans_param, work_dir):
   if ( 'file_name' in file_trans_param.keys() ):
     file_name = file_trans_param['file_name']
   else:
-    print ('Could not find file to be transfered, please set file_name')
+    log_info.log_error('No file need to be transfered, please set analzye/file_trans/file_name')
     exit()
 
   if ( 'trans_type' in file_trans_param.keys() ):
     trans_type = file_trans_param['trans_type']
   else:
-    print ('Could not find transfer type, please set trans_type to be pdb2xyz or xyz2pdb')
+    log_info.log_error('No transfer type found, please set analyze/file_trans/trans_type')
     exit()
 
   if ( trans_type == 'pdb2xyz' ):

@@ -6,6 +6,7 @@ import math
 import linecache
 import numpy as np
 from CP2K_kit.tools import call
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import traj_tools
@@ -329,10 +330,10 @@ def arrange_data_run(arrange_data_param, work_dir):
         blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
         traj_info.get_traj_info(traj_file)
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/arranage_data/temperature/traj_file')
       exit()
 
     arrange_temp(frames_num, pre_base, time_step, traj_file, work_dir, each)
@@ -347,10 +348,10 @@ def arrange_data_run(arrange_data_param, work_dir):
         blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
         traj_info.get_traj_info(traj_file)
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/arranage_data/potential/traj_file')
       exit()
 
     arrange_pot(frames_num, pre_base, time_step, traj_file, work_dir, each)
@@ -364,10 +365,10 @@ def arrange_data_run(arrange_data_param, work_dir):
       if ( os.path.exists(traj_file) ):
         pass
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/arranage_data/mulliken/traj_file')
       exit()
 
     if ( 'atom_id' in mulliken_param.keys() ):
@@ -376,7 +377,7 @@ def arrange_data_run(arrange_data_param, work_dir):
       elif ( len(mulliken_param['atom_id']) > 1 ):
         atom_id = [int(x) for x in mulliken_param['atom_id']]
     else:
-      print ('No atom id found, please set atom_id')
+      log_info.log_error('No atom id found, please set analyze/arranage_data/mulliken/atom_id')
       exit()
 
     if ( 'time_step' in mulliken_param.keys() ):
@@ -416,28 +417,28 @@ def arrange_data_run(arrange_data_param, work_dir):
         blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
         traj_info.get_traj_info(traj_file)
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/arranage_data/vertical_energy/traj_file')
       exit()
 
     if ( 'row_ox' in vert_ene_param.keys() ):
       row_ox = int(vert_ene_param['row_ox'])
     else:
-      print ('No row of oxidation found, please set row_ox')
+      log_info.log_error('No row of oxidation species found, please set analyze/arranage_data/vertical_energy/row_ox')
       exit()
 
     if ( 'row_red' in vert_ene_param.keys() ):
       row_red = int(vert_ene_param['row_red'])
     else:
-      print ('No row of reduction found, please set row_red')
+      log_info.log_error('No row of reduction species found, please set analyze/arranage_data/vertical_energy/row_red')
       exit()
 
     if ( 'redox_type' in vert_ene_param.keys() ):
       redox_type = vert_ene_param['redox_type']
     else:
-      print ('No redox type found, please set redox type')
+      log_info.log_error('No redox type found, please set analyze/arranage_data/vertical_energy/redox_type')
       exit()
 
     if ( 'slow_growth' in vert_ene_param.keys() ):
@@ -463,17 +464,17 @@ def arrange_data_run(arrange_data_param, work_dir):
     if ( slow_growth == 0 ):
       delta_ene, rmse = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step,start_id, \
                                                 traj_file, row_ox, row_red, redox_type, slow_growth, work_dir)
-      print ('Average vertical energy is %f eV, and error is %f eV' % (delta_ene, rmse))
+      print ('Average vertical energy is %f eV, and error is %f eV' % (delta_ene, rmse), flush=True)
     elif ( slow_growth == 1 ):
       vert_ene = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step, start_id, \
                                          traj_file, row_ox, row_red, redox_type, slow_growth, work_dir)
       if ( 'increment' in vert_ene_param.keys() ):
         increment = float(vert_ene_param['increment'])
       else:
-        print ('No increment found, please set increment')
+        log_info.log_error('No increment found, please set analyze/arranage_data/vertical_energy/increment')
         exit()
       redox_pka_free_ene = free_energy.redox_pka_slow_growth(vert_ene, increment)
-      print ('The redox free energy is %f ev' %(redox_pka_free_ene))
+      print ('The redox free energy is %f ev' %(redox_pka_free_ene), flush=True)
 
   #arrange thermodynamic integration force
   elif ( 'ti_force' in arrange_data_param ):
@@ -484,10 +485,10 @@ def arrange_data_run(arrange_data_param, work_dir):
       if ( os.path.exists(traj_file) ):
         pass
       else:
-        print ('Cannot find %s file' % (traj_file))
+        log_info.log_error('%s file does not exist' %(traj_file))
         exit()
     else:
-      print ('No trajectory file found, please choose traj_file')
+      log_info.log_error('No trajectory file found, please set analyze/arrange_data/ti_force/traj_file')
       exit()
 
     if ( 'stat_num' in ti_force_param.keys() ):
@@ -496,4 +497,4 @@ def arrange_data_run(arrange_data_param, work_dir):
       stat_num = 1
 
     force_avg, error_avg = arrange_ti_force(stat_num, traj_file)
-    print ("The averaged force is %f and averaged error is %f" %(force_avg, error_avg))
+    print ("The averaged force is %f and averaged error is %f" %(force_avg, error_avg), flush=True)

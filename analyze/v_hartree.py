@@ -1,10 +1,12 @@
 #! /usr/env/bin python
 
+import os
 import csv
 import math
 import linecache
 import numpy as np
 from CP2K_kit.lib import statistic_mod
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 
 def calc_v_hartree(cube_file, surface, work_dir):
@@ -36,7 +38,7 @@ Tips:
     on a semiconductor surface.
   '''
 
-  print (tips)
+  print (tips, flush=True)
 
   line = linecache.getline(cube_file, 3)
   line_split = list_dic_op.str_split(line, ' ')
@@ -132,8 +134,12 @@ def v_hartree_run(hartree_param, work_dir):
 
   if ( 'cube_file' in hartree_param.keys() ):
     cube_file = hartree_param['cube_file']
+    if ( os.path.exists(cube_file) ):
+      pass
+    else:
+      log_info.log_error('%s file does not exist' %(cube_file))
   else:
-    print ('Could not find v_hartree cube file, please set cube file')
+    log_info.log_error('No v_hartree cube file found, please set analyze/v_hartree/cube_file')
     exit()
 
   if ( 'surface' in hartree_param.keys() ):

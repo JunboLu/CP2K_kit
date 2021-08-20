@@ -4,6 +4,7 @@ import os
 import csv
 import linecache
 import numpy as np
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 from CP2K_kit.tools import numeric
 from CP2K_kit.tools import traj_info
@@ -200,7 +201,7 @@ def power_spectrum_run(spectrum_param, work_dir):
   if ( 'type' in spectrum_param.keys() ):
     spec_type = spectrum_param['type']
   else:
-    print ('No type found, please set type')
+    log_info('No type found, please set analyze/power_spectrum/type')
     exit()
 
   if ( spec_type == 'water_mode' or spec_type == 'hydration_mode' ):
@@ -209,10 +210,10 @@ def power_spectrum_run(spectrum_param, work_dir):
       if ( os.path.exists(traj_pos_file) ):
         pass
       else:
-        print ('Cannot find %s file' % (traj_pos_file))
+        log_info.log_error('%s file does not exist' %(traj_pos_file))
         exit()
     else:
-      print ('No position trajectory found, please set traj_pos_file')
+      log_info.log_error('No position trajectory found, please set analyze/power_spectrum/traj_pos_file')
       exit()
 
   if ( 'traj_vel_file' in spectrum_param.keys() ):
@@ -220,20 +221,20 @@ def power_spectrum_run(spectrum_param, work_dir):
     if ( os.path.exists(traj_vel_file) ):
       pass
     else:
-      print ('Cannot find %s file' % (traj_vel_file))
+      log_info.log_error('%s file does not exist' %(traj_vel_file))
   else:
-    print ('No velocity trajecotry found, please set traj_vel_file')
+    log_info.log_error('No velocity trajectory found, please set analyze/power_spectrum/traj_vel_file')
 
   if ( 'init_step' in spectrum_param.keys() ):
     init_step = int(spectrum_param['init_step'])
   else:
-    print ('No inititial step found, please set init_step')
+    log_info.log_error('No inititial step found, please set analyze/power_spectrum/init_step')
     exit()
 
   if ( 'end_step' in spectrum_param.keys() ):
     end_step = int(spectrum_param['end_step'])
   else:
-    print ('No end step found, please set end_step')
+    log_info.log_error('No end step found, please set analyze/power_spectrum/end_step')
     exit()
 
   if ( 'max_frame_corr' in spectrum_param.keys() ):
@@ -265,7 +266,7 @@ def power_spectrum_run(spectrum_param, work_dir):
     if ( 'atom_id' in spectrum_param.keys() ):
       atom_id_list = list_dic_op.get_id_list(spectrum_param['atom_id'])
     else:
-      print ('No atom id found, please set atom_id')
+      log_info.log_error('No atom id found, please set analyze/power_spectrum/atom_id')
       exit()
 
     atoms_num, base, pre_base, frame_num, each, start_id, end_id, time_step = \
@@ -285,7 +286,7 @@ def power_spectrum_run(spectrum_param, work_dir):
       B_exist = 'B' in spectrum_param['box'].keys()
       C_exist = 'C' in spectrum_param['box'].keys()
     else:
-      print ('No box information found, please set box')
+      log_info.log_error('No box found, please set analyze/power_spectrum/box')
       exit()
 
     if ( A_exist and B_exist and C_exist):
@@ -293,7 +294,7 @@ def power_spectrum_run(spectrum_param, work_dir):
       box_B = spectrum_param['box']['B']
       box_C = spectrum_param['box']['C']
     else:
-      print ('Box information wrong, please check')
+      log_info.log_error('Box setting error, please check analzye/power_spectrum/box')
       exit()
 
     a_vec = [float(x) for x in box_A]
@@ -330,7 +331,7 @@ def power_spectrum_run(spectrum_param, work_dir):
       if ( 'hyd_shell_dist' in spectrum_param.keys() ):
         hyd_shell_dist = float(spectrum_param['hyd_shell_dist'])
       else:
-        print ('No hydration shell distance found, please set hyd_shell_num')
+        log_info.log_error('No hydration shell distance found, please set analyze/power_spectrum/hyd_shell_num')
         exit()
 
       if ( 'dist_conv' in spectrum_param.keys() ):
@@ -343,7 +344,7 @@ def power_spectrum_run(spectrum_param, work_dir):
         atom_1 = atom_pair[0]
         atom_2 = atom_pair[1]
       else:
-        print ('No atom pair found, please set atom_pair')
+        log_info.log_error('No atom pair found, please set analyze/power_spectrum/atom_pair')
         exit()
 
       first_shell_id, dist = geometry.first_shell(atoms_num, base, pre_base, start_id, frames_num, each, init_step, end_step, \

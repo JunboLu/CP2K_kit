@@ -2,6 +2,7 @@ include 'vector.f90'
 
 module geometry
 use vector
+implicit none
 contains
   subroutine calculate_distance(coord_1, coord_2, a_vec, b_vec, c_vec, calc_distance, m, n)
   !a_vec, b_vec, c_vec are triclinic cell vectors
@@ -164,10 +165,6 @@ contains
       proj_b_vec(i) = 0.0
       proj_c_vec(i) = 0.0
     end do
-
-    call get_vec_len(a_vec, a_vec_len, n)
-    call get_vec_len(b_vec, b_vec_len, n)
-    call get_vec_len(c_vec, c_vec_len, n)
 
     call norm_vec(a_vec, a_vec_basis, n)
     call norm_vec(b_vec, b_vec_basis, n)
@@ -689,6 +686,7 @@ contains
 
     integer::u, v, w, n
     integer::i, j, k
+    real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
     real(kind=4)::sign_value_a, sign_value_b, sign_value_c
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len

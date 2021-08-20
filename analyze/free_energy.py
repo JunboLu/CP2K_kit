@@ -2,6 +2,7 @@
 
 import csv
 import linecache
+from CP2K_kit.tools import log_info
 from CP2K_kit.tools import list_dic_op
 
 def ti_method(force_cmd_file):
@@ -62,7 +63,7 @@ def free_energy_run(free_energy_param, work_dir):
   if ( 'method' in free_energy_param.keys() ):
     method = free_energy_param['method']
   else:
-    print ('No free energy method found, please set method')
+    log_info.log_error('No free energy method found, please set method')
     exit()
 
   if ( method == 'ti' ):
@@ -76,5 +77,5 @@ def free_energy_run(free_energy_param, work_dir):
         for i in range(len(target)):
           writer.writerow([garget[i],free_energy_value[i]])
     else:
-      print ('No TI file found, please set ti_file')
+      log_info.log_error('NO TI file found, please set ti_file')
       exit()

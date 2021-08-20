@@ -1,4 +1,5 @@
 module rmsd
+implicit none
 contains
   subroutine get_cov_matrix(coord_c, coord_r, coord_c_c, coord_r_c, cov_matrix, m, n)
 
