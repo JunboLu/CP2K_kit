@@ -3,7 +3,7 @@
 import copy
 import linecache
 from collections import OrderedDict
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 #This module is used to read input file. It is a bit complicated!
 #We have to use it now. But the further revisions are on the way.
@@ -61,7 +61,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
   if ( len(keyword_block) == 1 ):
     for i in range(keyword_block_index[0][0],keyword_block_index[0][1]+1,1):
       line_i = linecache.getline(inp, i)
-      line_i_split = list_dic_op.str_split(line_i, ' ')
+      line_i_split = data_op.str_split(line_i, ' ')
       if (line_i_split[len(line_i_split)-1] == '\n'):
         line_i_split.remove('\n')
       if ( len(line_i_split) == 2 ):
@@ -72,7 +72,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
   else:
     for i in range(0, len(keyword_block), 1):
 
-      i_list = list_dic_op.gen_list(keyword_block_index[i][0],keyword_block_index[i][1],1)
+      i_list = data_op.gen_list(keyword_block_index[i][0],keyword_block_index[i][1],1)
       i_dic = OrderedDict()
       sub_key = []
       sub_key_index = []
@@ -81,10 +81,10 @@ def get_dump(keyword_block, keyword_block_index, inp):
         if ( i != j ):
           if ( keyword_block_index[i][0] < keyword_block_index[j][0] \
                and keyword_block_index[i][1] > keyword_block_index[j][1] ):
-            j_list = list_dic_op.gen_list(keyword_block_index[j][0],keyword_block_index[j][1],1)
+            j_list = data_op.gen_list(keyword_block_index[j][0],keyword_block_index[j][1],1)
             sub_key.append(keyword_block[j])
             sub_key_index.append(j_list)
-            j_list_temp = list_dic_op.gen_list(keyword_block_index[j][0]-1,keyword_block_index[j][1]+1,1)
+            j_list_temp = data_op.gen_list(keyword_block_index[j][0]-1,keyword_block_index[j][1]+1,1)
             i_list = [x for x in i_list if x not in j_list_temp]
           elif ( keyword_block_index[i][0] > keyword_block_index[j][0] \
                  and keyword_block_index[i][1] < keyword_block_index[j][1] ):
@@ -96,7 +96,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
           j_dic = OrderedDict()
           for k in sub_key_index[j]:
             line_k = linecache.getline(inp, k)
-            line_k_split = list_dic_op.str_split(line_k, ' ')
+            line_k_split = data_op.str_split(line_k, ' ')
             if (line_k_split[len(line_k_split)-1] == '\n'):
               line_k_split.remove('\n')
             if ( len(line_k_split) == 2 ):
@@ -110,7 +110,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
       elif ( i_list != [] and sub_key != [] and i != 0 ):
         for j in i_list:
           line_j = linecache.getline(inp, j)
-          line_j_split = list_dic_op.str_split(line_j, ' ')
+          line_j_split = data_op.str_split(line_j, ' ')
           if (line_j_split[len(line_j_split)-1] == '\n'):
             line_j_split.remove('\n')
           if ( len(line_j_split) == 2 ):
@@ -124,7 +124,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
           j_dic = OrderedDict()
           for k in sub_key_index[j]:
             line_k = linecache.getline(inp, k)
-            line_k_split = list_dic_op.str_split(line_k, ' ')
+            line_k_split = data_op.str_split(line_k, ' ')
             if (line_k_split[len(line_k_split)-1] == '\n'):
               line_k_split.remove('\n')
             if ( len(line_k_split) == 2 ):
@@ -138,7 +138,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
       elif ( i_list != [] and sub_key == []):
         for j in i_list:
           line_j = linecache.getline(inp, j)
-          line_j_split = list_dic_op.str_split(line_j, ' ')
+          line_j_split = data_op.str_split(line_j, ' ')
           if (line_j_split[len(line_j_split)-1] == '\n'):
             line_j_split.remove('\n')
           if ( len(line_j_split) == 2 ):
@@ -151,7 +151,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
       elif ( i_list != [] and sub_key != [] and i == 0):
         for j in i_list:
           line_j = linecache.getline(inp, j)
-          line_j_split = list_dic_op.str_split(line_j, ' ')
+          line_j_split = data_op.str_split(line_j, ' ')
           if (line_j_split[len(line_j_split)-1] == '\n'):
             line_j_split.remove('\n')
           if ( len(line_j_split) == 2 ):
@@ -163,7 +163,7 @@ def get_dump(keyword_block, keyword_block_index, inp):
           j_dic = OrderedDict()
           for k in sub_key_index[j]:
             line_k = linecache.getline(inp, k)
-            line_k_split = list_dic_op.str_split(line_k, ' ')
+            line_k_split = data_op.str_split(line_k, ' ')
             if (line_k_split[len(line_k_split)-1] == '\n'):
               line_k_split.remove('\n')
             if ( len(line_k_split) == 2 ):

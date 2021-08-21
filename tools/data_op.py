@@ -4,9 +4,10 @@ import re
 import copy
 import numpy as np
 
-#This module defines several operation functions to list, dictionary and string.
+#This module defines several operation functions to list, integer, dictionary and string.
 #These functions are heavilly used.
 
+#Functions for list
 def gen_list(start, end, incre):
 
   '''
@@ -52,95 +53,6 @@ def comb_list_2_str(list_temp, space_char):
     comb_str = comb_str + str(list_temp[i]) + space_char
 
   return comb_str.strip(space_char)
-
-def eval_str(str_tmp):
-
-  '''
-  eval_str: evaluate string
-
-  Args:
-    str_tmp: string
-      str_tmp is the string needed to be evaluated.
-  Returns:
-    if the string is evaluated as string, return 0.
-    if the string is evaluated as int, return 1.
-    if the string is evaluated as float, return 2.
-  '''
-
-  try:
-    int(str_tmp)
-    return 1
-  except ValueError:
-    try:
-      float(str_tmp)
-      return 2
-    except ValueError:
-      return 0
-
-def str_wrap(str_tmp, max_width, indent_char=''):
-
-  '''
-  str_wrap : wrap the string
-
-  Args :
-    str_temp : string
-      str_temp is the string needed to be wrapped.
-    max_width : int
-      max_width is the maximum width.
-  Returns :
-    str_wrap : string
-  '''
-
-  if ( len(str_tmp) <= max_width ):
-    return indent_char+str_tmp
-  else:
-    max_width = max_width - len(indent_char)
-    list_tmp = [str_tmp[i:i+max_width] for i in range(0, len(str_tmp), max_width)]
-    for i in range(len(list_tmp)):
-      list_tmp[i] = indent_char + list_tmp[i]
-    str_wrap = '\n'.join(list_tmp)
-    return str_wrap
-
-def str_split(str_temp, space_char):
-
-  '''
-  str_split : split the string and then return a list.
-
-  Args :
-    str_temp : string
-      str_temp is the string needed to be splitted.
-      Example : 'a b c'
-    space_char : string
-      space_char is the splitting element.
-      Example : ' '
-  Returns :
-    list_temp : 1-d string list
-      list_temp is the final splited list.
-      Example : ['a', 'b', 'c']
-  '''
-
-  str_temp_split = str_temp.split(space_char)
-  list_temp = []
-  for i in range(len(str_temp_split)):
-    if ( str_temp_split[i] != ''):
-      list_temp.append(str_temp_split[i])
-
-  return list_temp
-
-def get_str_num(str_temp):
-
-  '''
-  get_str_num : get the number string in a string.
-
-  Args :
-    str_temp : string
-      Example : '123/q'
-  Return :
-    string
-      Example : '123'
-  '''
-
-  return re.sub('\D', '', str_temp)
 
 def list_reshape(list_temp):
 
@@ -296,6 +208,96 @@ def list_order(list_temp, order, return_index=False):
   else:
     return list(list_order), list(list_order_index)
 
+#Functions for string
+def eval_str(str_tmp):
+
+  '''
+  eval_str: evaluate string
+
+  Args:
+    str_tmp: string
+      str_tmp is the string needed to be evaluated.
+  Returns:
+    if the string is evaluated as string, return 0.
+    if the string is evaluated as int, return 1.
+    if the string is evaluated as float, return 2.
+  '''
+
+  try:
+    int(str_tmp)
+    return 1
+  except ValueError:
+    try:
+      float(str_tmp)
+      return 2
+    except ValueError:
+      return 0
+
+def str_wrap(str_tmp, max_width, indent_char=''):
+
+  '''
+  str_wrap : wrap the string
+
+  Args :
+    str_temp : string
+      str_temp is the string needed to be wrapped.
+    max_width : int
+      max_width is the maximum width.
+  Returns :
+    str_wrap : string
+  '''
+
+  if ( len(str_tmp) <= max_width ):
+    return indent_char+str_tmp
+  else:
+    max_width = max_width - len(indent_char)
+    list_tmp = [str_tmp[i:i+max_width] for i in range(0, len(str_tmp), max_width)]
+    for i in range(len(list_tmp)):
+      list_tmp[i] = indent_char + list_tmp[i]
+    str_wrap = '\n'.join(list_tmp)
+    return str_wrap
+
+def str_split(str_temp, space_char):
+
+  '''
+  str_split : split the string and then return a list.
+
+  Args :
+    str_temp : string
+      str_temp is the string needed to be splitted.
+      Example : 'a b c'
+    space_char : string
+      space_char is the splitting element.
+      Example : ' '
+  Returns :
+    list_temp : 1-d string list
+      list_temp is the final splited list.
+      Example : ['a', 'b', 'c']
+  '''
+
+  str_temp_split = str_temp.split(space_char)
+  list_temp = []
+  for i in range(len(str_temp_split)):
+    if ( str_temp_split[i] != ''):
+      list_temp.append(str_temp_split[i])
+
+  return list_temp
+
+def get_str_num(str_temp):
+
+  '''
+  get_str_num : get the number string in a string.
+
+  Args :
+    str_temp : string
+      Example : '123/q'
+  Return :
+    string
+      Example : '123'
+  '''
+
+  return re.sub('\D', '', str_temp)
+
 def get_id_list(id_str):
 
   '''
@@ -339,6 +341,29 @@ def get_id_list(id_str):
 
   return id_list
 
+def str_to_bool(str_tmp):
+
+  #This function is easy to understand, so we do not prepare examples.
+
+  '''
+  str_to_bool : transfrom string variable to bool variable.
+
+  Args :
+    str_temp : string
+  Returns :
+    bool_str : bool
+  '''
+
+  if ( str_tmp.upper() == 'TRUE' ):
+    bool_str = True
+    return bool_str
+  elif ( str_tmp.upper() == 'FALSE' ):
+    bool_str = False
+    return bool_str
+  else:
+    return str_tmp
+
+#Functions for dictionary
 def get_dic_keys(dic, value):
 
   #In general, one could get value for the given key in a dictionary. 
@@ -360,27 +385,23 @@ def get_dic_keys(dic, value):
 
   return [k for k,v in dic.items() if v == value]
 
-def str_to_bool(str_temp):
-
-  #This function is easy to understand, so we do not prepare examples.
+#Functions for integer:
+def int_split(int_tmp, n):
 
   '''
-  str_to_bool : transfrom string variable to bool variable.
-
-  Args :
-    str_temp : string
-  Returns :
-    bool_str : bool
+  int_split : split one integer as n parts
   '''
 
-  if ( str_temp == 'true' or str_temp == 'True' or str_temp == 'TRUE'):
-    bool_str = True
-    return bool_str
-  elif ( str_temp == 'false' or str_temp == 'False' or str_temp == 'FALSE'):
-    bool_str = False
-    return bool_str
-  else:
-    return str_tmp
+  assert n > 0
+  quotient = int(int_tmp/n)
+
+  remainder = int_tmp%n
+  if ( remainder > 0 ):
+    return [quotient]*(n-remainder) + [quotient+1]*remainder
+  if ( remainder < 0 ):
+    return [quotient-1]*(-remainder) + [quotient]*(n+remainder)
+
+  return [quotient]*n
 
 if __name__ == '__main__':
   from CP2K_kit.tools import list_dic_op
@@ -388,4 +409,3 @@ if __name__ == '__main__':
   list_temp = [1,2,3,4,5]
   comb_str = list_dic_op.comb_list_2_str(list_temp, ' ')
   print (comb_str)
-

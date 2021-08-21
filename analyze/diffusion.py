@@ -6,7 +6,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import atom
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import dynamic_mod
 
@@ -63,7 +63,7 @@ def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end
     for i in range(frames_num_stat):
       for j in range(len(atom_id)):
         line_ij = linecache.getline(file_name, (atoms_num+base)*(int((start-file_start)/each)+i)+pre_base+base+atom_id[j])
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.str_split(line_ij, ' ')
         coord[i,j,0] = float(line_ij_split[1])
         coord[i,j,1] = float(line_ij_split[2])
         coord[i,j,2] = float(line_ij_split[3].strip('\n'))
@@ -73,7 +73,7 @@ def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end
       atom_mass = []
       for i in range(len(atom_id)):
         line_i = linecache.getline(file_name, atom_id[i]+pre_base+base)
-        line_i_split = list_dic_op.str_split(line_i, ' ')
+        line_i_split = data_op.str_split(line_i, ' ')
         atom_mass.append(atom.get_atom_mass(line_i_split[0])[1])
       atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
       coord = dynamic_mod.dynamic.remove_coord_com(coord,atom_mass_array)
@@ -93,7 +93,7 @@ def diffusion(atoms_num, base, pre_base, each, file_start, time_step, start, end
     for i in range(frames_num_stat):
       for j in range(len(atom_id)):
         line_ij = linecache.getline(file_name, (atoms_num+base)*(int((start-file_start)/each)+i)+base+atom_id[j])
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.str_split(line_ij, ' ')
         vel[i,j,0] = float(line_ij_split[1])
         vel[i,j,1] = float(line_ij_split[2])
         vel[i,j,2] = float(line_ij_split[3].strip('\n'))
@@ -142,7 +142,7 @@ def diffusion_run(diffusion_param, work_dir):
     method = 'einstein_sum'
 
   if ( 'atom_id' in diffusion_param.keys() ):
-    atom_id = list_dic_op.get_id_list(diffusion_param['atom_id'])
+    atom_id = data_op.get_id_list(diffusion_param['atom_id'])
   else:
     log_info.log_error('No atom id found, please set analyze/diffusion/atom_id')
     exit()
@@ -163,7 +163,7 @@ def diffusion_run(diffusion_param, work_dir):
     max_frame_corr = int(frame_num/2)
 
   if ( 'remove_com' in diffusion_param.keys() ):
-    remove_com = list_dic_op.str_to_bool(diffusion_param['remove_com'])
+    remove_com = data_op.str_to_bool(diffusion_param['remove_com'])
   else:
     remove_com = False
 

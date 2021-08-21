@@ -5,7 +5,7 @@ import csv
 import linecache
 import numpy as np
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import numeric
 from CP2K_kit.tools import traj_info
 from CP2K_kit.analyze import time_correlation
@@ -264,7 +264,7 @@ def power_spectrum_run(spectrum_param, work_dir):
 
   if ( spec_type == 'general' ):
     if ( 'atom_id' in spectrum_param.keys() ):
-      atom_id_list = list_dic_op.get_id_list(spectrum_param['atom_id'])
+      atom_id_list = data_op.get_id_list(spectrum_param['atom_id'])
     else:
       log_info.log_error('No atom id found, please set analyze/power_spectrum/atom_id')
       exit()

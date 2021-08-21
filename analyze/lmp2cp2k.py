@@ -6,7 +6,7 @@ import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.lib.geometry_mod import geometry
 
 def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_step, unwrap, a_vec, b_vec, c_vec):
@@ -63,7 +63,7 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
   a_int = int(a[0].split(':')[0])
 
   line = linecache.getline(lmp_log_file, a_int)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
   log_item_num = len(line_split)
   log_item_id = OrderedDict()
@@ -86,7 +86,7 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
     line = linecache.getline(lmp_log_file, i+a_int+1)
     if ( line != '' ):
       frames_num_true = frames_num_true+1
-      line_split = list_dic_op.str_split(line, ' ')
+      line_split = data_op.str_split(line, ' ')
       if ( 'Step' in log_item_id.keys() ):
         if ( log_item_id['Step'] != log_item_num-1 ):
           step.append(int(line_split[log_item_id['Step']]))
@@ -120,7 +120,7 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
       ene_file.write('%10d%20.6f%20.9f%20s%20.9f\n' %(step[i], step[i]*time_step, kin_e[i], temp[i], pot_e[i]))
 
   line = linecache.getline(lmp_traj_file, 9)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
   traj_item_num = len(line_split)
   traj_item_id = OrderedDict()
@@ -174,7 +174,7 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
       frc_xyz = []
     for j in range(atoms_num):
       line = linecache.getline(lmp_traj_file, (atoms_num+9)*i+9+j+1)
-      line_split = list_dic_op.str_split(line, ' ')
+      line_split = data_op.str_split(line, ' ')
       if ( traj_item_id['type'] != traj_item_num-1 ):
         atom_type.append(int(line_split[traj_item_id['type']]))
       else:
@@ -234,14 +234,14 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
           frc_xyz_j.append(float(line_split[traj_item_id['fz']].strip('\n'))*frc_lmp2cp2k)
         frc_xyz.append(frc_xyz_j)
 
-    atom_id_asc, asc_index = list_dic_op.list_order(atom_id, 'ascend', True)
-    atom_type_asc = list_dic_op.order_list(atom_type, asc_index)
+    atom_id_asc, asc_index = data_op.list_order(atom_id, 'ascend', True)
+    atom_type_asc = data_op.order_list(atom_type, asc_index)
     if 'pos_xyz' in locals():
-      pos_xyz_asc = list_dic_op.order_list(pos_xyz, asc_index)
+      pos_xyz_asc = data_op.order_list(pos_xyz, asc_index)
     if 'vel_xyz' in locals():
-      vel_xyz_asc = list_dic_op.order_list(vel_xyz, asc_index)
+      vel_xyz_asc = data_op.order_list(vel_xyz, asc_index)
     if 'frc_xyz' in locals():
-      frc_xyz_asc = list_dic_op.order_list(frc_xyz, asc_index)
+      frc_xyz_asc = data_op.order_list(frc_xyz, asc_index)
 
     coord.append(pos_xyz_asc)
     atoms_i = []
@@ -320,7 +320,7 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
     atom_label = lmp2cp2k_param['atom_label']
     atom_label_dic = OrderedDict()
     for i in range (len(atom_label)):
-      lable_split = list_dic_op.str_split(atom_label[i], ':')
+      lable_split = data_op.str_split(atom_label[i], ':')
       atom_label_dic[int(lable_split[0])] = lable_split[1]
   else:
     log_info.log_error('No atom lable found, please set analyze/lmp2cp2k/atom_lable')
@@ -339,7 +339,7 @@ def lmp2cp2k_run(lmp2cp2k_param, work_dir):
     exit()
 
   if ( 'unwrap' in lmp2cp2k_param.keys() ):
-    unwrap = list_dic_op.str_to_bool(lmp2cp2k_param['unwrap'])
+    unwrap = data_op.str_to_bool(lmp2cp2k_param['unwrap'])
   else:
     unwrap = False
 

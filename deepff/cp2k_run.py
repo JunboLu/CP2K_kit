@@ -2,6 +2,7 @@
 
 import os
 import copy
+import math
 import linecache
 import numpy as np
 from CP2K_kit.tools import *
@@ -23,7 +24,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
     box : 3-d string list
       example : [[['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']],
                  [['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']]]
-    coord : 3-d string list
+    coord : 2-d string list, dim = (num of atoms) * 4
       example : [[['O','-9.64','-0.71','5.80'],['H','-10.39','-1.31','6.15'],['H','-8.89','-35.4','6.37']],
                  [['O','-2.64','-7.14','5.52'],['H','-2.89','-6.23','5.10'],['H','-1.70','-7.36','5.28']]]
     get_stress : bool
@@ -42,7 +43,176 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
   atoms = []
   for i in range(len(coord[0])):
     atoms.append(coord[0][i][0])
-  atoms_type = list_dic_op.list_replicate(atoms)
+  atoms_type = data_op.list_replicate(atoms)
+
+  std_inp_file_name = ''.join((cp2k_sys_dir, '/cp2k_std.inp'))
+  std_inp_file = open(std_inp_file_name, 'w')
+
+  std_inp_file.write('&Global\n')
+  std_inp_file.write('  PRINT_LEVEL LOW\n')
+  std_inp_file.write('  PROJECT_NAME cp2k\n')
+  std_inp_file.write('  RUN_TYPE ENERGY_FORCE\n')
+  std_inp_file.write('&END Global\n')
+  std_inp_file.write('\n')
+
+  std_inp_file.write('&FORCE_EVAL\n')
+  std_inp_file.write('  METHOD Quickstep\n')
+  std_inp_file.write('  STRESS_TENSOR ANALYTICAL\n')
+
+  cp2k_inp_file = cp2k_param['cp2k_inp_file']
+  if ( cp2k_inp_file != 'none' ):
+    cp2k_inp_file_upper = file_tools.upper_file(cp2k_inp_file, cp2k_sys_dir)
+    cp2k_inp_file_space = file_tools.space_file(cp2k_inp_file_upper, ' ', cp2k_sys_dir)
+    cmd_a = "grep -n %s %s" % ("'&DFT'", cp2k_inp_file_space)
+    a = call.call_returns_shell(cp2k_sys_dir, cmd_a)
+    cmd_b = "grep -n %s %s" % ("'&END DFT'", cp2k_inp_file_space)
+    b = call.call_returns_shell(cp2k_sys_dir, cmd_b)
+    a_int = int(a[0].split(':')[0])
+    b_int = int(b[0].split(':')[0])
+    tot_dft_lines = b_int-a_int+1
+    for i in range(tot_dft_lines):
+      line = linecache.getline(cp2k_inp_file, a_int+i)
+      std_inp_file.write(line)
+  else:
+    std_inp_file.write('  &DFT\n')
+
+    basis_file = cp2k_param['basis_set_file_name']
+    psp_file = cp2k_param['potential_file_name']
+    wfn_file = './cp2k-RESTART.wfn'
+    charge = cp2k_param['charge']
+    spin = cp2k_param['multiplicity']
+    cutoff = cp2k_param['cutoff']
+    std_inp_file.write(''.join(('    BASIS_SET_FILE_NAME ', basis_file, '\n')))
+    std_inp_file.write(''.join(('    POTENTIAL_FILE_NAME ', psp_file, '\n')))
+    std_inp_file.write(''.join(('    WFN_RESTART_FILE_NAME ', wfn_file, '\n')))
+    std_inp_file.write(''.join(('    CHARGE ', charge, '\n')))
+    std_inp_file.write(''.join(('    MULTIPLICITY ', spin, '\n')))
+    std_inp_file.write('    &MGRID\n')
+    std_inp_file.write(''.join(('      CUTOFF ', cutoff, '\n')))
+    std_inp_file.write('      NGRIDS 4\n')
+    std_inp_file.write('      REL_CUTOFF 50\n')
+    std_inp_file.write('    &END MGRID\n')
+    std_inp_file.write('    &QS\n')
+    std_inp_file.write('      METHOD GPW\n')
+    std_inp_file.write('      EXTRAPOLATION ASPC\n')
+    std_inp_file.write('    &END QS\n')
+    poisson_peridic = cp2k_param['poisson_peridic']
+    std_inp_file.write('    &POISSON\n')
+    if ( cp2k_param['poisson_periodic'] == 'NONE' ):
+      std_inp_file.write('      POISSON_SOLVER WAVELET\n')
+    std_inp_file.write('      PERIODIC %s\n' %(poisson_periodic))
+    std_inp_file.write('    &END POISSON\n')
+    std_inp_file.write('    &SCF\n')
+    std_inp_file.write('      MAX_SCF 100\n')
+    std_inp_file.write('      SCF_GUESS RESTART\n')
+    std_inp_file.write('      EPS_SCF 1.0E-6\n')
+    std_inp_file.write('      CHOLESKY INVERSE_DBCSR\n')
+    std_inp_file.write('      &OUTER_SCF\n')
+    std_inp_file.write('        MAX_SCF 6\n')
+    std_inp_file.write('        EPS_SCF 1.0E-6\n')
+    std_inp_file.write('      &END OUTER_SCF\n')
+    std_inp_file.write('      &OT\n')
+    std_inp_file.write('        MINIMIZER CG\n')
+    std_inp_file.write('        PRECONDITIONER FULL_ALL\n')
+    std_inp_file.write('      &END OT\n')
+    std_inp_file.write('    &END SCF\n')
+
+    std_inp_file.write('    &XC\n')
+    xc_func = cp2k_param['xc_functional']
+    std_inp_file.write(''.join(('      &XC_FUNCTIONAL ', xc_func, '\n')))
+    std_inp_file.write('      &END XC_FUNCTIONAL\n')
+    if cp2k_param['dftd3'] :
+      a_vec = np.array([float(x) for x in box[i][0]])
+      b_vec = np.array([float(x) for x in box[i][1]])
+      c_vec = np.array([float(x) for x in box[i][2]])
+      a, b, c, alpha, beta, gamma = get_cell.get_cell_const(a_vec, b_vec, c_vec)
+      l = max(a,b,c)
+      d3_file = cp2k_param['dftd3_file']
+      std_inp_file.write('      &VDW_POTENTIAL\n')
+      std_inp_file.write('        POTENTIAL_TYPE PAIR_POTENTIAL\n')
+      std_inp_file.write('        &PAIR_POTENTIAL\n')
+      std_inp_file.write(''.join(('          R_CUTOFF ', str(l/2.0), '\n')))
+      std_inp_file.write('          TYPE DFTD3\n')
+      std_inp_file.write(''.join(('          PARAMETER_FILE_NAME ', d3_file, '\n')))
+      std_inp_file.write(''.join(('          REFERENCE_FUNCTIONAL ', xc_func, '\n')))
+      std_inp_file.write('        &END PAIR_POTENTIAL\n')
+      std_inp_file.write('      &END VDW_POTENTIAL\n')
+    std_inp_file.write('    &END XC\n')
+    std_inp_file.write('  &END DFT\n')
+
+  std_inp_file.write('  &PRINT\n')
+  std_inp_file.write('    &FORCES\n')
+  std_inp_file.write('      FILENAME\n')
+  std_inp_file.write('    &END FORCES\n')
+  if get_stress:
+    std_inp_file.write('    &STRESS_TENSOR\n')
+    std_inp_file.write('      FILENAME\n')
+    std_inp_file.write('    &END STRESS_TENSOR\n')
+  std_inp_file.write('  &END PRINT\n')
+
+  std_inp_file.write('  &SUBSYS\n')
+  std_inp_file.write('    &CELL\n')
+  std_inp_file.write('      @include box\n')
+
+  if ( cp2k_inp_file != 'none' ):
+    cmd_a = "grep -n %s %s" % ("'&CELL'", cp2k_inp_file_space)
+    a = call.call_returns_shell(work_dir, cmd_a)
+    cmd_b = "grep -n %s %s" % ("'&END CELL'", cp2k_inp_file_space)
+    b = call.call_returns_shell(work_dir, cmd_a)
+    cmd_c = "grep -n %s %s" % ("'PERIODIC'", cp2k_inp_file_space)
+    c = call.call_returns_shell(work_dir, cmd_a)
+    a_int = int(a[0].split(':')[0])
+    b_int = int(b[0].split(':')[0])
+    c_int = [int(x.split(':')[0]) for x in c]
+    for i in c_int:
+      if ( i > a_int and i < b_int ):
+        cell_periodic_line_num = i
+    if 'cell_periodic_line_num' in locals():
+      line = linecache.getline(cp2k_inp_file, cell_periodic_line_num)
+      std_inp_file.write(line)
+    else:
+      std_inp_file.write('      PERIODIC XYZ\n')
+  else:
+    cell_periodic = cp2k_param['cell_periodic']
+    std_inp_file.write('      PERIODIC %s\n' %(cell_periodic))
+
+  std_inp_file.write('    &END CELL\n')
+  std_inp_file.write('    &COORD\n')
+  std_inp_file.write('      @include coord\n')
+  std_inp_file.write('    &END COORD\n')
+
+  if ( cp2k_inp_file != 'none' ):
+    cmd_a = "grep -n %s %s" % ("'&KIND'", cp2k_inp_file_space)
+    a = call.call_returns_shell(work_dir, cmd_a)
+    cmd_b = "grep -n %s %s" % ("'&END KIND'", cp2k_inp_file_space)
+    b = call.call_returns_shell(work_dir, cmd_b)
+    a_int = [int(x.split(':')[0]) for x in a]
+    b_int = [int(x.split(':')[0]) for x in b]
+    if ( len(a_int) != len(b_int) ):
+      log_info.log_error('CP2K input file provided by user wrong, please check kind setting')
+      eixt()
+    else:
+      for i in range(len(a_int)):
+        for j in range(b_int[i]-a_int[i]+1):
+          line = linecache.getline(cp2k_inp_file, a_int[i]+j)
+          std_inp_file.write(line)
+
+    call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
+    call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_space))
+
+  else:
+    for i in atoms_type:
+      std_inp_file.write(''.join(('    &KIND ', i, '\n')))
+      basis_name = ''.join((cp2k_param['basis_level'].upper(), '-MOLOPT-GTH-', atom.get_q_info(i)))
+      std_inp_file.write(''.join(('      BASIS_SET ', basis_name, '\n')))
+      psp_name = ''.join(('GTH-', xc_func, '-', atom.get_q_info(i)))
+      std_inp_file.write(''.join(('      POTENTIAL ', psp_name, '\n')))
+      std_inp_file.write('    &END KIND\n')
+
+  std_inp_file.write('  &END SUBSYS\n')
+  std_inp_file.write('&END FORCE_EVAL')
+
+  std_inp_file.close()
 
   for i in range(len(coord)):
     cmd = "mkdir %s" %(''.join(('task_', str(i))))
@@ -67,119 +237,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
       coord_file.write(''.join(('    ', coord_str, '\n')))
     coord_file.close()
 
-    task_job_inp = ''.join((cp2k_task_dir, '/input.inp'))
-    if ( cp2k_param['cp2k_inp_file'] != 'none' ):
-      cmd = 'cp %s %s' %(cp2k_inp_file, task_job_inp)
-    else:
-      inp_file = open(task_job_inp,'w')
-
-      inp_file.write('&Global\n')
-      inp_file.write('  PRINT_LEVEL LOW\n')
-      inp_file.write('  PROJECT_NAME cp2k\n')
-      inp_file.write('  RUN_TYPE ENERGY_FORCE\n')
-      inp_file.write('&END Global\n')
-      inp_file.write('\n')
-
-      inp_file.write('&FORCE_EVAL\n')
-      inp_file.write('  METHOD Quickstep\n')
-      inp_file.write('  STRESS_TENSOR ANALYTICAL\n')
-      inp_file.write('  &DFT\n')
-
-      basis_file = cp2k_param['basis_set_file_name']
-      psp_file = cp2k_param['potential_file_name']
-      if ( i ==0 ):
-        wfn_file = './cp2k-RESTART.wfn'
-      else:
-        wfn_file = ''.join(('../task_', str(i-1) , '/cp2k-RESTART.wfn'))
-      charge = cp2k_param['charge']
-      spin = cp2k_param['multiplicity']
-      cutoff = cp2k_param['cutoff']
-      inp_file.write(''.join(('    BASIS_SET_FILE_NAME ', basis_file, '\n')))
-      inp_file.write(''.join(('    POTENTIAL_FILE_NAME ', psp_file, '\n')))
-      inp_file.write(''.join(('    WFN_RESTART_FILE_NAME ', wfn_file, '\n')))
-      inp_file.write(''.join(('    CHARGE ', charge, '\n')))
-      inp_file.write(''.join(('    MULTIPLICITY ', spin, '\n')))
-      inp_file.write('    &MGRID\n')
-      inp_file.write(''.join(('      CUTOFF ', cutoff, '\n')))
-      inp_file.write('      NGRIDS 4\n')
-      inp_file.write('      REL_CUTOFF 50\n')
-      inp_file.write('    &END MGRID\n')
-      inp_file.write('    &QS\n')
-      inp_file.write('      METHOD GPW\n')
-      inp_file.write('      EXTRAPOLATION ASPC\n')
-      inp_file.write('    &END QS\n')
-      inp_file.write('    &POISSON\n')
-      inp_file.write('      PERIODIC XYZ\n')
-      inp_file.write('    &END POISSON\n')
-      inp_file.write('    &SCF\n')
-      inp_file.write('      MAX_SCF 100\n')
-      inp_file.write('      SCF_GUESS RESTART\n')
-      inp_file.write('      EPS_SCF 1.0E-6\n')
-      inp_file.write('      CHOLESKY INVERSE_DBCSR\n')
-      inp_file.write('      &OUTER_SCF\n')
-      inp_file.write('        MAX_SCF 6\n')
-      inp_file.write('        EPS_SCF 1.0E-6\n')
-      inp_file.write('      &END OUTER_SCF\n')
-      inp_file.write('      &OT\n')
-      inp_file.write('        MINIMIZER CG\n')
-      inp_file.write('        PRECONDITIONER FULL_ALL\n')
-      inp_file.write('      &END OT\n')
-      inp_file.write('    &END SCF\n')
-
-      inp_file.write('    &XC\n')
-      xc_func = cp2k_param['xc_functional']
-      inp_file.write(''.join(('      &XC_FUNCTIONAL ', xc_func, '\n')))
-      inp_file.write('      &END XC_FUNCTIONAL\n')
-      if cp2k_param['dftd3'] :
-        a_vec = np.array([float(x) for x in box[i][0]])
-        b_vec = np.array([float(x) for x in box[i][1]])
-        c_vec = np.array([float(x) for x in box[i][2]])
-        a, b, c, alpha, beta, gamma = get_cell.get_cell_const(a_vec, b_vec, c_vec)
-        l = max(a,b,c)
-        d3_file = cp2k_param['dftd3_file']
-        inp_file.write('      &VDW_POTENTIAL\n')
-        inp_file.write('        POTENTIAL_TYPE PAIR_POTENTIAL\n')
-        inp_file.write('        &PAIR_POTENTIAL\n')
-        inp_file.write(''.join(('          R_CUTOFF ', str(l/2.0), '\n')))
-        inp_file.write('          TYPE DFTD3\n')
-        inp_file.write(''.join(('          PARAMETER_FILE_NAME ', d3_file, '\n')))
-        inp_file.write(''.join(('          REFERENCE_FUNCTIONAL ', xc_func, '\n')))
-        inp_file.write('        &END PAIR_POTENTIAL\n')
-        inp_file.write('      &END VDW_POTENTIAL\n')
-      inp_file.write('    &END XC\n')
-      inp_file.write('  &END DFT\n')
-
-      inp_file.write('  &PRINT\n')
-      inp_file.write('    &FORCES\n')
-      inp_file.write('      FILENAME\n')
-      inp_file.write('    &END FORCES\n')
-      if get_stress:
-        inp_file.write('    &STRESS_TENSOR\n')
-        inp_file.write('      FILENAME\n')
-        inp_file.write('    &END STRESS_TENSOR\n')
-      inp_file.write('  &END PRINT\n')
-
-      inp_file.write('  &SUBSYS\n')
-      inp_file.write('    &CELL\n')
-      inp_file.write('      @include box\n')
-      inp_file.write('      PERIODIC XYZ\n')
-      inp_file.write('    &END CELL\n')
-      inp_file.write('    &COORD\n')
-      inp_file.write('      @include coord\n')
-      inp_file.write('    &END COORD\n')
-
-      for j in atoms_type:
-        inp_file.write(''.join(('    &KIND ', j, '\n')))
-        basis_name = ''.join((cp2k_param['basis_level'].upper(), '-MOLOPT-GTH-', atom.get_q_info(j)))
-        inp_file.write(''.join(('      BASIS_SET ', basis_name, '\n')))
-        psp_name = ''.join(('GTH-', xc_func, '-', atom.get_q_info(j)))
-        inp_file.write(''.join(('      POTENTIAL ', psp_name, '\n')))
-        inp_file.write('    &END KIND\n')
-
-      inp_file.write('  &END SUBSYS\n')
-      inp_file.write('&END FORCE_EVAL')
-
-      inp_file.close()
+    call.call_simple_shell(cp2k_task_dir, 'cp %s %s' %(std_inp_file_name, 'input.inp'))
 
 def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, \
                   struct_index, conv_new_data_num, choose_new_data_num_limit, get_stress=False):
@@ -262,13 +320,13 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           data_file = ''.join((lammps_sys_task_dir, '/data/data_', str(j), '.lmp'))
 
           line_4 = linecache.getline(data_file, 4)
-          line_4_split = list_dic_op.str_split(line_4, ' ')
+          line_4_split = data_op.str_split(line_4, ' ')
           line_5 = linecache.getline(data_file, 5)
-          line_5_split = list_dic_op.str_split(line_5, ' ')
+          line_5_split = data_op.str_split(line_5, ' ')
           line_6 = linecache.getline(data_file, 6)
-          line_6_split = list_dic_op.str_split(line_6, ' ')
+          line_6_split = data_op.str_split(line_6, ' ')
           line_7 = linecache.getline(data_file, 7)
-          line_7_split = list_dic_op.str_split(line_7, ' ')
+          line_7_split = data_op.str_split(line_7, ' ')
           Lx = float(line_4_split[1])
           Ly = float(line_5_split[1])
           Lz = float(line_6_split[1])
@@ -291,8 +349,8 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           atoms_type_dic = atoms_type_dic_tot[key]
           for k in range(atoms_num):
             line_jk = linecache.getline(data_file, k+10+1)
-            line_jk_split = list_dic_op.str_split(line_jk, ' ')
-            atom_name = list_dic_op.get_dic_keys(atoms_type_dic, int(line_jk_split[1]))[0]
+            line_jk_split = data_op.str_split(line_jk, ' ')
+            atom_name = data_op.get_dic_keys(atoms_type_dic, int(line_jk_split[1]))[0]
             x_str = line_jk_split[2]
             y_str = line_jk_split[3]
             z_str = line_jk_split[4].strip('\n')
@@ -302,7 +360,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
 
     gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, get_stress)
 
-def run_cp2kfrc(work_dir, iter_id, cp2k_exe, cp2k_env_file, cp2k_mpi_num):
+def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num):
 
   '''
   run_force : perform cp2k force calculation
@@ -337,7 +395,7 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, cp2k_env_file, cp2k_mpi_num):
        check_cp2k_gen.append(1)
   if ( all(i == 0 for i in check_cp2k_gen) ):
     str_tmp = 'Success: generate cp2k tasks in %s' %(cp2k_calc_dir)
-    str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
     print (str_tmp, flush=True)
   else:
     log_info.log_error('Generating cp2k tasks error, please check iteration %d' %(iter_id))
@@ -349,23 +407,69 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, cp2k_env_file, cp2k_mpi_num):
     cmd = "ls | grep %s" %('task_')
     task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
 
-    run = '''
+    run_start = 0
+    run_end = run_start+cp2k_job_num-1
+    cycle = math.ceil(task_num/cp2k_job_num)
+
+    for j in range(cycle):
+      mpi_num_list = data_op.int_split(proc_num, run_end-run_start+1)
+      mpi_num_str = data_op.comb_list_2_str(mpi_num_list, ' ')
+      task_job_list = data_op.gen_list(run_start, run_end, 1)
+      task_job_str = data_op.comb_list_2_str(task_job_list, ' ')
+
+      run = '''
+#! /bin/bash
+
+task_job="%s"
+mpi_num="%s"
+direc=%s
+parallel_num=%d
+parallel_exe=%s
+
+task_job_arr=(${task_job///})
+mpi_num_arr=(${mpi_num///})
+
+num=${#task_job_arr[*]}
+
+for ((i=0;i<=num-1;i++));
+do
+task_job_mpi_num_arr[i]="${task_job_arr[i]} ${mpi_num_arr[i]}"
+done
+
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parallel_num $direc/produce.sh {} $direc
+''' %(task_job_str, mpi_num_str, cp2k_sys_dir, run_end-run_start+1, parallel_exe)
+
+      produce = '''
 #! /bin/bash
 
 source %s
 
-mpirun -np %d %s input.inp 1> cp2k.out 2> cp2k.err
-''' %(cp2k_env_file, cp2k_mpi_num, cp2k_exe)
+x=$1
+direc=$2
 
-    for j in range(task_num):
-      cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
-      run_file=''.join((cp2k_sys_task_dir, '/run.sh'))
+x_arr=(${x///})
+
+cd $direc/task_${x_arr[0]}
+
+mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
+''' %(cp2k_env_file, cp2k_exe)
+
+      run_file = ''.join((cp2k_sys_dir, '/run.sh'))
       with open(run_file, 'w') as f:
         f.write(run)
 
-      subprocess.run('chmod +x run.sh', cwd=cp2k_sys_task_dir, shell=True)
-      cmd = "bash -c './run.sh'"
-      subprocess.run(cmd, cwd=cp2k_sys_task_dir, shell=True)
+      produce_file = ''.join((cp2k_sys_dir, '/produce.sh'))
+      with open(produce_file, 'w') as f:
+        f.write(produce)
+
+      subprocess.run('chmod +x run.sh', cwd=cp2k_sys_dir, shell=True)
+      subprocess.run('chmod +x produce.sh', cwd=cp2k_sys_dir, shell=True)
+      subprocess.run("bash -c './run.sh'", cwd=cp2k_sys_dir, shell=True)
+
+      run_start = run_start + cp2k_job_num
+      run_end = run_end + cp2k_job_num
+      if ( run_end > task_num-1):
+        run_end = task_num-1
 
   #check running cp2k tasks
   check_cp2k_run = []

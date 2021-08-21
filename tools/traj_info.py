@@ -5,7 +5,7 @@ import sys
 import math
 import linecache
 from CP2K_kit.tools import atom
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_tools
 
 def get_traj_info(file_name, group=[], return_group=False):
@@ -62,7 +62,7 @@ def get_traj_info(file_name, group=[], return_group=False):
   if (".xyz" in file_name):
     if ( "-pos-" in file_name or "-vel-" in file_name or "-frc-" in file_name):
       a = linecache.getline(file_name, pre_base+2)
-      b = list_dic_op.str_split(a, ' ')
+      b = data_op.str_split(a, ' ')
       start_frame_id = int(b[2].strip(','))
       start_time = float(b[5].strip(','))
     else:
@@ -71,12 +71,12 @@ def get_traj_info(file_name, group=[], return_group=False):
     if ( whole_line_num_1 > blocks_num+base+pre_base ):
       if ( "-pos-" in file_name or "-vel-" in file_name or "-frc-" in file_name):
         a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+2)
-        b = list_dic_op.str_split(a, ' ')
+        b = data_op.str_split(a, ' ')
         second_frame_id = int(b[2].strip(','))
         second_time = float(b[5].strip(','))
 
         a = linecache.getline(file_name, (frames_num_1-1)*(blocks_num+base)+pre_base+2)
-        b = list_dic_op.str_split(a, ' ')
+        b = data_op.str_split(a, ' ')
         end_frame_id = int(b[2].strip(','))
     else:
       end_frame_id = start_frame_id
@@ -84,18 +84,18 @@ def get_traj_info(file_name, group=[], return_group=False):
   if (".ener" in file_name):
 
     a = linecache.getline(file_name, pre_base+1)
-    b = list_dic_op.str_split(a, ' ')
+    b = data_op.str_split(a, ' ')
     start_frame_id = int(b[0])
     start_time = float(b[1])
 
     if ( whole_line_num_1 > blocks_num+base+pre_base ):
       a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+1)
-      b = list_dic_op.str_split(a, ' ')
+      b = data_op.str_split(a, ' ')
       second_frame_id = int(b[0])
       second_time = float(b[1])
 
       a = linecache.getline(file_name, whole_line_num_1)
-      b = list_dic_op.str_split(a, ' ')
+      b = data_op.str_split(a, ' ')
       end_frame_id = int(b[0])
     else:
       end_frame_id = start_frame_id

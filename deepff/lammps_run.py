@@ -44,7 +44,7 @@ def get_box_coord(box_file, coord_file):
     for i in range(3):
       cell_vec_i = []
       line_i = linecache.getline(box_file, i+1)
-      line_i_split = list_dic_op.str_split(line_i, ' ')
+      line_i_split = data_op.str_split(line_i, ' ')
       cell_vec_i.append(float(line_i_split[1]))
       cell_vec_i.append(float(line_i_split[2]))
       cell_vec_i.append(float(line_i_split[3].strip('\n')))
@@ -93,7 +93,7 @@ def get_box_coord(box_file, coord_file):
   #Get atom coord from coord file.
   for i in range(atom_num):
     line_i = linecache.getline(coord_file, i+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     atoms.append(line_i_split[0])
     x_float = float(line_i_split[1])
     y_float = float(line_i_split[2])
@@ -137,7 +137,7 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
   data_file = open(task_dir + '/' + file_name, 'w')
   data_file.write('\n')
 
-  atoms_type_num = len(list_dic_op.list_replicate(atoms_type_index))
+  atoms_type_num = len(data_op.list_replicate(atoms_type_index))
 
   line_1 = str(len(atoms_type_index)) + ' atoms\n'
   line_2 = str(atoms_type_num) + ' atom types\n'
@@ -222,7 +222,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
     coord_file = lmp_param[sys]['coord']
     tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
 
-    atoms_type = list_dic_op.list_replicate(atoms)
+    atoms_type = data_op.list_replicate(atoms)
     atoms_type_dic = {}
     for j in range(len(atoms_type)):
       atoms_type_dic[atoms_type[j]] = j+1
@@ -289,7 +289,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
         md_in_file.write('\n')
 
         if ( 'use_metad' in lmp_param.keys() ):
-          use_metad = list_dic_op.str_to_bool(lmp_param['use_metad'])
+          use_metad = data_op.str_to_bool(lmp_param['use_metad'])
         else:
           use_metad = False
 
@@ -390,7 +390,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
       for k in range(tot_frame):
         box_vec = []
         line_k = linecache.getline(log_file, a_int+k+1)
-        line_k_split = list_dic_op.str_split(line_k, ' ')
+        line_k_split = data_op.str_split(line_k, ' ')
         for l in range(6):
           box_param_float = float(line_k_split[l+7])
           box_param_float_str = numeric.get_as_num_string(box_param_float)
@@ -412,7 +412,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         id_k = []
         for l in range(atoms_num):
           line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
-          line_kl_split = list_dic_op.str_split(line_kl, ' ')
+          line_kl_split = data_op.str_split(line_kl, ' ')
           id_k.append(int(line_kl_split[0]))
           type_k.append(line_kl_split[1])
           x_float = float(line_kl_split[2])
@@ -427,11 +427,11 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
         #The atoms order in lammps trajectory is not same with that in data file.
         #So we should reorder it.
-        id_k_asc, asc_index = list_dic_op.list_order(id_k, 'ascend', True)
-        type_index_tot.append(list_dic_op.order_list(type_k, asc_index))
-        x_tot.append(list_dic_op.order_list(x_k, asc_index))
-        y_tot.append(list_dic_op.order_list(y_k, asc_index))
-        z_tot.append(list_dic_op.order_list(z_k, asc_index))
+        id_k_asc, asc_index = data_op.list_order(id_k, 'ascend', True)
+        type_index_tot.append(data_op.order_list(type_k, asc_index))
+        x_tot.append(data_op.order_list(x_k, asc_index))
+        y_tot.append(data_op.order_list(y_k, asc_index))
+        z_tot.append(data_op.order_list(z_k, asc_index))
 
       for k in range(tot_frame):
         data_file = 'data_' + str(k) + '.lmp'
@@ -530,7 +530,7 @@ def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
 
   if ( len(check_lmp_md_gen) !=0 and all(i == 0 for i in check_lmp_md_gen) ):
     str_tmp = 'Success: generate lammps molecular dynamics tasks in %s' %(lmp_dir)
-    str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
     print (str_tmp, flush=True)
   else:
     log_info.log_error('Generating lammps molecular dynamics tasks error, please check iteration %d' %(iter_id))
@@ -556,7 +556,7 @@ mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
 ''' %(lmp_openmp_num, lmp_mpi_num)
 
       else:
-        device_str=list_dic_op.comb_list_2_str(device, ',')
+        device_str=data_op.comb_list_2_str(device, ',')
         run = '''
 #! /bin/bash
 
@@ -715,7 +715,7 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
 
   if ( len(check_lmp_frc_gen) != 0 and all(i == 0 for i in check_lmp_frc_gen) ):
     str_tmp = 'Success: generating lammps model deviation file in %s' %(lmp_dir)
-    str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
     print (str_tmp, flush=True)
   else:
     log_info.log_error('Generating lammps model deviation tasks error, please check iteration %d' %(iter_id))

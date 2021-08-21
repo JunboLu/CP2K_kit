@@ -3,7 +3,7 @@
 import subprocess
 import linecache
 from CP2K_kit.tools import call
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def read_gpuinfo(work_dir, gpuinfo_file):
 
@@ -34,10 +34,10 @@ def read_gpuinfo(work_dir, gpuinfo_file):
     device_num = len(b)
     for i in range(device_num):
       line_1 = linecache.getline(gpuinfo_file, a_int+i*4+1)
-      line_1_split = list_dic_op.str_split(line_1, ' ')
+      line_1_split = data_op.str_split(line_1, ' ')
       device.append(line_1_split[1])
       line_2 = linecache.getline(gpuinfo_file, a_int+i*4+2)
-      line_2_split = list_dic_op.str_split(line_2, ' ')
+      line_2_split = data_op.str_split(line_2, ' ')
       mem_used = float(line_2_split[8][0:line_2_split[8].index('M')])
       mem_tot = float(line_2_split[10][0:line_2_split[10].index('M')])
       usage.append(mem_used/mem_tot)

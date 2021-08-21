@@ -88,6 +88,8 @@
     basis_set_file_name /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
     basis_level dzvp
     potential_file_name /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
+    cell_periodic xyz
+    poisson_periodic xyz
     charge 0
     multiplicity 1
     cutoff 300
@@ -103,6 +105,6 @@
     parallel_exe /home/lujunbo/bin/parallel/bin/parallel
     lmp_mpi_num 4
     lmp_openmp_num 2
-    cp2k_mpi_num 4
+    cp2k_job_num 2
   &end environ
 &end deepff

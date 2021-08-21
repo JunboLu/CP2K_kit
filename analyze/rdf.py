@@ -6,7 +6,7 @@ import math
 import linecache
 import numpy as np
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.analyze import center
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import geometry_mod
@@ -67,7 +67,7 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
   atom_id_2 = []
   for i in range(atoms_num):
     line_i = linecache.getline(new_file_name, base+i+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     if ( line_i_split[0] == atom_type_1 ):
       atom_id_1.append(i+1)
     if ( line_i_split[0] == atom_type_2 ):
@@ -80,13 +80,13 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
     distance_i = []
     for j in range(atoms_num):
       line_j = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+base)+j+base+1)
-      line_j_split = list_dic_op.str_split(line_j, ' ')
+      line_j_split = data_op.str_split(line_j, ' ')
       if ( line_j_split[0] == atom_type_1 ):
         coord_1 = []
         coord_2 = []
         for k in range(atoms_num):
           line_k = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+base)+k+base+1)
-          line_k_split = list_dic_op.str_split(line_k, ' ')
+          line_k_split = data_op.str_split(line_k, ' ')
           if ( line_k_split[0] == atom_type_2 and j != k ):
             coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3].strip('\n'))])
             coord_2.append([float(line_k_split[1]),float(line_k_split[2]),float(line_k_split[3].strip('\n'))])

@@ -7,7 +7,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import atom
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.lib import geometry_mod
 from CP2K_kit.analyze import geometry
 
@@ -84,7 +84,7 @@ def center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, center_ty
     atoms_mass = []
     for j in range(atoms_num):
       line_ij = linecache.getline(file_name, i*(atoms_num+base)+j+1+base+pre_base)
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       atoms.append(line_ij_split[0])
       atoms_mass.append(atom.get_atom_mass(line_ij_split[0])[1])
       coord[j,0] = float(line_ij_split[1])

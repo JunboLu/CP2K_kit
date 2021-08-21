@@ -6,7 +6,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import atom
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import statistic_mod
 from CP2K_kit.lib import dynamic_mod
@@ -61,7 +61,7 @@ def time_corr_func(atoms_num, base, pre_base, each, file_start, time_step, start
   for i in range(frame_num_stat):
     for j in range(len(atom_id)):
       line_ij = linecache.getline(file_name,(atoms_num+base)*(int((start-file_start)/each)+i)+base+atom_id[j])
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       data[i,j,0] = float(line_ij_split[1])
       data[i,j,1] = float(line_ij_split[2])
       data[i,j,2] = float(line_ij_split[3].strip('\n'))
@@ -138,7 +138,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
       for k in range(len(cluster_group_id[i][j])):
         #Dump coordinate
         line_k = linecache.getline(pos_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
-        line_k_split = list_dic_op.str_split(line_k, ' ')
+        line_k_split = data_op.str_split(line_k, ' ')
         element.append(line_k_split[0])
         pos_data[k,0] = float(line_k_split[1])
         pos_data[k,1] = float(line_k_split[2])
@@ -146,7 +146,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, file_start, time_step, 
 
         #Dump velocity
         line_k = linecache.getline(vel_file, (atoms_num+base)*(int((start-file_start)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
-        line_k_split = list_dic_op.str_split(line_k, ' ')
+        line_k_split = data_op.str_split(line_k, ' ')
         vel_data[k,0] = float(line_k_split[1])
         vel_data[k,1] = float(line_k_split[2])
         vel_data[k,2] = float(line_k_split[3].strip('\n'))
@@ -220,7 +220,7 @@ def time_corr_run(time_corr_param, work_dir):
 
   if ( 'atom_id' in time_corr_param.keys() ):
     atom_id = time_corr_param['atom_id']
-    atom_id_list = list_dic_op.get_id_list(atom_id)
+    atom_id_list = data_op.get_id_list(atom_id)
   else:
     log_info.log_error('No atom id found, please set analyze/time_correlation/atom_id')
     exit()

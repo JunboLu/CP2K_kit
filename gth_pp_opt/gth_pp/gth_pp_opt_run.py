@@ -6,7 +6,7 @@ import copy
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import read_input
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.gth_pp_opt.gth_pp import gen_atom_inp
 from CP2K_kit.gth_pp_opt.gth_pp import init_step
 from CP2K_kit.gth_pp_opt.gth_pp import step_reweight
@@ -25,7 +25,7 @@ def get_min_step(process_dir):
     cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
     return_temp = call.call_returns_shell(process_dir, cmd)
     if ( return_temp != [] ):
-      return_temp_split = list_dic_op.str_split(return_temp[0], ' ')
+      return_temp_split = data_op.str_split(return_temp[0], ' ')
       if ( len(return_temp_split) > 5 ):
         value.append(return_temp_split[5])
         step_index.append(i+1)
@@ -44,7 +44,7 @@ get_min_index = ''.join((str(sys.argv[5]), '/gth_pp_opt/gth_pp/get_index.py'))
 
 log_info.log_logo()
 
-print (list_dic_op.str_wrap('GTH_PP_OPT| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
+print (data_op.str_wrap('GTH_PP_OPT| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
 print ('GTH_PP_OPT| Input file name %s\n' %(inp_file), flush=True)
 
 job_type_param = read_input.dump_info(work_dir, inp_file, [run_type])
@@ -96,13 +96,13 @@ for i in range(129):
   cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
   return_temp = call.call_returns_shell(process_1_dir, cmd)
   if ( return_temp != [] ):
-    return_temp_split = list_dic_op.str_split(return_temp[0], ' ')
+    return_temp_split = data_op.str_split(return_temp[0], ' ')
     if ( len(return_temp_split) > 5 ):
       value.append(return_temp_split[5])
       step_index.append(i+1)
 
 if ( len(step_index) != 129 ):
-  step_index_res = list_dic_op.gen_list(1,129,1)
+  step_index_res = data_op.gen_list(1,129,1)
   step_index_res_copy = copy.deepcopy(step_index_res)
   for i in step_index:
     if i in step_index_res_copy:

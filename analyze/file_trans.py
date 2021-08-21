@@ -2,7 +2,7 @@
 
 import linecache
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def xyz2pdb(file_name, work_dir):
 
@@ -28,7 +28,7 @@ def xyz2pdb(file_name, work_dir):
 
   for i in range(atoms_num):
     line = linecache.getline(file_name, i+2+1)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     atom = line_split[0]
     atom_label = atom+'R'
     x = float(line_split[1])
@@ -56,7 +56,7 @@ def pdb2xyz(file_name, work_dir):
   line_num = len(open(file_name).readlines())
   for i in range(line_num):
     line = linecache.getline(file_name, i+1)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     if ( line_split[0] == 'ATOM' ):
       line_start = i
       break
@@ -67,7 +67,7 @@ def pdb2xyz(file_name, work_dir):
   total_atom_num = 0
   for i in range(line_num-line_start):
     line = linecache.getline(file_name, i+line_start+1)
-    line_split = list_dic_op.str_split(line.strip('\n'), ' ')
+    line_split = data_op.str_split(line.strip('\n'), ' ')
     if ( len(line_split) == 11 ):
       total_atom_num = total_atom_num + 1
       xyz_file.write('%-3s%8s%8s%8s\n' %(line_split[10].strip('\n'), line_split[5], line_split[6], line_split[7]))

@@ -1,7 +1,7 @@
 #! /usr/env/bin python
 
 import copy
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def gen_atom_inp(work_dir, gth_pp_opt_param):
 
@@ -89,7 +89,7 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
     val_orbit.append(val_config[i][1])
     val_orbit_occ.append(int(val_config[i][2:len(val_config[i])]))
 
-  val_orbit_type = list_dic_op.list_replicate(val_orbit)
+  val_orbit_type = data_op.list_replicate(val_orbit)
 
   if ( 'f' in val_orbit_type ):
     max_ang = '3'

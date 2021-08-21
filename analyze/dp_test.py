@@ -5,7 +5,7 @@ import csv
 import linecache
 import subprocess
 from collections import OrderedDict
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import atom
 from CP2K_kit.tools import call
 from CP2K_kit.tools import get_cell
@@ -126,7 +126,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
   for i in range(frames_num):
     #Dump box
     line_i = linecache.getline(cp2k_cell_file, i+1+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     cell_vec = [float(x) for x in line_i_split[2:11]]
     tri_cell_a, tri_cell_b, tri_cell_c = \
     get_cell.get_triclinic_cell(cell_vec[0:3], cell_vec[3:6], cell_vec[6:10])
@@ -140,9 +140,9 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
     z_i = []
     for j in range(atoms_num):
       line_ij = linecache.getline(cp2k_pos_file, (atoms_num+base)*i+j+pre_base+base+1)
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       line_ij_split[len(line_ij_split)-1] = line_ij_split[len(line_ij_split)-1].strip('\n')
-      atom_type_i.append(list_dic_op.get_dic_keys(atom_label, line_ij_split[0])[0])
+      atom_type_i.append(data_op.get_dic_keys(atom_label, line_ij_split[0])[0])
       x_i.append(line_ij_split[1])
       y_i.append(line_ij_split[2])
       z_i.append(line_ij_split[3])
@@ -154,7 +154,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
   cmd = "cp %s %s" %(dpff_file, work_dir)
   call.call_simple_shell(work_dir, cmd)
 
-  dpff_file_split = list_dic_op.str_split(dpff_file, '/')
+  dpff_file_split = data_op.str_split(dpff_file, '/')
   dpff_file_name = dpff_file_split[len(dpff_file_split)-1]
 
   for i in range(frames_num):
@@ -206,7 +206,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
     a = call.call_returns_shell(frame_dir, cmd_a)
     a_int = int(a[0].split(':')[0])
     line_log_i = linecache.getline(lmp_log_file, a_int+1)
-    line_log_i_split = list_dic_op.str_split(line_log_i, ' ')
+    line_log_i_split = data_op.str_split(line_log_i, ' ')
     energy_lmp.append(float(line_log_i_split[2])/atoms_num)
     atom_id_i = []
     frc_lmp_i = []
@@ -215,26 +215,26 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
     frc_z_lmp_i = []
     for j in range(atoms_num):
       line_traj_ij = linecache.getline(lmp_traj_file, j+1+9)
-      line_traj_ij_split = list_dic_op.str_split(line_traj_ij, ' ')
+      line_traj_ij_split = data_op.str_split(line_traj_ij, ' ')
       atom_id_i.append(int(line_traj_ij_split[0]))
       frc_x_lmp_i.append(float(line_traj_ij_split[5]))
       frc_y_lmp_i.append(float(line_traj_ij_split[6]))
       frc_z_lmp_i.append(float(line_traj_ij_split[7].strip('\n')))
       frc_lmp_i.append([float(line_traj_ij_split[5]), float(line_traj_ij_split[6]), float(line_traj_ij_split[7].strip('\n'))])
 
-    atom_id_i_asc, asc_index = list_dic_op.list_order(atom_id_i, 'ascend', True)
-    frc_x_lmp_i_asc = list_dic_op.order_list(frc_x_lmp_i, asc_index)
-    frc_y_lmp_i_asc = list_dic_op.order_list(frc_y_lmp_i, asc_index)
-    frc_z_lmp_i_asc = list_dic_op.order_list(frc_z_lmp_i, asc_index)
-    frc_lmp_i_asc = list_dic_op.order_list(frc_lmp_i, asc_index)
+    atom_id_i_asc, asc_index = data_op.list_order(atom_id_i, 'ascend', True)
+    frc_x_lmp_i_asc = data_op.order_list(frc_x_lmp_i, asc_index)
+    frc_y_lmp_i_asc = data_op.order_list(frc_y_lmp_i, asc_index)
+    frc_z_lmp_i_asc = data_op.order_list(frc_z_lmp_i, asc_index)
+    frc_lmp_i_asc = data_op.order_list(frc_lmp_i, asc_index)
 
-    frc_lmp.append(list_dic_op.list_reshape(frc_lmp_i_asc))
+    frc_lmp.append(data_op.list_reshape(frc_lmp_i_asc))
     frc_x_lmp.append(frc_x_lmp_i_asc)
     frc_y_lmp.append(frc_y_lmp_i_asc)
     frc_z_lmp.append(frc_z_lmp_i_asc)
 
     line_cp2k = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+2)
-    line_cp2k_split = list_dic_op.str_split(line_cp2k, ' ')
+    line_cp2k_split = data_op.str_split(line_cp2k, ' ')
     energy_cp2k.append(float(line_cp2k_split[len(line_cp2k_split)-1].strip('\n'))*hartree_to_ev/atoms_num)
 
     frc_cp2k_i = []
@@ -243,7 +243,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
     frc_z_cp2k_i = []
     for j in range(atoms_num):
       line_cp2k_ij = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+j+1+pre_base+base)
-      line_cp2k_ij_split = list_dic_op.str_split(line_cp2k_ij, ' ')
+      line_cp2k_ij_split = data_op.str_split(line_cp2k_ij, ' ')
       fx = float(line_cp2k_ij_split[1])*hartree_to_ev*ang_to_bohr
       fy = float(line_cp2k_ij_split[2])*hartree_to_ev*ang_to_bohr
       fz = float(line_cp2k_ij_split[3].strip('\n'))*hartree_to_ev*ang_to_bohr
@@ -298,7 +298,7 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label,
   atoms, energy, coord, vel, frc, cell = \
   read_lmp.read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label, [], True, True, False, True, True)
 
-  cp2k_inp_split = list_dic_op.str_split(os.path.abspath(cp2k_inp_file), '/')
+  cp2k_inp_split = data_op.str_split(os.path.abspath(cp2k_inp_file), '/')
   cp2k_inp_file = cp2k_inp_split[len(cp2k_inp_split)-1]
 
   for i in range(frames_num):
@@ -348,7 +348,7 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label,
     frc_file_i = ''.join((frame_dir, '/cp2k-1_0.xyz'))
     for j in range(atoms_num):
       line_ij = linecache.getline(frc_file_i, j+4+1)
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       fx = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
       fy = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
       fz = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
@@ -424,7 +424,7 @@ def dp_test_run(dp_test_param, work_dir):
       atom_label = dp_test_param['atom_label']
       atom_label_dic = OrderedDict()
       for i in range (len(atom_label)):
-        lable_split = list_dic_op.str_split(atom_label[i], ':')
+        lable_split = data_op.str_split(atom_label[i], ':')
         atom_label_dic[int(lable_split[0])] = lable_split[1]
     else:
       log_info.log_error('No atom lable found, please set analyze/dp_test/atom_lable')
@@ -452,7 +452,7 @@ def dp_test_run(dp_test_param, work_dir):
       atom_label = dp_test_param['atom_label']
       atom_label_dic = OrderedDict()
       for i in range (len(atom_label)):
-        lable_split = list_dic_op.str_split(atom_label[i], ':')
+        lable_split = data_op.str_split(atom_label[i], ':')
         atom_label_dic[int(lable_split[0])] = lable_split[1]
     else:
       log_info.log_error('No atom label found, please set analyze/dp_test/atom_lable')

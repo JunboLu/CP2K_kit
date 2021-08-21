@@ -6,7 +6,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.lib import rmsd_mod
 from CP2K_kit.lib import statistic_mod
 
@@ -46,7 +46,7 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, file_start, ref_frame, comp_f
 
   for i in range(len(atom_id)):
     line_i = linecache.getline(file_name, int((ref_frame-file_start)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     coord_ref[i,0] = float(line_i_split[1])
     coord_ref[i,1] = float(line_i_split[2])
     coord_ref[i,2] = float(line_i_split[3].strip('\n'))
@@ -60,7 +60,7 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, file_start, ref_frame, comp_f
   for m in range(len(comp_frame_list)):
     for i in range(len(atom_id)):
       line_mi = linecache.getline(file_name, int((comp_frame_list[m]-file_start)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
-      line_mi_split = list_dic_op.str_split(line_mi, ' ')
+      line_mi_split = data_op.str_split(line_mi, ' ')
       coord_comp[i,0] = float(line_mi_split[1])
       coord_comp[i,1] = float(line_mi_split[2])
       coord_comp[i,2] = float(line_mi_split[3].strip('\n'))
@@ -115,7 +115,7 @@ def rmsd_run(rmsd_param, work_dir):
 
   if ( 'atom_id' in rmsd_param.keys() ):
     atom_id = rmsd_param['atom_id']
-    atom_id_list = list_dic_op.get_id_list(atom_id)
+    atom_id_list = data_op.get_id_list(atom_id)
   else:
     log_info.log_error('No atom id found, please set analyze/rmsd/atom_id')
     exit()
@@ -128,7 +128,7 @@ def rmsd_run(rmsd_param, work_dir):
 
   if ( 'compare_frame' in rmsd_param.keys() ):
     compare_frame = rmsd_param['compare_frame']
-    compare_frame_list = list_dic_op.get_id_list(compare_frame)
+    compare_frame_list = data_op.get_id_list(compare_frame)
   else:
     log_info.log_error('No compare frame found, please set analyze/rmsd/compare_frame')
     exit()

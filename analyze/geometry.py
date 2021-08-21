@@ -8,7 +8,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import get_cell
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import traj_tools
 from CP2K_kit.analyze import rdf
@@ -42,7 +42,7 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
       Example : {'O':80.0, 'H':90.0}
   '''
 
-  atoms_type = list_dic_op.list_replicate(atoms)
+  atoms_type = data_op.list_replicate(atoms)
   coord_num = []
 
   for i in range(len(atoms_type)):
@@ -62,7 +62,7 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
                                                         np.asfortranarray(a_vec, dtype='float32'), \
                                                         np.asfortranarray(b_vec, dtype='float32'), \
                                                         np.asfortranarray(c_vec, dtype='float32'))
-        coord_num_temp = list_dic_op.list_num_stat(dist, r_cut, 'less')
+        coord_num_temp = data_op.list_num_stat(dist, r_cut, 'less')
         coord_num_i.append(coord_num_temp)
     coord_num.append(coord_num_i)
 
@@ -109,7 +109,7 @@ def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp
   coord_atom = np.asfortranarray(np.zeros((atoms_num,3)),dtype='float32')
   for i in range(atoms_num):
     line_i = linecache.getline(file_name, i+base+pre_base+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     coord_atom[i,0] = float(line_i_split[1])
     coord_atom[i,1] = float(line_i_split[2])
     coord_atom[i,2] = float(line_i_split[3].strip('\n'))
@@ -197,13 +197,13 @@ def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, st
   for i in range(stat_num):
     time.append(time_step*each*i)
     line_i_1 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_1_id+base)
-    line_i_1_split = list_dic_op.str_split(line_i_1, ' ')
+    line_i_1_split = data_op.str_split(line_i_1, ' ')
     coord_atom_1[i,0] = float(line_i_1_split[1])
     coord_atom_1[i,1] = float(line_i_1_split[2])
     coord_atom_1[i,2] = float(line_i_1_split[3].strip('\n'))
 
     line_i_2 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_2_id+base)
-    line_i_2_split = list_dic_op.str_split(line_i_2, ' ')
+    line_i_2_split = data_op.str_split(line_i_2, ' ')
     coord_atom_2[i,0] = float(line_i_2_split[1])
     coord_atom_2[i,1] = float(line_i_2_split[2])
     coord_atom_2[i,2] = float(line_i_2_split[3].strip('\n'))
@@ -343,9 +343,9 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
 
   for i in range(len(group_tot)):
     atom_id = group_tot[i]['atom_id']
-    atom_id_list = list_dic_op.get_id_list(atom_id)
+    atom_id_list = data_op.get_id_list(atom_id)
     group_atom = group_tot[i]['group_atom']
-    group_atom_type, group_atom_type_num = list_dic_op.list_replicate(group_atom, True)
+    group_atom_type, group_atom_type_num = data_op.list_replicate(group_atom, True)
 
     group_coord = []
     group_atom_id = []
@@ -354,7 +354,7 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
       group_atom_id_j = []
       for k in atom_id_list:
         line_k = linecache.getline(traj_file, pre_base+base+k)
-        line_k_split = list_dic_op.str_split(line_k, ' ')
+        line_k_split = data_op.str_split(line_k, ' ')
         if ( line_k_split[0] == group_atom_type[j] ):
           group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3].strip('\n'))])
           group_atom_id_j.append(k)
@@ -378,7 +378,7 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
                                                         np.asfortranarray(c_vec, dtype='float32'), \
                                                         len(coord_1), 3)
 
-        dist_ascend, dist_ascend_index = list_dic_op.list_order(dist, 'ascend', True)
+        dist_ascend, dist_ascend_index = data_op.list_order(dist, 'ascend', True)
         coord_1 = []
         coord_2 = []
         for l in range(group_atom_type_num[0+k+1]):
@@ -386,7 +386,7 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
       #######################################################
       #The above block is used to dump ligand atoms.
 
-  exclude_list = list_dic_op.gen_list(1,atoms_num,1)
+  exclude_list = data_op.gen_list(1,atoms_num,1)
   for i in order_list:
     exclude_list.remove(i)
 
@@ -494,7 +494,7 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
 
   coord_atom_1 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
   a_atom_1 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+center_atom_id+base)
-  c = list_dic_op.str_split(a_atom_1, ' ')
+  c = data_op.str_split(a_atom_1, ' ')
   coord_atom_1[0,0] = float(c[1])
   coord_atom_1[0,1] = float(c[2])
   coord_atom_1[0,2] = float(c[3].strip('\n'))
@@ -508,7 +508,7 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
     id_list = []
     coord_atom_2 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
     a_atom_2 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+sur_atom_id[i]+base)
-    c = list_dic_op.str_split(a_atom_2, ' ')
+    c = data_op.str_split(a_atom_2, ' ')
     coord_atom_2[0,0] = float(c[1])
     coord_atom_2[0,1] = float(c[2])
     coord_atom_2[0,2] = float(c[3].strip('\n'))
@@ -517,7 +517,7 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
       if (j != i):
         coord_atom_3 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
         a_atom_3 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+sur_atom_id[j]+base)
-        c = list_dic_op.str_split(a_atom_3, ' ')
+        c = data_op.str_split(a_atom_3, ' ')
         coord_atom_3[0,0] = float(c[1])
         coord_atom_3[0,1] = float(c[2])
         coord_atom_3[0,2] = float(c[3].strip('\n'))
@@ -605,7 +605,7 @@ def geometry_run(geometry_param, work_dir):
         coord = []
         for j in range(atoms_num):
           line_ij = linecache.getline(traj_file, (atoms_num+base)*i+pre_base+base+j+1)
-          line_ij_split = list_dic_op.str_split(line_ij, ' ')
+          line_ij_split = data_op.str_split(line_ij, ' ')
           atoms.append(line_ij_split[0])
           coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
         atoms_type, coord_num = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
@@ -809,7 +809,7 @@ def geometry_run(geometry_param, work_dir):
       end_step = start_frame_id + each
 
     if ( 'atom_id' in choose_str_param.keys() ):
-      atom_id = list_dic_op.get_id_list(choose_str_param['atom_id'])
+      atom_id = data_op.get_id_list(choose_str_param['atom_id'])
     else:
       log_info.log_error('No atom id found, please set analyze/geometry/choose_structure/atom_id')
 

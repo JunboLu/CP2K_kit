@@ -3,7 +3,7 @@
 import os
 import copy
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num):
 
@@ -46,7 +46,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     exit()
   else:
     if ( 'type_map' in new_deepmd_dic['model'].keys() ):
-      if ( all(list_dic_op.eval_str(i) == 0 for i in new_deepmd_dic['model']['type_map']) ):
+      if ( all(data_op.eval_str(i) == 0 for i in new_deepmd_dic['model']['type_map']) ):
         pass
       else:
         log_info.log_error('Input error: type_map wrong, please check deepff/deepmd/model/type_map')
@@ -60,7 +60,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       if ( 'sel' in new_deepmd_dic['model']['descriptor'].keys() ):
         sel = new_deepmd_dic['model']['descriptor']['sel']
-        if ( all(list_dic_op.eval_str(i) == 1 for i in sel) ):
+        if ( all(data_op.eval_str(i) == 1 for i in sel) ):
           new_deepmd_dic['model']['descriptor']['sel'] = [int(x) for x in sel]
         else:
           log_info.log_error('Input error: sel wrong, please check deepff/deepmd/model/descriptor/sel')
@@ -71,7 +71,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
       if ( 'rcut_smth' in new_deepmd_dic['model']['descriptor'].keys() ):
         rcut_smth = new_deepmd_dic['model']['descriptor']['rcut_smth']
-        if ( list_dic_op.eval_str(rcut_smth) == 1 or list_dic_op.eval_str(rcut_smth) == 2 ):
+        if ( data_op.eval_str(rcut_smth) == 1 or data_op.eval_str(rcut_smth) == 2 ):
           new_deepmd_dic['model']['descriptor']['rcut_smth'] = float(rcut_smth)
         else:
           log_info.log_error('Input error: rcut_smth error, please check deepff/deepmd/model/descriptor/rcut_smth')
@@ -81,7 +81,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
       if ( 'rcut' in new_deepmd_dic['model']['descriptor'].keys() ):
         rcut = new_deepmd_dic['model']['descriptor']['rcut']
-        if ( list_dic_op.eval_str(rcut) == 1 or list_dic_op.eval_str(rcut) == 2 ):
+        if ( data_op.eval_str(rcut) == 1 or data_op.eval_str(rcut) == 2 ):
           new_deepmd_dic['model']['descriptor']['rcut'] = float(rcut)
         else:
           log_info.log_error('Input error: rcut error, please check deepff/deepmd/model/descriptor/rcut')
@@ -91,7 +91,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
       if ( 'neuron' in new_deepmd_dic['model']['descriptor'].keys() ):
         neuron_encode = new_deepmd_dic['model']['descriptor']['neuron']
-        if ( all(list_dic_op.eval_str(i) == 1 for i in neuron_encode) ):
+        if ( all(data_op.eval_str(i) == 1 for i in neuron_encode) ):
           new_deepmd_dic['model']['descriptor']['neuron'] = [int(x) for x in neuron_encode]
         else:
           log_info.log_error('Input error: neuron error, please check deepff/deepmd/model/descriptor/neuron')
@@ -101,7 +101,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
       if ( 'resnet_dt' in new_deepmd_dic['model']['descriptor'].keys() ):
         resnet_dt = new_deepmd_dic['model']['descriptor']['resnet_dt']
-        resnet_dt_bool = list_dic_op.str_to_bool(resnet_dt)
+        resnet_dt_bool = data_op.str_to_bool(resnet_dt)
         if ( isinstance(resnet_dt_bool, bool) ):
           new_deepmd_dic['model']['descriptor']['resnet_dt'] = resnet_dt_bool
         else:
@@ -112,7 +112,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
       if ( 'axis_neuron' in new_deepmd_dic['model']['descriptor'].keys() ):
         axis_neuron =new_deepmd_dic['model']['descriptor']['axis_neuron']
-        if ( list_dic_op.eval_str(axis_neuron) == 1 ):
+        if ( data_op.eval_str(axis_neuron) == 1 ):
           new_deepmd_dic['model']['descriptor']['axis_neuron'] = int(axis_neuron)
         else:
           log_info.log_error('Input error: axis_neuron error, please check deepff/deepmd/model/descriptor/axis_neuron')
@@ -126,7 +126,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       if ( 'resnet_dt' in new_deepmd_dic['model']['fitting_net'].keys() ):
         resnet_dt = new_deepmd_dic['model']['fitting_net']['resnet_dt']
-        resnet_dt_bool = list_dic_op.str_to_bool(resnet_dt)
+        resnet_dt_bool = data_op.str_to_bool(resnet_dt)
         if ( isinstance(resnet_dt_bool, bool) ):
           new_deepmd_dic['model']['fitting_net']['resnet_dt'] = resnet_dt_bool
         else:
@@ -141,7 +141,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     if ( 'type' in new_deepmd_dic['learning_rate'].keys() ):
       decay_type = new_deepmd_dic['learning_rate']['type']
-      if ( list_dic_op.eval_str(decay_type) == 0 ):
+      if ( data_op.eval_str(decay_type) == 0 ):
         pass
       else:
         log_info.log_error('Input error: type error, please check deepff/deepmd/learning_rate/type')
@@ -151,7 +151,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'decay_steps' in new_deepmd_dic['learning_rate'].keys() ):
       decay_steps = new_deepmd_dic['learning_rate']['decay_steps']
-      if ( list_dic_op.eval_str(decay_steps) == 1 ):
+      if ( data_op.eval_str(decay_steps) == 1 ):
         new_deepmd_dic['learning_rate']['decay_steps'] = int(decay_steps)
       else:
         log_info.log_error('Input error: decay_steps error, please check deepff/deepmd/learning_rate/decay_steps')
@@ -161,7 +161,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'start_lr' in new_deepmd_dic['learning_rate'].keys() ):
       start_lr = new_deepmd_dic['learning_rate']['start_lr']
-      if ( list_dic_op.eval_str(start_lr) == 2 ):
+      if ( data_op.eval_str(start_lr) == 2 ):
         new_deepmd_dic['learning_rate']['start_lr'] = float(start_lr)
       else:
         log_info.log_error('Input error: start_lr error, please check deepff/deepmd/learning_rate/start_lr')
@@ -171,7 +171,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'stop_lr' in new_deepmd_dic['learning_rate'].keys() ):
       stop_lr = new_deepmd_dic['learning_rate']['stop_lr']
-      if ( list_dic_op.eval_str(stop_lr) == 2 ):
+      if ( data_op.eval_str(stop_lr) == 2 ):
         new_deepmd_dic['learning_rate']['stop_lr'] = float(stop_lr)
       else:
         log_info.log_error('Input error: stop_lr error, please check deepff/deepmd/learning_rate/stop_lr')
@@ -185,7 +185,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     if ( 'start_pref_e' in new_deepmd_dic['loss'].keys() ):
       start_pref_e = new_deepmd_dic['loss']['start_pref_e']
-      if ( list_dic_op.eval_str(start_pref_e) == 1 or list_dic_op.eval_str(start_pref_e) == 2 ):
+      if ( data_op.eval_str(start_pref_e) == 1 or data_op.eval_str(start_pref_e) == 2 ):
         new_deepmd_dic['loss']['start_pref_e'] = float(start_pref_e)
       else:
         log_info.log_error('Input error: start_pref_e error, please check deepff/deepmd/loss/start_pref_e')
@@ -195,7 +195,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'limit_pref_e' in new_deepmd_dic['loss'].keys() ):
       limit_pref_e = new_deepmd_dic['loss']['limit_pref_e']
-      if ( list_dic_op.eval_str(limit_pref_e) == 1 or list_dic_op.eval_str(limit_pref_e) == 2 ):
+      if ( data_op.eval_str(limit_pref_e) == 1 or data_op.eval_str(limit_pref_e) == 2 ):
         new_deepmd_dic['loss']['limit_pref_e'] = float(limit_pref_e)
       else:
         log_info.log_error('Input error: limit_pref_e error, please check deepff/deepmd/loss/limit_pref_e')
@@ -205,7 +205,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'start_pref_f' in new_deepmd_dic['loss'].keys() ):
       start_pref_f = new_deepmd_dic['loss']['start_pref_f']
-      if ( list_dic_op.eval_str(start_pref_f) == 1 or list_dic_op.eval_str(start_pref_f) == 2 ):
+      if ( data_op.eval_str(start_pref_f) == 1 or data_op.eval_str(start_pref_f) == 2 ):
         new_deepmd_dic['loss']['start_pref_f'] = float(start_pref_f)
       else:
         log_info.log_error('Input error: start_pref_f error, please check deepff/deepmd/loss/start_pref_f')
@@ -215,7 +215,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'limit_pref_f' in new_deepmd_dic['loss'].keys() ):
       limit_pref_f = new_deepmd_dic['loss']['limit_pref_f']
-      if ( list_dic_op.eval_str(limit_pref_f) == 1 or list_dic_op.eval_str(limit_pref_f) == 2 ):
+      if ( data_op.eval_str(limit_pref_f) == 1 or data_op.eval_str(limit_pref_f) == 2 ):
         new_deepmd_dic['loss']['limit_pref_f'] = float(limit_pref_f)
       else:
         log_info.log_error('Input error: limit_pref_f error, please check deepff/deepmd/loss/limit_pref_f')
@@ -225,7 +225,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'start_pref_v' in new_deepmd_dic['loss'].keys() ):
       start_pref_v = new_deepmd_dic['loss']['start_pref_v']
-      if ( list_dic_op.eval_str(start_pref_v) == 1 or list_dic_op.eval_str(start_pref_v) == 2 ):
+      if ( data_op.eval_str(start_pref_v) == 1 or data_op.eval_str(start_pref_v) == 2 ):
         new_deepmd_dic['loss']['start_pref_v'] = float(start_pref_v)
       else:
         log_info.log_error('Input error: start_pref_v error, please check deepff/deepmd/loss/start_pref_v')
@@ -235,7 +235,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'limit_pref_v' in new_deepmd_dic['loss'].keys() ):
       limit_pref_v = new_deepmd_dic['loss']['limit_pref_v']
-      if ( list_dic_op.eval_str(limit_pref_v) == 1 or list_dic_op.eval_str(limit_pref_v) == 2 ):
+      if ( data_op.eval_str(limit_pref_v) == 1 or data_op.eval_str(limit_pref_v) == 2 ):
         new_deepmd_dic['loss']['limit_pref_v'] = float(limit_pref_v)
       else:
         log_info.log_error('Input error: limit_pref_v error, please check deepff/deepmd/loss/limit_pref_v')
@@ -266,7 +266,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
           exit()
         if ( 'start_frame' in new_deepmd_dic['training'][i] ):
           start_frame = new_deepmd_dic['training'][i]['start_frame']
-          if ( list_dic_op.eval_str(start_frame) == 1 ):
+          if ( data_op.eval_str(start_frame) == 1 ):
             new_deepmd_dic['training'][i]['start_frame'] = int(start_frame)
           else:
             log_info.log_error('Input error: start_frame error, please check deepff/deepmd/training/system/start_frame')
@@ -275,7 +275,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
           new_deepmd_dic['training'][i]['start_frame'] = 0
         if ( 'end_frame' in new_deepmd_dic['training'][i] ):
           end_frame = new_deepmd_dic['training'][i]['end_frame']
-          if ( list_dic_op.eval_str(end_frame) == 1 ):
+          if ( data_op.eval_str(end_frame) == 1 ):
             new_deepmd_dic['training'][i]['end_frame'] = int(end_frame)
           else:
             log_info.log_error('Input error: end_frame error, please check deepff/deepmd/training/system/end_frame')
@@ -284,7 +284,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
           new_deepmd_dic['training'][i]['end_frame'] = 0
         if ( 'choosed_frame_num' in new_deepmd_dic['training'][i] ):
           choosed_frame_num = new_deepmd_dic['training'][i]['choosed_frame_num']
-          if ( list_dic_op.eval_str(choosed_frame_num) == 1 ):
+          if ( data_op.eval_str(choosed_frame_num) == 1 ):
             new_deepmd_dic['training'][i]['choosed_frame_num'] = int(choosed_frame_num)
           else:
             log_info.log_error('Input error: choosed_frame_num error, please check deepff/deepmd/training/system/choosed_frame_num')
@@ -293,7 +293,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
           new_deepmd_dic['training'][i]['choosed_frame_num'] = 0
         if ( 'set_parts' in new_deepmd_dic['training'][i] ):
           set_parts = new_deepmd_dic['training'][i]['set_parts']
-          if ( list_dic_op.eval_str(set_parts) == 1 ):
+          if ( data_op.eval_str(set_parts) == 1 ):
             new_deepmd_dic['training'][i]['set_parts'] = int(set_parts)
           else:
             log_info.log_error('Input error: set_parts error, please check deepff/deepmd/training/system/set_parts')
@@ -322,7 +322,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     if ( new_deepmd_dic['training']['model_type'] == 'use_seed' ):
       if ( 'seed_num' in new_deepmd_dic['training'].keys() ):
         seed_num = new_deepmd_dic['training']['seed_num']
-        if ( list_dic_op.eval_str(seed_num) == 1 ):
+        if ( data_op.eval_str(seed_num) == 1 ):
           new_deepmd_dic['training']['seed_num'] = int(seed_num)
         else:
           log_info.log_error('Input error: seed_num error, please check deepff/deepmd/training/seed_num')
@@ -334,18 +334,18 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       neuron_list = new_deepmd_dic['training']['neuron']
       if ( new_deepmd_dic['training']['model_type'] == 'use_node' ):
         neuron = []
-        tmp_str = list_dic_op.comb_list_2_str(neuron_list, ' ')
-        tmp_list = list_dic_op.str_split(tmp_str, '...')
+        tmp_str = data_op.comb_list_2_str(neuron_list, ' ')
+        tmp_list = data_op.str_split(tmp_str, '...')
 
         for i in range(len(tmp_list)):
-          neuron_i = list_dic_op.str_split(tmp_list[i], ' ')
-          if ( all(list_dic_op.eval_str(j) == 1 for j in neuron_i) ):
+          neuron_i = data_op.str_split(tmp_list[i], ' ')
+          if ( all(data_op.eval_str(j) == 1 for j in neuron_i) ):
             neuron.append([int(x) for x in neuron_i])
           else:
             log_info.log_error('Input error: neuron error, please check deepff/deepmd/training/neuron')
             exit()
       elif ( new_deepmd_dic['training']['model_type'] == 'use_seed' ):
-        if ( all(list_dic_op.eval_str(j) == 1 for j in neuron_list) ):
+        if ( all(data_op.eval_str(j) == 1 for j in neuron_list) ):
           neuron = [int(x) for x in neuron_str]
         else:
           log_info.log_error('Input error: neuron error, please check deepff/deepmd/training/neuron')
@@ -357,7 +357,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'set_prefix' in new_deepmd_dic['training'].keys() ):
       set_prefix = new_deepmd_dic['training']['set_prefix']
-      if ( list_dic_op.eval_str(set_prefix) == 0 ):
+      if ( data_op.eval_str(set_prefix) == 0 ):
         pass
       else:
         log_info.log_error('Input error: set_prefix error, please check deepff/deepmd/training/set_prefix')
@@ -368,7 +368,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'stop_batch' in new_deepmd_dic['training'].keys() ):
       stop_batch = new_deepmd_dic['training']['stop_batch']
-      if ( list_dic_op.eval_str(stop_batch) == 1 ):
+      if ( data_op.eval_str(stop_batch) == 1 ):
         new_deepmd_dic['training']['stop_batch'] = int(stop_batch)
       else:
         log_info.log_error('Input error: stop_batch error, please check deepff/deepmd/training/stop_batch')
@@ -378,7 +378,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'batch_size' in new_deepmd_dic['training'].keys() ):
       batch_size = new_deepmd_dic['training']['batch_size']
-      if ( list_dic_op.eval_str(batch_size) == 1 ):
+      if ( data_op.eval_str(batch_size) == 1 ):
         new_deepmd_dic['training']['batch_size'] = int(batch_size)
       elif ( batch_size == 'auto' ):
         pass
@@ -390,7 +390,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'disp_freq' in new_deepmd_dic['training'].keys() ):
       disp_freq = new_deepmd_dic['training']['disp_freq']
-      if ( list_dic_op.eval_str(disp_freq) == 1 ):
+      if ( data_op.eval_str(disp_freq) == 1 ):
         new_deepmd_dic['training']['disp_freq'] = int(disp_freq)
       else:
         log_info.log_error('Input error: disp_freq error, please check deepff/deepmd/training/disp_freq')
@@ -400,7 +400,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'numb_test' in new_deepmd_dic['training'].keys() ):
       numb_test = new_deepmd_dic['training']['numb_test']
-      if ( list_dic_op.eval_str(numb_test) == 1 ):
+      if ( data_op.eval_str(numb_test) == 1 ):
         new_deepmd_dic['training']['numb_test'] = int(numb_test)
       else:
         log_info.log_error('Input error: numb_test error, please check deepff/deepmd/training/numb_test')
@@ -410,7 +410,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'save_freq' in new_deepmd_dic['training'].keys() ):
       save_freq = new_deepmd_dic['training']['save_freq']
-      if ( list_dic_op.eval_str(save_freq) == 1 ):
+      if ( data_op.eval_str(save_freq) == 1 ):
         new_deepmd_dic['training']['save_freq'] = int(save_freq)
       else:
         log_info.log_error('Input error: save_freq error, please check deepff/deepmd/training/save_freq')
@@ -420,7 +420,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'disp_training' in new_deepmd_dic['training'].keys() ):
       disp_training = new_deepmd_dic['training']['disp_training']
-      disp_training_bool = list_dic_op.str_to_bool(disp_training)
+      disp_training_bool = data_op.str_to_bool(disp_training)
       if ( isinstance(disp_training_bool, bool) ):
         new_deepmd_dic['training']['disp_training'] = disp_training_bool
       else:
@@ -431,7 +431,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'disp_file' in new_deepmd_dic['training'].keys() ):
       disp_file = new_deepmd_dic['training']['disp_file']
-      if ( list_dic_op.eval_str(disp_file) == 0 ):
+      if ( data_op.eval_str(disp_file) == 0 ):
         pass
       else:
         log_info.log_error('Input error: disp_file error, please check deepff/deepmd/training/disp_file')
@@ -441,7 +441,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'save_ckpt' in new_deepmd_dic['training'].keys() ):
       save_ckpt = new_deepmd_dic['training']['save_ckpt']
-      if ( list_dic_op.eval_str(save_ckpt) == 0 ):
+      if ( data_op.eval_str(save_ckpt) == 0 ):
         pass
       else:
         log_info.log_error('Input error: save_ckpt error, please check deepff/deepmd/training/save_ckpt')
@@ -451,7 +451,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'load_ckpt' in new_deepmd_dic['training'].keys() ):
       load_ckpt = new_deepmd_dic['training']['load_ckpt']
-      if ( list_dic_op.eval_str(load_ckpt) == 0 ):
+      if ( data_op.eval_str(load_ckpt) == 0 ):
         pass
       else:
         log_info.log_error('Input error: load_ckpt error, please check deepff/deepmd/training/load_ckpt')
@@ -461,7 +461,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'time_training' in new_deepmd_dic['training'].keys() ):
       time_training = new_deepmd_dic['training']['time_training']
-      time_training_bool = list_dic_op.str_to_bool(time_training)
+      time_training_bool = data_op.str_to_bool(time_training)
       if ( isinstance(time_training_bool, bool) ):
         new_deepmd_dic['training']['time_training'] = time_training_bool
       else:
@@ -472,7 +472,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'profiling' in new_deepmd_dic['training'].keys() ):
       profiling = new_deepmd_dic['training']['profiling']
-      profiling_bool = list_dic_op.str_to_bool(profiling)
+      profiling_bool = data_op.str_to_bool(profiling)
       if ( isinstance(profiling_bool, bool) ):
         new_deepmd_dic['training']['profiling'] = profiling_bool
       else:
@@ -484,7 +484,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   #Check parameters for lammps
   if ( 'nsteps' in new_lmp_dic.keys() ):
     nsteps = new_lmp_dic['nsteps']
-    if ( list_dic_op.eval_str(nsteps) == 1 ):
+    if ( data_op.eval_str(nsteps) == 1 ):
       pass
     else:
       log_info.log_error('Input error: nsteps error, please check deepff/lammps/nsteps')
@@ -494,7 +494,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'thermo_freq' in new_lmp_dic.keys() ):
     thermo_freq = new_lmp_dic['thermo_freq']
-    if ( list_dic_op.eval_str(thermo_freq) == 1 ):
+    if ( data_op.eval_str(thermo_freq) == 1 ):
       pass
     else:
       log_info.log_error('Input error: thermo_freq error, please check deepff/lammps/thermo_freq')
@@ -504,7 +504,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'dump_freq' in new_lmp_dic.keys() ):
     dump_freq = new_lmp_dic['dump_freq']
-    if ( list_dic_op.eval_str(dump_freq) == 1 ):
+    if ( data_op.eval_str(dump_freq) == 1 ):
       pass
     else:
       log_info.log_error('Input error: dump_freq error, please check deepff/lammps/dump_freq')
@@ -514,7 +514,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'time_step' in new_lmp_dic.keys() ):
     time_step = new_lmp_dic['time_step']
-    if ( list_dic_op.eval_str(time_step) == 2 ):
+    if ( data_op.eval_str(time_step) == 2 ):
       pass
     else:
       log_info.log_error('Input error: time_step error, please check deepff/lammps/time_step')
@@ -523,7 +523,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'tau_t' in new_lmp_dic.keys() ):
     tau_t = new_lmp_dic['tau_t']
-    if ( list_dic_op.eval_str(tau_t) == 2 ):
+    if ( data_op.eval_str(tau_t) == 2 ):
       pass
     else:
       log_info.log_error('Input error: tau_t error, please check deepff/lammps/tau_t')
@@ -533,7 +533,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'tau_p' in new_lmp_dic.keys() ):
     tau_p = new_lmp_dic['tau_p']
-    if ( list_dic_op.eval_str(tau_p) == 2 ):
+    if ( data_op.eval_str(tau_p) == 2 ):
       pass
     else:
       log_info.log_error('Input error: tau_p error, please check deepff/lammps/tau_p')
@@ -554,13 +554,13 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   if ( 'temp' in new_lmp_dic.keys() ):
     temp = new_lmp_dic['temp']
     if ( isinstance(temp, list) ):
-      if ( all(list_dic_op.eval_str(i) == 1 or list_dic_op.eval_str(i) == 2 for i in temp)):
+      if ( all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in temp)):
         pass
       else:
         log_info.log_error('Input error: temp wrong, please check deepff/lammps/temp')
         exit()
     else:
-      if ( list_dic_op.eval_str(temp) == 1 or list_dic_op.eval_str(temp) == 2 ):
+      if ( data_op.eval_str(temp) == 1 or data_op.eval_str(temp) == 2 ):
         pass
       else:
         log_info.log_error('Input error: temp wrong, please check deepff/lammps/temp')
@@ -571,13 +571,13 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   if ( 'pres' in new_lmp_dic.keys() ):
     pres = new_lmp_dic['pres']
     if ( isinstance(pres, list) ):
-      if ( all(list_dic_op.eval_str(i) == 1 or list_dic_op.eval_str(i) == 2 for i in pres)):
+      if ( all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in pres)):
         pass
       else:
         log_info.log_error('Input error: pres wrong, please check deepff/lammps/pres')
         exit()
     else:
-      if ( list_dic_op.eval_str(pres) == 1 or list_dic_op.eval_str(pres) == 2 ):
+      if ( data_op.eval_str(pres) == 1 or data_op.eval_str(pres) == 2 ):
         pass
       else:
         log_info.log_error('Input error: pres wrong, please check deepff/lammps/pres')
@@ -610,7 +610,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   #Check parameters for force_eval
   if ( 'choose_new_data_num_limit' in new_force_eval_dic.keys() ):
     choose_new_data_num_limit = new_force_eval_dic['choose_new_data_num_limit']
-    if ( list_dic_op.eval_str(choose_new_data_num_limit) == 1 ):
+    if ( data_op.eval_str(choose_new_data_num_limit) == 1 ):
       new_force_eval_dic['choose_new_data_num_limit'] = int(choose_new_data_num_limit)
     else:
       log_info.log_error('Input error: choose_new_data_num_limit wrong, please check or set deepff/force_eval/choose_new_data_num_limit')
@@ -620,7 +620,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'conv_new_data_num' in new_force_eval_dic.keys() ):
     conv_new_data_num = new_force_eval_dic['conv_new_data_num']
-    if ( list_dic_op.eval_str(conv_new_data_num) == 1 ):
+    if ( data_op.eval_str(conv_new_data_num) == 1 ):
       new_force_eval_dic['conv_new_data_num'] = int(conv_new_data_num)
     else:
       log_info.log_error('Input error: conv_new_data_num wrong, please check or set deepff/force_eval/conv_new_data_num')
@@ -630,7 +630,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'force_conv' in new_force_eval_dic.keys() ):
     force_conv = new_force_eval_dic['force_conv']
-    if ( list_dic_op.eval_str(conv_new_data_num) == 1 or list_dic_op.eval_str(conv_new_data_num) == 2 ):
+    if ( data_op.eval_str(conv_new_data_num) == 1 or data_op.eval_str(conv_new_data_num) == 2 ):
       new_force_eval_dic['force_conv'] = float(force_conv)
     else:
       log_info.log_error('Input error: force_conv wrong, please check or set deepff/force_eval/force_conv')
@@ -640,7 +640,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'max_iter' in new_force_eval_dic.keys() ):
     max_iter = new_force_eval_dic['max_iter']
-    if ( list_dic_op.eval_str(max_iter) == 1 ):
+    if ( data_op.eval_str(max_iter) == 1 ):
       new_force_eval_dic['max_iter'] = int(max_iter)
     else:
       log_info.log_error('Input error: max_iter wrong, please check or set deepff/force_eval/max_iter')
@@ -650,7 +650,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'restart_iter' in new_force_eval_dic.keys() ):
     restart_iter = new_force_eval_dic['restart_iter']
-    if ( list_dic_op.eval_str(restart_iter) == 1 ):
+    if ( data_op.eval_str(restart_iter) == 1 ):
       new_force_eval_dic['restart_iter'] = int(restart_iter)
     else:
       log_info.log_error('Input error: restart_iter wrong, please check or set deepff/force_eval/restart_iter')
@@ -661,8 +661,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   #Check parameters for CP2K
   if ( 'cp2k_inp_file' in new_cp2k_dic.keys() ):
     if ( len(new_cp2k_dic.keys()) > 1):
-      log_info.log_error('Input error: as you have cp2k input file, you do not need other keywords')
-      exit()
+      log_info.log_error('Warning: as cp2k_inp_file is set, other keywords are ignored!', 'Warning')
     else:
       cp2k_inp_file = new_cp2k_dic['cp2k_inp_file']
       if ( os.path.exists(os.path.abspath(cp2k_inp_file)) ):
@@ -704,9 +703,28 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       new_cp2k_dic['basis_level'] = 'dzvp'
 
+    periodic_valid = ['NONE', 'X', 'XY', 'XYZ', 'XZ', 'Y', 'YZ', 'Z']
+    if ( 'poisson_periodic' in new_cp2k_dic.keys() ):
+      poisson_periodic = new_cp2k_dic['poisson_periodic']
+      if ( poisson_periodic.upper() in periodic_valid ):
+        new_cp2k_dic['poisson_periodic'] = poisson_periodic.upper()
+      else:
+        log_info.log_error('Input error: poisson_periodic %s is not supported, please check' %(poisson_periodic))
+    else:
+      new_cp2k_dic['poisson_periodic'] = 'XYZ'
+
+    if ( 'cell_periodic' in new_cp2k_dic.keys() ):
+      cell_periodic = new_cp2k_dic['cell_periodic']
+      if ( cell_periodic.upper() in periodic_valid ):
+        new_cp2k_dic['cell_periodic'] = cell_periodic.upper()
+      else:
+        log_info.log_error('Input error: cell_periodic %s is not supported, please check' %(cell_periodic))
+    else:
+      new_cp2k_dic['cell_periodic'] = 'XYZ'
+
     if ( 'charge' in new_cp2k_dic.keys() ):
       charge = new_cp2k_dic['charge']
-      if ( list_dic_op.eval_str(charge) == 1 ):
+      if ( data_op.eval_str(charge) == 1 ):
         pass
       else:
         log_info.log_error('Input error: charge wrong, please check deepff/cp2k/charge')
@@ -717,7 +735,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'multiplicity' in new_cp2k_dic.keys() ):
       multiplicity = new_cp2k_dic['multiplicity']
-      if ( list_dic_op.eval_str(multiplicity) == 1 ):
+      if ( data_op.eval_str(multiplicity) == 1 ):
         pass
       else:
         log_info.log_error('Input error: multiplicity wrong, please check deepff/cp2k/multiplicity')
@@ -728,7 +746,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     if ( 'cutoff' in new_cp2k_dic.keys() ):
       cutoff = new_cp2k_dic['cutoff']
-      if ( list_dic_op.eval_str(cutoff) == 1 or list_dic_op.eval_str(cutoff) == 2 ):
+      if ( data_op.eval_str(cutoff) == 1 or data_op.eval_str(cutoff) == 2 ):
         pass
       else:
         log_info.log_error('Input error: cutoff wrong, please check deepff/cp2k/cutoff')
@@ -736,20 +754,20 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       new_cp2k_dic['cutoff'] = '400'
 
-    function_lib = ['PBE', 'B3LYP', 'TPSS']
-    if ( 'xc_function' in new_cp2k_dic.keys() ):
-      xc_function = new_cp2k_dic['xc_function']
-      if ( xc_function in function_lib ):
+    functional_lib = ['PBE', 'B3LYP', 'TPSS']
+    if ( 'xc_functional' in new_cp2k_dic.keys() ):
+      xc_functional = new_cp2k_dic['xc_functional']
+      if ( xc_functional in function_lib ):
         pass
       else:
-        log_info.log_error('Input error: %s functional is not suported' %(xc_function))
+        log_info.log_error('Input error: %s functional is not suported' %(xc_functional))
         exit()
     else:
-      new_cp2k_dic['xc_function'] = 'PBE'
+      new_cp2k_dic['xc_functional'] = 'PBE'
 
     if ( 'dftd3' in new_cp2k_dic.keys() ):
       dftd3 = new_cp2k_dic['dftd3']
-      dftd3_bool = list_dic_op.str_to_bool(dftd3)
+      dftd3_bool = data_op.str_to_bool(dftd3)
       if ( isinstance(dftd3_bool, bool) ):
         new_cp2k_dic['dftd3'] = dftd3_bool
       else:
@@ -815,19 +833,19 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     log_info.log_error('Input error: no cp2k parallel file, please set deepff/environ/parallel_exe')
     exit()
 
-  if ( 'cp2k_mpi_num' in new_environ_dic.keys() ):
-    cp2k_mpi_num = new_environ_dic['cp2k_mpi_num']
-    if ( list_dic_op.eval_str(cp2k_mpi_num) == 1 ):
-      new_environ_dic['cp2k_mpi_num'] = int(cp2k_mpi_num)
+  if ( 'cp2k_job_num' in new_environ_dic.keys() ):
+    cp2k_job_num = new_environ_dic['cp2k_job_num']
+    if ( data_op.eval_str(cp2k_job_num) == 1 ):
+      new_environ_dic['cp2k_job_num'] = int(cp2k_job_num)
     else:
-      log_info.log_error('Input error: cp2k_mpi_num wrong, please check or set deepff/environ/cp2k_mpi_num')
+      log_info.log_error('Input error: cp2k_job_num wrong, please check or set deepff/environ/cp2k_job_num')
       exit()
   else:
-    new_environ_dic['cp2k_mpi_num'] = proc_num
+    new_environ_dic['cp2k_job_num'] = 1
 
   if ( 'lmp_mpi_num' in new_environ_dic.keys() ):
     lmp_mpi_num = new_environ_dic['lmp_mpi_num']
-    if ( list_dic_op.eval_str(lmp_mpi_num) == 1 ):
+    if ( data_op.eval_str(lmp_mpi_num) == 1 ):
       new_environ_dic['lmp_mpi_num'] = int(lmp_mpi_num)
     else:
       log_info.log_error('Input error: lmp_mpi_num wrong, please check or set deepff/environ/lmp_mpi_num')
@@ -837,7 +855,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   if ( 'lmp_openmp_num' in new_environ_dic ):
     lmp_openmp_num = new_environ_dic['lmp_openmp_num']
-    if ( list_dic_op.eval_str(lmp_openmp_num) == 1 ):
+    if ( data_op.eval_str(lmp_openmp_num) == 1 ):
       new_environ_dic['lmp_openmp_num'] = int(lmp_openmp_num)
     else:
       log_info.log_error('Input error: lmp_openmp_num wrong, please check or set deepff/environ/lmp_openmp_num')

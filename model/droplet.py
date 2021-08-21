@@ -4,7 +4,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import atom
 from CP2K_kit.tools import traj_tools
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.lib import geometry_mod
 
 def center_of_mass(atom_name, coord):
@@ -70,7 +70,7 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
   atom_name = []
   for i in range(len(center_id)):
     line_i = linecache.getline(file_name, center_id[i]+pre_base+base)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     atom_name.append(line_i_split[0])
     center_atom_coord.append([float(line_i_split[1]), float(line_i_split[2]), float(line_i_split[3].strip('\n'))])
 
@@ -86,7 +86,7 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
     group_atom_coord = []
     for j in range(len(group_atom)):
       line_ij = linecache.getline(file_name, pre_base+base+i+j+1)
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       group_atom_coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
       if ( line_ij_split[0] == group_atom[j] ):
         check_group.append(True)
@@ -142,7 +142,7 @@ def droplet_run(droplet_param, work_dir):
 
   if ( 'center_id' in droplet_param.keys() ):
     center_id = droplet_param['center_id']
-    center_id = list_dic_op.get_id_list(center_id)
+    center_id = data_op.get_id_list(center_id)
     center_id_num = [int(x) for x in center_id]
   else:
     print ('Cannot find id of center atom, please set center_id')

@@ -1,7 +1,7 @@
 #! /usr/env/bin python
 
 import linecache
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def get_index(file_name):
   total_step = len(open(file_name).readlines())
@@ -16,7 +16,7 @@ def get_index(file_name):
     value.append(float(b[len(b)-1]))
   min_index = value.index(min(value))
   line = linecache.getline(file_name, min_index+1)
-  num = list_dic_op.get_str_num(line[5:8])
+  num = data_op.get_str_num(line[5:8])
 
   return num
 

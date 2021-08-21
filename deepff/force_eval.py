@@ -75,7 +75,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
         a = call.call_returns_shell(lammps_sys_task_dir, cmd_a)
         a_int = int(a[0].split(':')[0])
         line_k = linecache.getline(log_file, a_int+k+1)
-        line_k_split = list_dic_op.str_split(line_k, ' ')
+        line_k_split = data_op.str_split(line_k, ' ')
         for l in range(6):
           box.append(float(line_k_split[l+7]))
 
@@ -85,9 +85,9 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
 
         for l in range(atoms_num):
           line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
-          line_kl_split = list_dic_op.str_split(line_kl, ' ')
+          line_kl_split = data_op.str_split(line_kl, ' ')
 
-          atoms.append(list_dic_op.get_dic_keys(atoms_type_dic_tot[i], int(line_kl_split[1]))[0])
+          atoms.append(data_op.get_dic_keys(atoms_type_dic_tot[i], int(line_kl_split[1]))[0])
           coord.append([float(line_kl_split[2]), float(line_kl_split[3]), float(line_kl_split[4])])
 
         #Dump forces for models.
@@ -98,14 +98,14 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
           model_dump_file = ''.join((model_dir, '/traj_', str(k), '/atom.dump'))
           for m in range(atoms_num):
             line_lm = linecache.getline(model_dump_file, m+9+1)
-            line_lm_split = list_dic_op.str_split(line_lm, ' ')
+            line_lm_split = data_op.str_split(line_lm, ' ')
             id_l.append(int(line_lm_split[0]))
             frc_model_l.append([float(line_lm_split[5]), \
                                 float(line_lm_split[6]), \
                                 float(line_lm_split[7].strip('\n'))])
 
-          id_l_asc, asc_index = list_dic_op.list_order(id_l, 'ascend', True)
-          frc_model_l_asc = list_dic_op.order_list(frc_model_l, asc_index)
+          id_l_asc, asc_index = data_op.list_order(id_l, 'ascend', True)
+          frc_model_l_asc = data_op.order_list(frc_model_l, asc_index)
           frc_model.append(frc_model_l_asc)
 
         force_devi = []
@@ -170,7 +170,7 @@ def calc_dist(atoms, coord, a_vec, b_vec, c_vec):
       Example : {(O,H):[1.0,1.0], (H,H):[1.5]}
   '''
 
-  atoms_type = list_dic_op.list_replicate(atoms)
+  atoms_type = data_op.list_replicate(atoms)
   atoms_type_coord = []
 
   for i in range(len(atoms_type)):

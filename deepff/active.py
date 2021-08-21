@@ -6,7 +6,7 @@ import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import read_input
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
 from CP2K_kit.deepff import check_deepff
@@ -284,7 +284,7 @@ def write_active_data(work_dir, conv_iter):
 #                       frc_y_cp2k, force_y_lmp, frc_z_cp2k, force_z_lmp, sys_dir)
 
 def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-             init_train_data, work_dir, max_iter, restart_iter, host, device, usage):
+             init_train_data, work_dir, max_iter, restart_iter, proc_num, host, device, usage):
 
   '''
   run_iter : run active learning iterations.
@@ -340,7 +340,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
   cp2k_env_file = environ_dic['cp2k_env_file']
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
-  cp2k_mpi_num = environ_dic['cp2k_mpi_num']
+  cp2k_job_num = environ_dic['cp2k_job_num']
   lmp_mpi_num = environ_dic['lmp_mpi_num']
   lmp_openmp_num = environ_dic['lmp_openmp_num']
 
@@ -400,9 +400,9 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
     for key1 in struct_index:
       for key2 in struct_index:
         if ( len(struct_index[key1][key2]) != 0 ):
-          sys_task_index = list_dic_op.comb_list_2_str(struct_index[key1][key2], ' ')
+          sys_task_index = data_op.comb_list_2_str(struct_index[key1][key2], ' ')
           str_tmp = 'Choosed index for system %d task %d: %s' %(key1, key2, sys_task_index)
-          str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+          str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
           print (str_tmp, flush=True)
 
     print ('  The accurate ratio for iteration %d traning is %.2f%%' %(i, success_ratio*100), flush=True)
@@ -427,7 +427,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
       get_stress = True
     cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
                            struct_index, conv_new_data_num, choose_new_data_num_limit, get_stress)
-    cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, cp2k_env_file, cp2k_mpi_num)
+    cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num)
 
     ##Get new data of CP2K
     for j in range(sys_num):
@@ -467,7 +467,7 @@ def kernel(work_dir, inp_file):
     host = []
     for i in range(line_num-1):
       line_i = linecache.getline(host_file, i+2)
-      line_i_split = list_dic_op.str_split(line_i, ' ')
+      line_i_split = data_op.str_split(line_i, ' ')
       host.append(line_i_split[1].strip('\n'))
     ssh = True
   else:
@@ -484,6 +484,7 @@ def kernel(work_dir, inp_file):
 
   deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
   check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+  print ('Check input file: no error in %s' %(inp_file), flush=True)
 
   max_iter = force_eval_dic['max_iter']
   restart_iter = force_eval_dic['restart_iter']
@@ -492,10 +493,10 @@ def kernel(work_dir, inp_file):
 
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):
-    print ('%s' %(list_dic_op.str_wrap(init_train_data[i], 80)), flush=True)
+    print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
   run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-           init_train_data, work_dir, max_iter, restart_iter, host, device, usage)
+           init_train_data, work_dir, max_iter, restart_iter, proc_num, host, device, usage)
 
 if __name__ == '__main__':
 

@@ -8,7 +8,7 @@ import subprocess
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
                     descr_seed, fit_seed, tra_seed, neuron, model_type):
@@ -181,7 +181,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
     if ( len(host) < model_num ):
       host_list = host_list*math.ceil(model_num/len(host))
     host_list = host_list[0:model_num]
-    host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+    host_comb = data_op.comb_list_2_str(host_list, ' ')
 
     run = '''
 #! /bin/bash
@@ -251,9 +251,9 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
   if ( len(host) == 1 and len(device[0]) > 1 ):
     if ( len(device[0]) >= model_num ):
       device_choose = device[0][0:model_num]
-      device_str = list_dic_op.comb_list_2_str(device_choose, ' ')
-      model_list = list_dic_op.gen_list(start, end, 1)
-      model_str = list_dic_op.comb_list_2_str(model_list, ' ')
+      device_str = data_op.comb_list_2_str(device_choose, ' ')
+      model_list = data_op.gen_list(start, end, 1)
+      model_str = data_op.comb_list_2_str(model_list, ' ')
 
       run = '''
 #! /bin/bash
@@ -317,9 +317,9 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       run_end = run_start+len(device[0])-1
       cycle = math.ceil(model_num/len(device[0]))
       for i in range(cycle):
-        device_str = list_dic_op.comb_list_2_str(device[0][0:(run_end-run_start+1)], ' ')
-        model_list = list_dic_op.gen_list(run_start, run_end, 1)
-        model_str = list_dic_op.comb_list_2_str(model_list, ' ')
+        device_str = data_op.comb_list_2_str(device[0][0:(run_end-run_start+1)], ' ')
+        model_list = data_op.gen_list(run_start, run_end, 1)
+        model_str = data_op.comb_list_2_str(model_list, ' ')
         run = '''
 #! /bin/bash
 
@@ -384,24 +384,24 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
           run_end = end
 
   #Case 5
-  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(list_dic_op.list_replicate(device)) == 1 ):
+  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(data_op.list_replicate(device)) == 1 ):
 
     host_exp = []
     for i in range(len(host)):
       for j in range(len(device[i])):
         host_exp.append(host[i])
-    device_exp = list_dic_op.list_reshape(device)
+    device_exp = data_op.list_reshape(device)
 
     if ( len(device_exp) >= model_num ):
       host_list = []
       for i in range(len(model_num)):
         host_list.append('-S' + ' ' + host_exp[i])
       host_list = host_list[0:model_num]
-      host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+      host_comb = data_op.comb_list_2_str(host_list, ' ')
       device_choose = device_exp[0:model_num]
-      device_str = list_dic_op.comb_list_2_str(device_choose, ' ')
-      model_list = list_dic_op.gen_list(start, end, 1)
-      model_str = list_dic_op.comb_list_2_str(model_list, ' ')
+      device_str = data_op.comb_list_2_str(device_choose, ' ')
+      model_list = data_op.gen_list(start, end, 1)
+      model_str = data_op.comb_list_2_str(model_list, ' ')
 
       run = '''
 #! /bin/bash
@@ -463,13 +463,13 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       run_end = run_start+len(device_exp)-1
       cycle = math.ceil(model_num/len(device_exp))
       for i in range(cycle):
-        device_str = list_dic_op.comb_list_2_str(device_exp[0:(run_end-run_start+1)], ' ')
-        model_list = list_dic_op.gen_list(run_start, run_end, 1)
-        model_str = list_dic_op.comb_list_2_str(model_list, ' ')
+        device_str = data_op.comb_list_2_str(device_exp[0:(run_end-run_start+1)], ' ')
+        model_list = data_op.gen_list(run_start, run_end, 1)
+        model_str = data_op.comb_list_2_str(model_list, ' ')
         host_list = []
         for j in range(run_end-run_start+1):
           host_list.append('-S' + ' ' + host_exp[j])
-        host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+        host_comb = data_op.comb_list_2_str(host_list, ' ')
 
         run = '''
 #! /bin/bash
@@ -535,7 +535,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
           run_end = end
 
   #Case 6
-  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(list_dic_op.list_replicate(device)) != 1 ):
+  if ( len(host) > 1 and not all(len(i) == 0 for i in device) and len(data_op.list_replicate(device)) != 1 ):
     host_true = []
     for i in range(len(host)):
       if ( len(device[i]) != 0 ):
@@ -544,7 +544,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       host_list = []
       for i in range(model_num):
         host_list.append('-S' + ' ' + host_true[j])
-      host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+      host_comb = data_op.comb_list_2_str(host_list, ' ')
 
       run = '''
 #! /bin/bash
@@ -593,7 +593,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
         host_list = []
         for j in range(run_end-run_start+1):
           host_list.append('-S' + ' ' + host_true[j])
-        host_comb = list_dic_op.comb_list_2_str(host_list, ' ')
+        host_comb = data_op.comb_list_2_str(host_list, ' ')
         run = '''
 #! /bin/bash
 
@@ -671,7 +671,7 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
 
   if ( len(check_deepmd_gen) != 0 and all(i == 0 for i in check_deepmd_gen) ):
     str_tmp = 'Success: generate deepmd-kit tasks in %s' %(train_dir)
-    str_tmp = list_dic_op.str_wrap(str_tmp, 80, '  ')
+    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
     print (str_tmp, flush=True)
   else:
     log_info.log_error('Generating deepmd-kit tasks error, please check iteration %d' %(iter_id))

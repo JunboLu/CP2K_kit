@@ -8,7 +8,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import call
 from CP2K_kit.tools import numeric
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import log_info
 
@@ -47,30 +47,17 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
   virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
 
   atoms = []
-  task_0_dir = ''.join((file_dir, '/', file_prefix, str(0)))
-  inp_file_0 = ''.join((file_dir, '/', file_prefix, str(0), '/input.inp'))
 
-  cmd_a = "grep -n %s %s" % ("'&CELL'", 'input.inp')
-  a = call.call_returns_shell(task_0_dir, cmd_a)
-  a_int = int(a[0].split(':')[0])
-
-  cmd_b = "grep -n %s %s" %("'&COORD'", 'input.inp')
-  b = call.call_returns_shell(task_0_dir, cmd_b)
-  b_int = int(b[0].split(':')[0])
-
-  cmd_c = "grep -n %s %s" %("'&END COORD'", 'input.inp')
-  c = call.call_returns_shell(task_0_dir, cmd_c)
-  c_int = int(c[0].split(':')[0])
-
-  atoms_num = c_int-b_int-1
+  coord_file_0 = ''.join((file_dir, '/', file_prefix, str(0), '/coord'))
+  atoms_num = len(open(coord_file_0).readlines())
 
   #Dump atoms type information
   for i in range(atoms_num):
-    line_i = linecache.getline(inp_file_0, b_int+i+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i = linecache.getline(coord_file_0, i+1)
+    line_i_split = data_op.str_split(line_i, ' ')
     atoms.append(line_i_split[0])
 
-  atoms_type = list_dic_op.list_replicate(atoms)
+  atoms_type = data_op.list_replicate(atoms)
 
   atoms_dic = {}
   for i in range(len(atoms_type)):
@@ -89,21 +76,23 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
   for i in range(task_num):
 
     task_dir_i = ''.join((file_dir, '/', file_prefix, str(i)))
-    inp_file_i = ''.join((task_dir_i, '/input.inp'))
+    box_file_i = ''.join((task_dir_i, '/box'))
+    coord_file_i = ''.join((task_dir_i, '/coord'))
     out_file_i = ''.join((task_dir_i, '/cp2k.out'))
     frc_file_i = ''.join((task_dir_i, '/', proj_name, '-1_0.xyz'))
     stress_file_i = ''.join((task_dir_i, '/', proj_name, '-1_0.stress_tensor'))
 
-    inp_exist = os.path.exists(inp_file_i)
+    box_exist = os.path.exists(box_file_i)
+    coord_exist = os.path.exists(coord_file_i)
     out_exist = os.path.exists(out_file_i)
     frc_exist = os.path.exists(frc_file_i)
 
     #Dump box information
-    if ( inp_exist and out_exist and frc_exist ):
+    if ( box_exist and coord_exist and out_exist and frc_exist ):
       vec = []
       for j in range(3):
-        line_ij = linecache.getline(inp_file_i, a_int+j+1)
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij = linecache.getline(box_file_i, j+1)
+        line_ij_split = data_op.str_split(line_ij, ' ')
         #vol will be used in stress calculation.
         vec.append([float(line_ij_split[1]), \
                     float(line_ij_split[2]), \
@@ -126,8 +115,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
 
     #Dump coord information
       for j in range(atoms_num):
-        line_ij = linecache.getline(inp_file_i, b_int+j+1)
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij = linecache.getline(coord_file_i, j+1)
+        line_ij_split = data_op.str_split(line_ij, ' ')
         if (j==0):
           frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
         else:
@@ -139,7 +128,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
     #Dump force information
       for j in range(atoms_num):
         line_ij = linecache.getline(frc_file_i, j+4+1)
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.str_split(line_ij, ' ')
         f1 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
         f2 = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
         f3 = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
@@ -156,7 +145,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
     if os.path.exists(stress_file_i):
       for j in range(3):
         line_ij = linecache.getline(stress_file_i, j+5)
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.str_split(line_ij, ' ')
         stress_1 = float(line_ij_split[1])*vol/160.21766208
         stress_2 = float(line_ij_split[2])*vol/160.21766208
         stress_3 = float(line_ij_split[3].strip('\n'))*vol/160.21766208
@@ -219,14 +208,14 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   if ( start == 0 and end == 0 and choosed_num == 0 ):
     start = start_id
     end = end_id
-    choosed_index = list_dic_op.gen_list(start, end, each)
+    choosed_index = data_op.gen_list(start, end, each)
 
   if ( start != 0 or end != 0 ):
     if ( start >= end ):
       log_info.log_error('End frame id is less than end frame id for trajectory in %s, please check!' %(proj_dir))
       exit()
     else:
-      total_index = list_dic_op.gen_list(start, end, each)
+      total_index = data_op.gen_list(start, end, each)
       max_choosed_num = int((end-start)/each)+1
       if ( choosed_num > max_choosed_num ):
         log_info.log_error('choosed_frame_num is larger than max choosed_frame_num for trajectory in %s, please check!' %(proj_dir))
@@ -244,7 +233,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   if os.path.exists(md_cell_file):
     for i in range(len(choosed_index)):
       line_i = linecache.getline(md_cell_file, int((choosed_index[i]-start_id)/each)+2)
-      line_i_split = list_dic_op.str_split(line_i, ' ')
+      line_i_split = data_op.str_split(line_i, ' ')
       vol.append(float(line_i_split[len(line_i_split)-1].strip('\n')))
       for j in range(9):
         if ( j == 0 ):
@@ -260,7 +249,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
       a_int = int(a[0].split(':')[0])
       for i in range(3):
         line_i = linecache.getline(restart_file, a_int+i+1)
-        line_i_split = list_dic_op.str_split(line_i, ' ')
+        line_i_split = data_op.str_split(line_i, ' ')
         if ( i == 0 ):
           frame_str = ' '.join((line_i_split[1], line_i_split[2], line_i_split[3].strip('\n')))
         else:
@@ -278,7 +267,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
   for i in range(len(choosed_index)):
     line_i = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2) + 2)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     energy = float(line_i_split[len(line_i_split)-1].strip('\n'))*hartree_to_ev
     energy_file.write(''.join((str(energy),'\n')))
 
@@ -288,10 +277,10 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   atoms = []
   for i in range(atoms_num):
     line_i = linecache.getline(md_pos_file, 2+i+1)
-    line_i_split = list_dic_op.str_split(line_i, ' ')
+    line_i_split = data_op.str_split(line_i, ' ')
     atoms.append(line_i_split[0])
 
-  atoms_type = list_dic_op.list_replicate(atoms)
+  atoms_type = data_op.list_replicate(atoms)
 
   atoms_type_dic = {}
   for i in range(len(atoms_type)):
@@ -313,7 +302,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
     frame_str = ''
     for j in range(atoms_num):
       line_ij = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
-      line_ij_split = list_dic_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.str_split(line_ij, ' ')
       if (j==0):
         frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
       else:
@@ -332,7 +321,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
       frame_str = ''
       for j in range(atoms_num):
         line_ij = linecache.getline(md_frc_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
-        line_ij_split = list_dic_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.str_split(line_ij, ' ')
         f1 = float(line_ij_split[1])*hartree_to_ev*ang_to_bohr
         f2 = float(line_ij_split[2])*hartree_to_ev*ang_to_bohr
         f3 = float(line_ij_split[3].strip('\n'))*hartree_to_ev*ang_to_bohr
@@ -357,7 +346,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
       frame_str = ''
       #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
       line_i = linecache.getline(stress_file, int((choosed_index[i]-start_id)/each)+2)
-      line_i_split = list_dic_op.str_split(line_i, ' ')
+      line_i_split = data_op.str_split(line_i, ' ')
       #The unit of stress tensor in 'xx-1.stress' file is bar.
       for j in range(9):
         if ( j != 9 ):
@@ -374,7 +363,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
 
     virial_file.close()
 
-  total_index = list_dic_op.gen_list(start_id, end_id, each)
+  total_index = data_op.gen_list(start_id, end_id, each)
   no_train_data_index = copy.deepcopy(total_index)
 
   for i in choosed_index:
@@ -542,7 +531,7 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
 #  random.shuffle(index)
   part_num = math.ceil(frames_num/parts)
   index_parts = []
-  index_temp = list_dic_op.list_split(index, part_num)
+  index_temp = data_op.list_split(index, part_num)
   for i in index_temp:
     index_parts.append(i)
 

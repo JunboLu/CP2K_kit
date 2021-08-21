@@ -2,7 +2,7 @@
 
 import subprocess
 from CP2K_kit.tools import call
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                     method, val_elec_num, python_exe, get_min_index):
@@ -252,7 +252,7 @@ cd $direc
   for line in iter(p.stdout.readline, 'b'):
     line = line.rstrip().decode('utf8')
     if ( line != '' ):
-      line_split = list_dic_op.str_split(line, ' ')
+      line_split = data_op.str_split(line, ' ')
       if ( len(line_split) == 2 ):
         restart_index.append(int(line_split[0]))
         value.append(float(line_split[1]))

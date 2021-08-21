@@ -7,7 +7,7 @@ import linecache
 import numpy as np
 from CP2K_kit.lib import statistic_mod
 from CP2K_kit.tools import log_info
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def calc_v_hartree(cube_file, surface, work_dir):
 
@@ -41,21 +41,21 @@ Tips:
   print (tips, flush=True)
 
   line = linecache.getline(cube_file, 3)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   atoms_num = int(line_split[0])
 
   line = linecache.getline(cube_file, 4)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   a_grids = int(line_split[0])
   a = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
 
   line = linecache.getline(cube_file, 5)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   b_grids = int(line_split[0])
   b = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
 
   line = linecache.getline(cube_file, 6)
-  line_split = list_dic_op.str_split(line, ' ')
+  line_split = data_op.str_split(line, ' ')
   c_grids = int(line_split[0])
   c = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
 
@@ -83,7 +83,7 @@ Tips:
       for k in range(block_line_num):
         temp_list = []
         line = linecache.getline(cube_file, i*second_index*block_line_num+j*block_line_num+k+pre_file+1)
-        line_split = list_dic_op.str_split(line, ' ')
+        line_split = data_op.str_split(line, ' ')
         line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
         for l in range (len(line_split)):
           v_hartree[i,j,k*6+l] = float(line_split[l])

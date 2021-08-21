@@ -4,7 +4,7 @@ import os
 import math
 import linecache
 from CP2K_kit.tools import call
-from CP2K_kit.tools import list_dic_op
+from CP2K_kit.tools import data_op
 
 def get_block_base(file_name):
 
@@ -31,7 +31,7 @@ def get_block_base(file_name):
     p_base = 0
     base = 2
     line = linecache.getline(file_name, 2)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     if ( "-pos-" in file_name or "-vel-" in file_name or "-frc-" in file_name):
       file_start = int(line_split[2].strip(','))
     else:
@@ -42,7 +42,7 @@ def get_block_base(file_name):
     p_base = 0
     base = 0
     line = linecache.getline(file_name, 1)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     file_start = int(line_split[0])
 
   if ("-1.ener" in file_name and "mix" not in file_name):
@@ -50,7 +50,7 @@ def get_block_base(file_name):
     p_base = 1
     base = 0
     line = linecache.getline(file_name, 2)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     file_start = int(line_split[0])
 
   if ("LagrangeMultLog" in file_name):
@@ -87,7 +87,7 @@ def find_breakpoint(file_name):
   compare_list = []
   for i in range(blocks_num):
     line = linecache.getline(file_name, pre_base+base+i+1)
-    line_split = list_dic_op.str_split(line, ' ')
+    line_split = data_op.str_split(line, ' ')
     compare_list.append(line_split[0])
 
   #This part is complicated. Maybe we need a better way.
@@ -101,7 +101,7 @@ def find_breakpoint(file_name):
         break
       else:
         line = linecache.getline(file_name,line_num)
-        c = list_dic_op.str_split(line, ' ')
+        c = data_op.str_split(line, ' ')
         frame_list.append(c[0])
     if (frame_list != compare_list and frame_list != []):
       breakpoint_frame.append(i+frame_start)
