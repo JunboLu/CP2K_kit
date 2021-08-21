@@ -96,9 +96,9 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
     std_inp_file.write('      METHOD GPW\n')
     std_inp_file.write('      EXTRAPOLATION ASPC\n')
     std_inp_file.write('    &END QS\n')
-    poisson_peridic = cp2k_param['poisson_peridic']
+    poisson_periodic = cp2k_param['poisson_periodic']
     std_inp_file.write('    &POISSON\n')
-    if ( cp2k_param['poisson_periodic'] == 'NONE' ):
+    if ( poisson_periodic == 'NONE' ):
       std_inp_file.write('      POISSON_SOLVER WAVELET\n')
     std_inp_file.write('      PERIODIC %s\n' %(poisson_periodic))
     std_inp_file.write('    &END POISSON\n')
@@ -452,7 +452,11 @@ x_arr=(${x///})
 cd $direc/task_${x_arr[0]}
 
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
-''' %(cp2k_env_file, cp2k_exe)
+
+grep "SCF run NOT converged" cp2k.out
+if [ $? -eq 0 ]; then
+mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
+''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
       run_file = ''.join((cp2k_sys_dir, '/run.sh'))
       with open(run_file, 'w') as f:

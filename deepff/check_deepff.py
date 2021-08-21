@@ -757,7 +757,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     functional_lib = ['PBE', 'B3LYP', 'TPSS']
     if ( 'xc_functional' in new_cp2k_dic.keys() ):
       xc_functional = new_cp2k_dic['xc_functional']
-      if ( xc_functional in function_lib ):
+      if ( xc_functional in functional_lib ):
         pass
       else:
         log_info.log_error('Input error: %s functional is not suported' %(xc_functional))
