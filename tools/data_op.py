@@ -158,6 +158,8 @@ def list_replicate(list_temp, return_num=False):
       Example : [2, 2, 1]
   '''
 
+  assert isinstance(list_temp, list)
+
   list_type = []
   for x in list_temp:
     if x not in list_type:
@@ -207,6 +209,36 @@ def list_order(list_temp, order, return_index=False):
     return list(list_order)
   else:
     return list(list_order), list(list_order_index)
+
+def expand_2d_list(list_tmp, n, element):
+
+  '''
+  expand_2d_list : expand two dimensional list
+
+  Args :
+    list_tmp : 2d list
+      list_tmp is the list needed to be expanded.
+    n : int
+      n is the dimension.
+    element is the expanding element.
+  Returns :
+    new_list : 2-d list
+      new_list is the expanded list.
+  '''
+
+  new_list = []
+  for i in range(len(list_tmp)):
+    new_list_i = []
+    list_i_len = len(list_tmp[i])
+    assert list_i_len <= n
+    for j in range(n):
+      if ( j <= list_i_len-1 ):
+        new_list_i.append(list_tmp[i][j])
+      else:
+        new_list_i.append(element)
+    new_list.append(new_list_i)
+
+  return new_list
 
 #Functions for string
 def eval_str(str_tmp):

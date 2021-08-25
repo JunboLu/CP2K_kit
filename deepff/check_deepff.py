@@ -301,6 +301,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
         else:
           new_deepmd_dic['training'][i]['set_parts'] = 1
 
+    if ( 'train_stress' in new_deepmd_dic['training'].keys() ):
+      train_stress = new_deepmd_dic['training']['train_stress']
+      train_stress_bool = data_op.str_to_bool(train_stress)
+      if ( isinstance(train_stress_bool, bool) ):
+        new_deepmd_dic['training']['train_stress'] = train_stress_bool
+      else:
+        log_info.log_error('Input error: train_stress should be bool, please check or reset deepff/deepmd/training/train_stress')
+        exit()
+    else:
+      new_deepmd_dic['training']['train_stress'] = False
+
     if ( 'set_data_dir' in new_deepmd_dic['training'].keys() ):
       set_data_dir = new_deepmd_dic['training']['set_data_dir']
       if ( os.path.exists(os.path.abspath(set_data_dir)) ):
@@ -541,27 +552,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     new_lmp_dic['tau_p'] = '%f' %(float(new_lmp_dic['time_step'])*200)
 
-  if ( 'md_type' in new_lmp_dic.keys() ):
-    md_type = new_lmp_dic['md_type']
-    if ( md_type == 'nvt' or md_type == 'npt' ):
-      pass
-    else:
-      log_info.log_error('Input error: md_type wrong, please check deepff/lammps/md_type')
-      exit()
-  else:
-    new_lmp_dic['md_type'] = 'nvt'
-
   if ( 'temp' in new_lmp_dic.keys() ):
     temp = new_lmp_dic['temp']
     if ( isinstance(temp, list) ):
       if ( all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in temp)):
-        pass
+        new_lmp_dic['temp'] = [float(i) for i in temp]
       else:
         log_info.log_error('Input error: temp wrong, please check deepff/lammps/temp')
         exit()
     else:
       if ( data_op.eval_str(temp) == 1 or data_op.eval_str(temp) == 2 ):
-        pass
+        new_lmp_dic['temp'] = float(temp)
       else:
         log_info.log_error('Input error: temp wrong, please check deepff/lammps/temp')
         exit()
@@ -572,13 +573,13 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     pres = new_lmp_dic['pres']
     if ( isinstance(pres, list) ):
       if ( all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in pres)):
-        pass
+        new_lmp_dic['pres'] = [float(i) for i in pres]
       else:
-        log_info.log_error('Input error: pres wrong, please check deepff/lammps/pres')
+        log_info.log_error('Input error: multipole pressure wrong, please check deepff/lammps/pres')
         exit()
     else:
       if ( data_op.eval_str(pres) == 1 or data_op.eval_str(pres) == 2 ):
-        pass
+        new_lmp_dic['pres'] = float(pres)
       else:
         log_info.log_error('Input error: pres wrong, please check deepff/lammps/pres')
         exit()
@@ -589,19 +590,55 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   for key in new_lmp_dic.keys():
     if ( 'system' in key ):
       sys_num = sys_num+1
-      if ( 'box' in new_lmp_dic[key] ):
+
+      if ( 'box' in new_lmp_dic[key].keys() ):
         box_file = new_lmp_dic[key]['box']
         if ( os.path.exists(os.path.abspath(box_file)) ):
           new_lmp_dic[key]['box'] = os.path.abspath(box_file)
         else:
-          log_info.log_error('%s file does not exist' %(box_file))
+          log_info.log_error('Input error: %s file does not exist' %(box_file))
           exit()
-      if ( 'coord' in new_lmp_dic[key] ):
+
+      if ( 'coord' in new_lmp_dic[key].keys() ):
         coord_file = new_lmp_dic[key]['coord']
         if ( os.path.exists(os.path.abspath(coord_file)) ):
           new_lmp_dic[key]['coord'] = os.path.abspath(coord_file)
         else:
-          log_info.log_error('%s file does not exist' %(coord_file))
+          log_info.log_error('Input error: %s file does not exist' %(coord_file))
+          exit()
+
+      valid_md_type = ['nve', 'nvt', 'npt']
+      if ( 'md_type' in new_lmp_dic[key].keys() ):
+        md_type = new_lmp_dic[key]['md_type']
+        if ( md_type in valid_md_type ):
+          pass
+        else:
+          log_info.log_error('Input error: md_type wrong, please check deepff/lammps/system/md_type')
+          exit()
+      else:
+        new_lmp_dic[key]['md_type'] = 'nvt'
+
+      if ( 'use_metad' in new_lmp_dic[key].keys() ):
+        use_metad = new_lmp_dic[key]['use_metad']
+        use_metad_bool = data_op.str_to_bool(use_metad)
+        if ( isinstance(use_metad_bool, bool) ):
+          new_lmp_dic[key]['use_metad'] = use_metad_bool
+        else:
+          log_info.log_out('Input error: use_metad wrong, please check or set deepff/lammps/system/use_metad')
+          exit()
+      else:
+        new_lmp_dic[key]['use_metad'] = False
+
+      if new_lmp_dic[key]['use_metad'] :
+        if ( 'plumed_file' in new_lmp_dic[key].keys() ):
+          plumed_file = new_lmp_dic[key]['plumed_file']
+          if ( os.path.exists(os.path.abspath(plumed_file)) ):
+            new_lmp_dic[key]['plumed_file'] = os.path.abspath(plumed_file)
+          else:
+            log_info.log_error('Input error: %s file does not exist, please check deepff/lammps/system/plumed_file' %(plumed_file))
+            exit()
+        else:
+          log_info.log_error('Input error: as you want to use plumed, but no plumed_file, please check deepff/lammps/system/plumed_file')
           exit()
 
   if ( sys_num == 0 ):
@@ -765,13 +802,24 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       new_cp2k_dic['xc_functional'] = 'PBE'
 
+    if ( 'use_prev_wfn' in new_cp2k_dic.keys() ):
+      use_prev_wfn = new_cp2k_dic['use_prev_wfn']
+      use_prev_wfn_bool = data_op.str_to_bool(use_prev_wfn)
+      if ( isinstance(use_prev_wfn_bool, bool) ):
+        new_cp2k_dic['use_prev_wfn'] = use_prev_wfn_bool
+      else:
+        log_info.log_error('Input error: use_prev_wfn should be bool, please check or reset deepff/cp2k/use_prev_wfn')
+        exit()
+    else:
+      new_cp2k_dic['use_prev_wfn'] = False
+
     if ( 'dftd3' in new_cp2k_dic.keys() ):
       dftd3 = new_cp2k_dic['dftd3']
       dftd3_bool = data_op.str_to_bool(dftd3)
       if ( isinstance(dftd3_bool, bool) ):
         new_cp2k_dic['dftd3'] = dftd3_bool
       else:
-        log_info.log_error('Input error: dftd3 wrong, please check or set deepff/cp2k/dftd3')
+        log_info.log_error('Input error: dftd3 should be bool, please check or check or reset deepff/cp2k/dftd3')
         exit()
     else:
       new_cp2k_dic['dftd3'] = False

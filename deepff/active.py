@@ -52,7 +52,7 @@ def dump_input(work_dir, inp_file, f_key):
 
   return deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic
 
-def dump_init_data(work_dir, deepmd_dic, restart_iter):
+def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
 
   '''
   dump_init_data : load initial training data.
@@ -69,6 +69,10 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
       init_train_data contains initial training data directories.
   '''
 
+  if ( restart_iter == 0 ):
+    cmd = 'rm -rf init_train_data'
+    call.call_simple_shell(work_dir, cmd)
+
   i = 0
   init_train_data = []
   cmd = "mkdir %s" % ('init_train_data')
@@ -79,18 +83,24 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter):
     set_data_dir = train_dic['set_data_dir']
   for key in train_dic:
     if ( 'system' in key):
-      init_train_key_dir = train_dic[key]['directory']
-      proj_name = train_dic[key]['proj_name']
-      start = train_dic[key]['start_frame']
-      end = train_dic[key]['end_frame']
-      choosed_num = train_dic[key]['choosed_frame_num']
-      parts = train_dic[key]['set_parts']
       save_dir = ''.join((work_dir, '/init_train_data/data_', str(i)))
-      init_train_data.append(save_dir)
       if ( restart_iter == 0 ):
-        load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num)
+        init_train_key_dir = train_dic[key]['directory']
+        proj_name = train_dic[key]['proj_name']
+        start = train_dic[key]['start_frame']
+        end = train_dic[key]['end_frame']
+        choosed_num = train_dic[key]['choosed_frame_num']
+        parts = train_dic[key]['set_parts']
+        init_train_data.append(save_dir)
+        load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+      else:
+        if ( os.path.exists(save_dir) ):
+          pass
+        else:
+          log_info.log_error('%s does not exist for training system %d' %(save_dir, i))
+          exit()
       i = i+1
 
   if 'set_data_dir' in locals():
@@ -113,7 +123,8 @@ def write_active_data(work_dir, conv_iter):
   '''
 
   active_data_dir = ''.join((work_dir, '/active_data'))
-  print ('Active data is written in %s' %(active_data_dir), flush=True)
+  str_print = 'Active data is written in %s' %(active_data_dir)
+  print (data_op.str_wrap(str_print, 80), flush=True)
 
   cmd = "mkdir %s" %('active_data')
   call.call_simple_shell(work_dir, cmd)
@@ -329,8 +340,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
   neuron = deepmd_dic['training']['neuron']
-
-  md_type = lammps_dic['md_type']
+  train_stress = deepmd_dic['training']['train_stress']
 
   conv_new_data_num = force_eval_dic['conv_new_data_num']
   choose_new_data_num_limit = force_eval_dic['choose_new_data_num_limit']
@@ -397,14 +407,6 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
     ##Get force-force correlation and then choose new structures
     struct_index, success_ratio = force_eval.choose_lmp_str(work_dir, i, atoms_type_dic_tot, atoms_num_tot, force_conv)
 
-    for key1 in struct_index:
-      for key2 in struct_index:
-        if ( len(struct_index[key1][key2]) != 0 ):
-          sys_task_index = data_op.comb_list_2_str(struct_index[key1][key2], ' ')
-          str_tmp = 'Choosed index for system %d task %d: %s' %(key1, key2, sys_task_index)
-          str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
-          print (str_tmp, flush=True)
-
     print ('  The accurate ratio for iteration %d traning is %.2f%%' %(i, success_ratio*100), flush=True)
     choose_data_num = []
     for key1 in struct_index:
@@ -421,12 +423,8 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
 
     print ('Step 3: cp2k tasks', flush=True)
     ##Perform cp2k calculation
-    if ( md_type == 'nvt' or md_type == 'nve' ):
-      get_stress = False
-    elif ( md_type == 'npt' ):
-      get_stress = True
     cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
-                           struct_index, conv_new_data_num, choose_new_data_num_limit, get_stress)
+                           struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
     cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num)
 
     ##Get new data of CP2K
@@ -488,8 +486,9 @@ def kernel(work_dir, inp_file):
 
   max_iter = force_eval_dic['max_iter']
   restart_iter = force_eval_dic['restart_iter']
+  train_stress = deepmd_dic['training']['train_stress']
 
-  init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter)
+  init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress)
 
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):

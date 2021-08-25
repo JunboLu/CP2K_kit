@@ -10,5 +10,7 @@
     lmp_log_file ./log.lammps
     cp2k_inp_file ./cp2k.inp
     atom_label 1:O 2:H
+    cp2k_mpi_num 4
+    cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
   &end dp_test
 &end analyze

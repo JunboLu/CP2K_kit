@@ -6,10 +6,11 @@
 &analyze
   &geometry
     &choose_structure
-      traj_file ./UO2_REDOX_aimd-pos-1.xyz
+      traj_file ./UO22+_aimd-pos-1.xyz
+      file_type coord
       atom_id 1-5
       init_step 0
-      end_step 20359
+      end_step 69792
     &end choose_structure
   &end geometry
 &end analyze

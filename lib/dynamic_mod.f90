@@ -5,7 +5,7 @@ use vector
 implicit none
 contains
 
-  subroutine remove_coord_com(coord,atom_mass,l,m,n)
+  subroutine remove_coord_com(coord,atom_mass,coord_sub_com,l,m,n)
 
     integer::l,m,n
     integer::i,j,k
@@ -38,7 +38,7 @@ contains
 
   end subroutine
 
-  subroutine diffusion_einstein_sum(coord,sum_array,u,l,m,n)
+  subroutine diffusion_einstein_sum(coord,u,sum_array,l,m,n)
 
     integer::l,m,n,u
     integer::i,j,k

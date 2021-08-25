@@ -7,7 +7,7 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import *
 
-def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stress=False):
+def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_stress):
 
   '''
   gen_cp2kfrc_file : generate cp2k input file for force calculation
@@ -27,8 +27,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
     coord : 2-d string list, dim = (num of atoms) * 4
       example : [[['O','-9.64','-0.71','5.80'],['H','-10.39','-1.31','6.15'],['H','-8.89','-35.4','6.37']],
                  [['O','-2.64','-7.14','5.52'],['H','-2.89','-6.23','5.10'],['H','-1.70','-7.36','5.28']]]
-    get_stress : bool
-      get_stress is whether we need to get stress tensor
+    train_stress : bool
+      train_stress is whether we need to get stress tensor
   Returns :
     none
   '''
@@ -78,7 +78,14 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
 
     basis_file = cp2k_param['basis_set_file_name']
     psp_file = cp2k_param['potential_file_name']
-    wfn_file = './cp2k-RESTART.wfn'
+    use_prev_wfn = cp2k_param['use_prev_wfn']
+    if use_prev_wfn:
+      if ( i == 0 ):
+        wfn_file = './cp2k-RESTART.wfn'
+      else:
+        wfn_file = ''.join(('../task_', str(i-1), '/cp2k-RESTART.wfn'))
+    else:
+      wfn_file = './cp2k-RESTART.wfn'
     charge = cp2k_param['charge']
     spin = cp2k_param['multiplicity']
     cutoff = cp2k_param['cutoff']
@@ -144,7 +151,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
   std_inp_file.write('    &FORCES\n')
   std_inp_file.write('      FILENAME\n')
   std_inp_file.write('    &END FORCES\n')
-  if get_stress:
+  if train_stress:
     std_inp_file.write('    &STRESS_TENSOR\n')
     std_inp_file.write('      FILENAME\n')
     std_inp_file.write('    &END STRESS_TENSOR\n')
@@ -240,7 +247,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, get_stre
     call.call_simple_shell(cp2k_task_dir, 'cp %s %s' %(std_inp_file_name, 'input.inp'))
 
 def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, \
-                  struct_index, conv_new_data_num, choose_new_data_num_limit, get_stress=False):
+                  struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress):
 
   '''
   gen_cp2k_task : generate cp2k tasks based on choosed struct_index
@@ -262,8 +269,8 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
                sys_id          task_id              traj_id
     choose_new_data_num_limit : int
       choose_new_data_num_limit is the maximum number of choosed new structures.
-    get_stress : bool
-      get_stress is whether we need to get stress tensor
+    train_stress : bool
+      train_stress is whether we need to get stress tensor
   Returns :
     box : 3-d string list
       example : [[['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']],
@@ -313,7 +320,11 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
       new_choosed_index = list(choosed_index_array[0:choosed_index_num[i]])
 
       lammps_sys_task_dir = ''.join((lammps_sys_dir, '/task_', str(choosed_task[i])))
-      if ( new_choosed_index != [] ):
+      if ( len(new_choosed_index) != 0 ):
+        sys_task_index = data_op.comb_list_2_str(sorted(new_choosed_index), ' ')
+        str_print = 'Choosed index for system %d lammps task %d: %s' %(key, choosed_task[i], sys_task_index)
+        str_print = data_op.str_wrap(str_print, 80, '  ')
+        print (str_print, flush=True)
         for j in new_choosed_index:
           box_j = []
           coord_j = []
@@ -358,7 +369,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
 
           coord.append(coord_j)
 
-    gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, get_stress)
+    gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, train_stress)
 
 def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num):
 
@@ -394,9 +405,9 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
      else:
        check_cp2k_gen.append(1)
   if ( all(i == 0 for i in check_cp2k_gen) ):
-    str_tmp = 'Success: generate cp2k tasks in %s' %(cp2k_calc_dir)
-    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
-    print (str_tmp, flush=True)
+    str_print = 'Success: generate cp2k tasks in %s' %(cp2k_calc_dir)
+    str_print = data_op.str_wrap(str_print, 80, '  ')
+    print (str_print, flush=True)
   else:
     log_info.log_error('Generating cp2k tasks error, please check iteration %d' %(iter_id))
     exit()
@@ -455,7 +466,11 @@ mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 
 grep "SCF run NOT converged" cp2k.out
 if [ $? -eq 0 ]; then
+line=`grep -n "WFN_RESTART_FILE_NAME" | awk -F ":" '{print $1}'`
+sed -ie ''$line's/.*/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn/' input.inp
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
+fi
+
 ''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
       run_file = ''.join((cp2k_sys_dir, '/run.sh'))

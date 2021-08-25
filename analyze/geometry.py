@@ -13,6 +13,7 @@ from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import traj_tools
 from CP2K_kit.analyze import rdf
 from CP2K_kit.analyze import center
+from CP2K_kit.analyze import check_analyze
 from CP2K_kit.lib import geometry_mod
 from CP2K_kit.lib import statistic_mod
 
@@ -62,16 +63,16 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
                                                         np.asfortranarray(a_vec, dtype='float32'), \
                                                         np.asfortranarray(b_vec, dtype='float32'), \
                                                         np.asfortranarray(c_vec, dtype='float32'))
-        coord_num_temp = data_op.list_num_stat(dist, r_cut, 'less')
-        coord_num_i.append(coord_num_temp)
+        coord_num_tmp = data_op.list_num_stat(dist, r_cut, 'less')
+        coord_num_i.append(coord_num_tmp)
     coord_num.append(coord_num_i)
 
-  atoms_type_coord_num = OrderedDict()
+  coord_num_avg = []
   for i in range(len(coord_num)):
-    coord_num_temp = sum(coord_num[i])/len(coord_num[i])
-    atoms_type_coord_num[atoms_type[i]] = coord_num_temp
+    coord_num_tmp = sum(coord_num[i])/len(coord_num[i])
+    coord_num_avg.append(coord_num_tmp)
 
-  return atoms_type, atoms_type_coord_num
+  return atoms_type, coord_num_avg
 
 def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp, b_exp, c_exp, work_dir):
 
@@ -131,8 +132,8 @@ def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp
     coord_atom_exp[i], coord_atom_exp[i], coord_atom_exp[i]))
 
 
-def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, start, end, time_step,
-                     file_name, a_vec, b_vec, c_vec, atom_1_id, atom_2_id, work_dir):
+def bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
+                     time_step, traj_coord_file, a_vec, b_vec, c_vec, atom_1_id, atom_2_id, work_dir):
 
   '''
   bond_length_stat : get the bond length between two atoms over different frames.
@@ -144,8 +145,8 @@ def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, st
       base is the number of lines before structure in a structure block.
     pre_base : int
       pre_base is the number of lines before block of trajectory file.
-    file_start : int
-      file_start is the starting frame in trajectory file.
+    start_frame_id : int
+      start_frame_id is the starting frame in trajectory file.
     frames_num : int
       frames_num is the number of frames in trajectory file.
     each : int
@@ -186,23 +187,23 @@ def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, st
   b_vec = np.asfortranarray(b_vec, dtype='float32')
   c_vec = np.asfortranarray(c_vec, dtype='float32')
 
-  center.center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, 'center_box', 0, file_name, work_dir)
+  center_file = center.center(atoms_num, base, pre_base, frames_num, \
+                a_vec, b_vec, c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
 
-  stat_num = int((end-start)/each+1)
-  new_file_name = ''.join((work_dir, '/center_box.xyz'))
-  coord_atom_1 = np.asfortranarray(np.zeros((stat_num,3)),dtype='float32')
-  coord_atom_2 = np.asfortranarray(np.zeros((stat_num,3)),dtype='float32')
+  frame_stat_num = int((end_step-init_step)/each+1)
+  coord_atom_1 = np.asfortranarray(np.zeros((frame_stat_num,3)),dtype='float32')
+  coord_atom_2 = np.asfortranarray(np.zeros((frame_stat_num,3)),dtype='float32')
   time = []
 
-  for i in range(stat_num):
+  for i in range(frame_stat_num):
     time.append(time_step*each*i)
-    line_i_1 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_1_id+base)
+    line_i_1 = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_1_id+base)
     line_i_1_split = data_op.str_split(line_i_1, ' ')
     coord_atom_1[i,0] = float(line_i_1_split[1])
     coord_atom_1[i,1] = float(line_i_1_split[2])
     coord_atom_1[i,2] = float(line_i_1_split[3].strip('\n'))
 
-    line_i_2 = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_2_id+base)
+    line_i_2 = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_2_id+base)
     line_i_2_split = data_op.str_split(line_i_2, ' ')
     coord_atom_2[i,0] = float(line_i_2_split[1])
     coord_atom_2[i,1] = float(line_i_2_split[2])
@@ -211,13 +212,13 @@ def bond_length_stat(atoms_num, base, pre_base, file_start, frames_num, each, st
   distance = geometry_mod.geometry.calculate_distance(coord_atom_1, coord_atom_2, a_vec, b_vec, c_vec)
   distance_avg, sigma = statistic_mod.statistic.numerical_average(distance)
 
-  cmd = 'rm center_box.xyz'
+  cmd = 'rm %s' %(center_file)
   call.call_simple_shell(work_dir, cmd)
 
   return time, distance, distance_avg, sigma
 
-def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, start, end,
-                    time_step, file_name, atom_1_id, atom_2_id, atom_3_id):
+def bond_angle_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
+                    end_step, time_step, traj_coord_file, atom_1_id, atom_2_id, atom_3_id):
 
   #atom_2_id is the center for bond angle analysis.
 
@@ -231,8 +232,8 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
       base is the number of lines before structure in a structure block.
     pre_base : int
       pre_base is the number of lines before block of trajectory file.
-    file_start : int
-      file_start is the starting frame in trajectory file.
+    start_frame_id : int
+      start_frame_id is the starting frame in trajectory file.
     frames_num : int
       frames_num is the number of frames in trajectory file.
     each : int
@@ -260,15 +261,15 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
       angle_avg is the averaged angle between three atoms.
   '''
 
-  stat_num = int((end-start)/each+1)
-  coord_atom_1 = np.asfortranarray(np.zeros((stat_num,3)),dtype='float32')
-  coord_atom_2 = np.asfortranarray(np.zeros((stat_num,3)),dtype='float32')
-  coord_atom_3 = np.asfortranarray(np.zeros((stat_num,3)),dtype='float32')
+  frame_stat_num = int((end_step-init_step)/each+1)
+  coord_atom_1 = np.asfortranarray(np.zeros((frame_stat_num,3)),dtype='float32')
+  coord_atom_2 = np.asfortranarray(np.zeros((frame_stat_num,3)),dtype='float32')
+  coord_atom_3 = np.asfortranarray(np.zeros((frame_stat_num,3)),dtype='float32')
   time = []
 
-  for i in range(stat_num):
+  for i in range(frame_stat_num):
     time.append(time_step*i*each)
-    a_atom_1 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_1_id+base)
+    a_atom_1 = linecache.getline(traj_coord_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_1_id+base)
     b_atom_1 = a_atom_1.split(' ')
     c_atom_1 = []
     for j in range(len(b_atom_1)):
@@ -278,7 +279,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
     coord_atom_1[i,1] = float(c_atom_1[2])
     coord_atom_1[i,2] = float(c_atom_1[3].strip('\n'))
 
-    a_atom_2 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_2_id+base)
+    a_atom_2 = linecache.getline(traj_coord_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_2_id+base)
     b_atom_2 = a_atom_2.split(' ')
     c_atom_2 = []
     for j in range(len(b_atom_2)):
@@ -288,7 +289,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
     coord_atom_2[i,1] = float(c_atom_2[2])
     coord_atom_2[i,2] = float(c_atom_2[3].strip('\n'))
 
-    a_atom_3 = linecache.getline(file_name, (int((start-file_start)/each)+i)*(atoms_num+2)+atom_3_id+base)
+    a_atom_3 = linecache.getline(traj_coord_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_3_id+base)
     b_atom_3 = a_atom_3.split(' ')
     c_atom_3 = []
     for j in range(len(b_atom_3)):
@@ -303,7 +304,7 @@ def bond_angle_stat(atoms_num, base, pre_base, file_start, frames_num, each, sta
 
   return time, angle, angle_avg, sigma
 
-def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_vec, b_vec, c_vec, work_dir):
+def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, traj_file, a_vec, b_vec, c_vec, work_dir, file_name):
 
   #This function works for small molecule where there is a center atom, and other atoms are ligands.
 
@@ -341,71 +342,77 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_tot, traj_file, a_
 
   order_list = []
 
-  for i in range(len(group_tot)):
-    atom_id = group_tot[i]['atom_id']
-    atom_id_list = data_op.get_id_list(atom_id)
-    group_atom = group_tot[i]['group_atom']
-    group_atom_type, group_atom_type_num = data_op.list_replicate(group_atom, True)
+  #Get the order list from the first frame
+  for i in range(len(group_atom)):
+    order_list_i = []
+    atom_id_i = atom_id[i]
+    group_atom_i = group_atom[i]
+    if ( len(atom_id_i) == len(group_atom_i) ):
+      for j in atom_id_i:
+        order_list_i.append(j)
+    else:
+      if ( len(atom_id_i) != 1 and atom_id_i[0] in atom_id_i[1:len(atom_id_i)] ):
+        log_info.log_error('Order structure error: complex structure is not supported!')
+        exit()
+      else:
+        group_atom_type, group_atom_type_num = data_op.list_replicate(group_atom_i, True)
 
-    group_coord = []
-    group_atom_id = []
-    for j in range(len(group_atom_type)):
-      group_coord_j = []
-      group_atom_id_j = []
-      for k in atom_id_list:
-        line_k = linecache.getline(traj_file, pre_base+base+k)
-        line_k_split = data_op.str_split(line_k, ' ')
-        if ( line_k_split[0] == group_atom_type[j] ):
-          group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3].strip('\n'))])
-          group_atom_id_j.append(k)
-      group_coord.append(group_coord_j)
-      group_atom_id.append(group_atom_id_j)
+        group_coord = []
+        group_atom_id = []
+        for j in range(len(group_atom_type)):
+          group_coord_j = []
+          group_atom_id_j = []
+          for k in atom_id_i:
+            line_k = linecache.getline(traj_file, pre_base+base+k)
+            line_k_split = data_op.str_split(line_k, ' ')
+            if ( line_k_split[0] == group_atom_type[j] ):
+              group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3].strip('\n'))])
+              group_atom_id_j.append(k)
+          group_coord.append(group_coord_j)
+          group_atom_id.append(group_atom_id_j)
 
-    for j in range(len(group_coord[0])):
-      coord_1 = []
-      coord_2 = []
-      order_list.append(group_atom_id[0][j]) #The center atom
-      #######################################################
-      for k in range(len(group_coord)-1):
-        for l in range(len(group_coord[0+k+1])):
-          coord_1.append(group_coord[0][j])
-          coord_2.append(group_coord[0+k+1][l])
+        for j in range(len(group_coord[0])):
+          coord_1 = []
+          coord_2 = []
+          order_list_i.append(group_atom_id[0][j]) #The center atom
+          #######################################################
+          for k in range(len(group_coord)-1):
+            for l in range(len(group_coord[0+k+1])):
+              coord_1.append(group_coord[0][j])
+              coord_2.append(group_coord[0+k+1][l])
 
-        dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
-                                                        np.asfortranarray(coord_2, dtype='float32'), \
-                                                        np.asfortranarray(a_vec, dtype='float32'), \
-                                                        np.asfortranarray(b_vec, dtype='float32'), \
-                                                        np.asfortranarray(c_vec, dtype='float32'), \
-                                                        len(coord_1), 3)
+            dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
+                                                            np.asfortranarray(coord_2, dtype='float32'), \
+                                                            np.asfortranarray(a_vec, dtype='float32'), \
+                                                            np.asfortranarray(b_vec, dtype='float32'), \
+                                                            np.asfortranarray(c_vec, dtype='float32'), \
+                                                            len(coord_1), 3)
 
-        dist_ascend, dist_ascend_index = data_op.list_order(dist, 'ascend', True)
-        coord_1 = []
-        coord_2 = []
-        for l in range(group_atom_type_num[0+k+1]):
-          order_list.append(group_atom_id[0+k+1][dist_ascend_index[l]])
-      #######################################################
-      #The above block is used to dump ligand atoms.
+            dist_ascend, dist_ascend_index = data_op.list_order(dist, 'ascend', True)
+            coord_1 = []
+            coord_2 = []
+            for l in range(group_atom_type_num[0+k+1]):
+              order_list_i.append(group_atom_id[0+k+1][dist_ascend_index[l]])
+          #######################################################
+          #The above block is used to dump ligand atoms.
+    order_list.append(order_list_i)
 
-  exclude_list = data_op.gen_list(1,atoms_num,1)
-  for i in order_list:
-    exclude_list.remove(i)
-
-  order_list = exclude_list + order_list
-  new_file_name = ''.join((work_dir, '/traj_order.xyz'))
+  new_file_name = ''.join((work_dir, '/', file_name))
   new_traj_file = open(new_file_name, 'w')
   for i in range(frames_num):
     line_i_1 = linecache.getline(traj_file, (base+atoms_num)*i+1+pre_base)
     line_i_2 = linecache.getline(traj_file, (base+atoms_num)*i+2+pre_base)
     new_traj_file.write(line_i_1)
     new_traj_file.write(line_i_2)
-    for j in order_list:
-      line_ij = linecache.getline(traj_file, (base+atoms_num)*i+base+j+pre_base)
-      new_traj_file.write(line_ij)
+    for j in range(len(order_list)):
+      for k in order_list[j]:
+        line_ijk = linecache.getline(traj_file, (base+atoms_num)*i+base+k+pre_base)
+        new_traj_file.write(line_ijk)
 
-  return new_file_name
+  return new_file_name, order_list
 
-def first_shell(atoms_num, base, pre_base, file_start, frames_num, each, start, end, atom_type_1, atom_type_2,
-                a_vec, b_vec, c_vec, file_name, dist_first_shell, converge, work_dir):
+def first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, atom_type_1, \
+                atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, dist_first_shell, converge, work_dir):
 
   #Before you run this function, please do a rdf, then you will know the distance of first shell.
 
@@ -419,8 +426,8 @@ def first_shell(atoms_num, base, pre_base, file_start, frames_num, each, start, 
       base is the number of lines before structure in a structure block.
     pre_base : int
       pre_base is the number of lines before block of trajectory file.
-    file_start : int
-      file_start is the starting frame in trajectory file.
+    start_frame_id : int
+      start_frame_id is the starting frame in trajectory file.
     frames_num : int
       frames_num is the number of frames in trajectory file.
     each : int
@@ -456,8 +463,8 @@ def first_shell(atoms_num, base, pre_base, file_start, frames_num, each, start, 
   '''
 
   #distance is 3-d float list (frames_num*(number of atom_1)*(number of atom_2)).
-  distance, atom_1, atom_2 = rdf.distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end,
-                                          atom_type_1, atom_type_2, a_vec, b_vec, c_vec, file_name, work_dir)
+  distance, atom_1, atom_2 = rdf.distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step,
+                                          atom_type_1, atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir)
 
   dim1, dim2, dim3 = np.array(distance).shape
 
@@ -481,19 +488,19 @@ def first_shell(atoms_num, base, pre_base, file_start, frames_num, each, start, 
 
   return first_shell, dist
 
-def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
+def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
 
   '''
   This function is complicated, it is not very general. It is used in spectrum mode analysis.
   It is mainly designed to get the nearest triangle atoms in plane.
   '''
 
-  atoms_num, pre_base, base, file_start = traj_tools.get_block_base(file_name)
+  atoms_num, pre_base, base, start_frame_id = traj_tools.get_block_base(traj_coord_file, 'coord')
 
   sur_atom_id_o = []
 
   coord_atom_1 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
-  a_atom_1 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+center_atom_id+base)
+  a_atom_1 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+center_atom_id+base+pre_base)
   c = data_op.str_split(a_atom_1, ' ')
   coord_atom_1[0,0] = float(c[1])
   coord_atom_1[0,1] = float(c[2])
@@ -507,7 +514,7 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
     angle_list = []
     id_list = []
     coord_atom_2 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
-    a_atom_2 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+sur_atom_id[i]+base)
+    a_atom_2 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+sur_atom_id[i]+base+pre_base)
     c = data_op.str_split(a_atom_2, ' ')
     coord_atom_2[0,0] = float(c[1])
     coord_atom_2[0,1] = float(c[2])
@@ -516,7 +523,7 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, start, file_name):
     for j in range(len(sur_atom_id)):
       if (j != i):
         coord_atom_3 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
-        a_atom_3 = linecache.getline(file_name, (start-file_start+frame_id)*(atoms_num+2)+sur_atom_id[j]+base)
+        a_atom_3 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+sur_atom_id[j]+base)
         c = data_op.str_split(a_atom_3, ' ')
         coord_atom_3[0,0] = float(c[1])
         coord_atom_3[0,1] = float(c[2])
@@ -559,266 +566,249 @@ def geometry_run(geometry_param, work_dir):
     none
   '''
 
+  geometry_param = check_analyze.check_geometry_inp(geometry_param)
+
   if ( 'coord_num' in geometry_param ):
     coord_num_param = geometry_param['coord_num']
 
-    if ( 'traj_file' in coord_num_param.keys() ):
-      traj_file = coord_num_param['traj_file']
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/geometry/coord_num/traj_file')
-      exit()
-
-    if ( 'r_cut' in coord_num_param.keys() ):
-      r_cut = float(coord_num_param['r_cut'])
-    else:
-      r_cut = 6.0
-
-    if ( 'box' in coord_num_param.keys() ):
-      A_exist = 'A' in coord_num_param['box'].keys()
-      B_exist = 'B' in coord_num_param['box'].keys()
-      C_exist = 'C' in coord_num_param['box'].keys()
-    else:
-      log_info.log_error('No box found, please set analyze/geometry/coord_num/box')
-      exit()
-
-    if ( A_exist and B_exist and C_exist):
-      box_A = coord_num_param['box']['A']
-      box_B = coord_num_param['box']['B']
-      box_C = coord_num_param['box']['C']
-    else:
-      log_info.log_error('Box setting error, please check analyze/geometry/coord_num/box')
-      exit()
-
-    a_vec = [float(x) for x in box_A]
-    b_vec = [float(x) for x in box_B]
-    c_vec = [float(x) for x in box_C]
+    traj_coord_file = coord_num_param['traj_coord_file']
+    r_cut = coord_num_param['r_cut']
+    init_step = coord_num_param['init_step']
+    end_step = coord_num_param['end_step']
+    a_vec = coord_num_param['box']['A']
+    b_vec = coord_num_param['box']['B']
+    c_vec = coord_num_param['box']['C']
 
     atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-    traj_info.get_traj_info(traj_file)
+    traj_info.get_traj_info(traj_coord_file, 'coord')
 
-    coord_num_file = ''.join((work_dir, '/coord_num.csv'))
-    with open(coord_num_file, 'w') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(['frame','coord_num'])
-      for i in range(frames_num):
-        atoms = []
-        coord = []
-        for j in range(atoms_num):
-          line_ij = linecache.getline(traj_file, (atoms_num+base)*i+pre_base+base+j+1)
-          line_ij_split = data_op.str_split(line_ij, ' ')
-          atoms.append(line_ij_split[0])
-          coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
-        atoms_type, coord_num = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
-        writer.writerow([i, coord_num])
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
+
+    center_file = center.center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, \
+                                'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
+
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Coordination number of each atom type', flush=True)
+
+    frames_num_stat = int((end_step-init_step)/each+1)
+
+    atoms = []
+    for i in range(atoms_num):
+      line_i = linecache.getline(center_file, pre_base+base+i+1)
+      line_i_split = data_op.str_split(line_i, ' ')
+      atoms.append(line_i_split[0])
+
+    atoms_type = data_op.list_replicate(atoms)
+    coord_num_tot = [0]*len(atoms_type)
+
+    for i in range(frames_num_stat):
+      atoms = []
+      coord = []
+      for j in range(atoms_num):
+        line_ij = linecache.getline(center_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+pre_base+base+j+1)
+        line_ij_split = data_op.str_split(line_ij, ' ')
+        atoms.append(line_ij_split[0])
+        coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
+      atoms_type_j, coord_num_j = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
+      for j in range(len(atoms_type)):
+        coord_num_tot[j] = coord_num_tot[j] + coord_num_j[j]
+
+    for i in range(len(atoms_type)):
+      print ('Atom type %s is: %d' %(atoms_type[i], int(coord_num_tot[i]/frames_num_stat)), flush=True)
+
+    cmd = 'rm %s' %(center_file)
+    call.call_simple_shell(work_dir, cmd)
 
   elif ( 'bond_length' in geometry_param ):
     bond_length_param = geometry_param['bond_length']
 
-    if ( 'traj_file' in bond_length_param.keys() ):
-      traj_file = bond_length_param['traj_file']
-      atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(traj_file)
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/geometry/bond_length/traj_file')
-      exit()
+    traj_coord_file = bond_length_param['traj_coord_file']
+    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord')
 
-    if ( 'atom_pair' in bond_length_param.keys() ):
-      atom_pair = [int (x) for x in bond_length_param['atom_pair']]
-      atom_1 = atom_pair[0]
-      atom_2 = atom_pair[1]
-    else:
-      log_info.log_error('No atom pair found, please set analyze/geometry/bond_length/atom_pair')
-      exit()
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    if ( 'init_step' in bond_length_param.keys() ):
-      init_step = int(bond_length_param['init_step'])
-    else:
-      init_step = start_frame_id
+    atom_pair = bond_length_param['atom_pair']
+    atom_1 = atom_pair[0]
+    atom_2 = atom_pair[1]
 
-    if ( 'end_step' in bond_length_param.keys() ):
-      end_step = int(bond_length_param['end_step'])
-    else:
-      end_step = start_frame_id + each
+    init_step = bond_length_param['init_step']
+    end_step = bond_length_param['end_step']
 
-    if ( 'box' in bond_length_param.keys() ):
-      A_exist = 'A' in bond_length_param['box'].keys()
-      B_exist = 'B' in bond_length_param['box'].keys()
-      C_exist = 'C' in bond_length_param['box'].keys()
-    else:
-      log_info.log_error('No box found, please set analyze/geometry/bond_length/box')
-      exit()
+    a_vec = geometry_param['bond_length']['box']['A']
+    b_vec = geometry_param['bond_length']['box']['B']
+    c_vec = geometry_param['bond_length']['box']['C']
 
-    if ( A_exist and B_exist and C_exist):
-      box_A = bond_length_param['box']['A']
-      box_B = bond_length_param['box']['B']
-      box_C = bond_length_param['box']['C']
-    else:
-      log_info.log_error('Box setting error, please check analyze/geometry/bond_length/box')
-      exit()
-
-    a_vec = [float(x) for x in box_A]
-    b_vec = [float(x) for x in box_B]
-    c_vec = [float(x) for x in box_C]
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Analyze bond length between %d and %d' %(atom_1, atom_2), flush=True)
 
     time, distance, distance_avg, sigma = \
     bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
-    end_step, time_step, traj_file, a_vec, b_vec, c_vec, atom_1, atom_2, work_dir)
+    end_step, time_step, traj_coord_file, a_vec, b_vec, c_vec, atom_1, atom_2, work_dir)
 
     dist_file = ''.join((work_dir, '/distance.csv'))
     with open(dist_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['time', 'distance'])
+      writer.writerow(['time(fs)', 'distance(Ang)'])
       for i in range(len(distance)):
         writer.writerow([time[i], distance[i]])
 
+    str_print = 'The file containing bond length (unit: angstrom) vs time (unit: fs) is written in %s' %(dist_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
     print ("The averaged bond length is %f (A) and standard error is %f (A)" %(distance_avg, sigma), flush=True)
 
   elif ( 'bond_angle' in geometry_param ):
     bond_angle_param = geometry_param['bond_angle']
 
-    if ( 'traj_file' in bond_angle_param.keys() ):
-      traj_file = bond_angle_param['traj_file']
-      atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(traj_file)
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/geometry/bond_angle/traj_file')
-      exit()
+    traj_coord_file = bond_angle_param['traj_coord_file']
+    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord')
 
-    if ( 'atom_pair' in bond_angle_param.keys() ):
-      atom_pair = [int (x) for x in bond_angle_param['atom_pair']]
-      atom_1 = atom_pair[0]
-      atom_2 = atom_pair[1]
-      atom_3 = atom_pair[2]
-    else:
-      log_info.log_error('No atom pair found, please set analyze/geometry/bond_angle/atom_pair')
-      exit()
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    if ( 'init_step' in bond_angle_param.keys() ):
-      init_step = int(bond_angle_param['init_step'])
-    else:
-      init_step = start_frame_id
+    atom_pair = bond_angle_param['atom_pair']
+    atom_1 = atom_pair[0]
+    atom_2 = atom_pair[1]
+    atom_3 = atom_pair[2]
 
-    if ( 'end_step' in bond_angle_param.keys() ):
-      end_step = int(bond_angle_param['end_step'])
-    else:
-      end_step = start_frame_id + each
+    init_step = bond_angle_param['init_step']
+
+    end_step = bond_angle_param['end_step']
+
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Analyze bond angle between %d and %d and %d' %(atom_1, atom_2, atom_3), flush=True)
 
     time, angle, angle_avg, sigma = \
     bond_angle_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step,
-    end_step, time_step, traj_file, atom_1, atom_2, atom_3)
+    end_step, time_step, traj_coord_file, atom_1, atom_2, atom_3)
 
     angle_file = ''.join((work_dir, '/angle.csv'))
     with open(angle_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['time', 'angle'])
+      writer.writerow(['time(fs)', 'angle(rad)'])
       for i in range(len(angle)):
         writer.writerow([time[i], angle[i]])
 
+    str_print = 'The file containing bond angle (unit: rad) vs time (unit: fs) is written in %s' %(angle_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
     print ("The averaged angle is %f (rad) and standard error is %f (rad)" %(angle_avg, sigma), flush=True)
 
   elif (  'first_shell' in geometry_param ):
     first_shell_param = geometry_param['first_shell']
 
-    if ( 'traj_file' in first_shell_param.keys() ):
-      traj_file = first_shell_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(traj_file)
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/geometry/first_shell/traj_file')
-      exit()
+    traj_coord_file = first_shell_param['traj_coord_file']
 
-    if ( 'atom_type_pair' in first_shell_param.keys() ):
-      atom_type_pair = first_shell_param['atom_type_pair']
-      atom_1 = atom_type_pair[0]
-      atom_2 = atom_type_pair[1]
-    else:
-      log_info.log_error('No atom pair found, please set analyze/geometry/first_shell/atom_pair')
-      exit()
+    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord')
 
-    if ( 'first_shell_dist' in first_shell_param.keys() ):
-      first_shell_dist = float(first_shell_param['first_shell_dist'])
-    else:
-      log_info.log_error('No first shell distance found, please set analyze/geometry/first_shell/first_shell_dist')
-      exit()
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    if ( 'dist_conv' in first_shell_param.keys() ):
-      dist_conv = float(first_shell_param['dist_conv'])
-    else:
-      dist_conv = 0.1
+    atom_type_pair = first_shell_param['atom_type_pair']
+    atom_1 = atom_type_pair[0]
+    atom_2 = atom_type_pair[1]
 
-    if ( 'init_step' in first_shell_param.keys() ):
-      init_step = int(first_shell_param['init_step'])
-    else:
-      init_step = start_frame_id
+    first_shell_dist = first_shell_param['first_shell_dist']
+    dist_conv = first_shell_param['dist_conv']
+    init_step = first_shell_param['init_step']
+    end_step = first_shell_param['end_step']
 
-    if ( 'end_step' in first_shell_param.keys() ):
-      end_step = int(first_shell_param['end_step'])
-    else:
-      end_step = start_frame_id + each
+    a_vec = first_shell_param['box']['A']
+    b_vec = first_shell_param['box']['B']
+    c_vec = first_shell_param['box']['C']
 
-    if ( 'box' in first_shell_param.keys() ):
-      A_exist = 'A' in first_shell_param['box'].keys()
-      B_exist = 'B' in first_shell_param['box'].keys()
-      C_exist = 'C' in first_shell_param['box'].keys()
-    else:
-      log_info.log_error('No box found, please set analyze/geometry/first_shell/box')
-      exit()
-
-    if ( A_exist and B_exist and C_exist):
-      box_A = first_shell_param['box']['A']
-      box_B = first_shell_param['box']['B']
-      box_C = first_shell_param['box']['C']
-    else:
-      log_info.log_error('Box setting error, please check analyze/geometry/first_shell/box')
-      exit()
-
-    a_vec = [float(x) for x in box_A]
-    b_vec = [float(x) for x in box_B]
-    c_vec = [float(x) for x in box_C]
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Analyze first shell between %s and %s' %(atom_1, atom_2), flush=True)
 
     first_shell_id, dist = first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
-                                       atom_1, atom_2, a_vec, b_vec, c_vec, traj_file, first_shell_dist, dist_conv, work_dir)
+                                       atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, first_shell_dist, dist_conv, work_dir)
 
-    first_shell_file = open('first_shell','w')
-    for i in range(len(first_shell_id)):
-      first_shell_file.write(str(first_shell_id[i])+' '+str(dist[i])+'\n')
+    first_shell_file = ''.join((work_dir, '/first_shell'))
+    with open(first_shell_file, 'w') as csvfile:
+      writer = csv.writer(csvfile)
+      writer.writerow(['time', 'coord_num', 'distance', 'first_shell_id'])
+      for i in range(len(first_shell_id)):
+        writer.writerow([time_step*i*each, len(dist[i][0]), dist[i][0], first_shell_id[i][0]])
 
-  elif (  'choose_structure' in geometry_param ):
+    str_print = 'The file containing first shell information is written in %s' %(first_shell_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+  elif ( 'choose_structure' in geometry_param ):
     choose_str_param = geometry_param['choose_structure']
 
-    if ( 'traj_file' in choose_str_param.keys() ):
-      traj_file = choose_str_param['traj_file']
-      atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(traj_file)
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/geometry/choose_structure/traj_file')
-      exit()
+    traj_coord_file = choose_str_param['traj_file']
+    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord')
 
-    if ( 'init_step' in choose_str_param.keys() ):
-      init_step = int(choose_str_param['init_step'])
-    else:
-      init_step = start_frame_id
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    if ( 'end_step' in choose_str_param.keys() ):
-      end_step = int(choose_str_param['end_step'])
-    else:
-      end_step = start_frame_id + each
+    init_step = choose_str_param['init_step']
+    end_step = choose_str_param['end_step']
+    atom_id = choose_str_param['atom_id']
 
-    if ( 'atom_id' in choose_str_param.keys() ):
-      atom_id = data_op.get_id_list(choose_str_param['atom_id'])
-    else:
-      log_info.log_error('No atom id found, please set analyze/geometry/choose_structure/atom_id')
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Choose structure for user defined atom id', flush=True)
 
-    traj_tools.choose_str(atoms_num, pre_base, base, each, init_step, end_step, \
-                          start_frame_id, traj_file, atom_id, work_dir)
+    choose_str_file = traj_tools.choose_str(atoms_num, pre_base, base, each, init_step, end_step, \
+                                            start_frame_id, traj_coord_file, [atom_id], work_dir, 'choose.xyz')
+
+    str_print = 'The choosed structure file is written in %s' %(choose_str_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+  elif ( 'order_structure' in geometry_param ):
+    order_str_param = geometry_param['order_structure']
+
+    traj_coord_file = order_str_param['traj_coord_file']
+    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord')
+
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
+
+    atom_id = order_str_param['atom_id']
+    group_atom = order_str_param['group_atom']
+    a_vec = order_str_param['box']['A']
+    b_vec = order_str_param['box']['B']
+    c_vec = order_str_param['box']['C']
+
+    traj_choose_file = traj_tools.choose_str(atoms_num, pre_base, base, each, start_frame_id, end_frame_id, \
+                       start_frame_id, traj_coord_file, atom_id, work_dir, 'traj_choose.xyz')
+
+    atom_id_new = []
+    atom_id_len = []
+    for i in range(len(atom_id)):
+      atom_id_len.append(len(atom_id[i]))
+
+    for i in range(len(atom_id_len)):
+      if ( i == 0 ):
+        atom_id_new.append(data_op.gen_list(1, atom_id_len[i], 1))
+      elif ( i == len(atom_id_len)-1 ):
+        atom_id_new.append(data_op.gen_list(sum(atom_id_len)-atom_id_len[i]+1, sum(atom_id_len), 1))
+      else:
+        atom_id_new.append(data_op.gen_list(sum(atom_id_len[0:i])+1, sum(atom_id_len[0:i])+atom_id_len[i], 1))
+
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Order structure for the trajectory with the connectivity')
+    traj_order_file, order_list = order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id_new,\
+                                  traj_choose_file, a_vec, b_vec, c_vec, work_dir, 'traj_order.xyz')
+    str_print = 'The ordered structure is written in %s' %(traj_order_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+    cmd = 'rm %s' %(traj_choose_file)
+    call.call_simple_shell(work_dir, cmd)
 
 if __name__ == '__main__':
   from collections import OrderedDict
   from CP2K_kit.analyze import geometry
+
+  center_atom_id = 1
+  sur_atom_id = [183, 186, 192, 195]
+  frame_id = 21091
+  init_step = 10000
+  each = 1
+  traj_coord_file = '/home/lujunbo/WORK/test/TEST_CP2K_KIT/TEST_ANALYZE/spectrum/UO22+_aimd-pos-1.xyz'
+  order = order_angle(center_atom_id, sur_atom_id, frame_id, init_step, each, traj_coord_file)
+  print (order)
+
+  exit()
   atoms_num = 250
   frames_num = 801
   base = 2

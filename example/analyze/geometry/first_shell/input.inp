@@ -6,11 +6,11 @@
 &analyze
   &geometry
     &first_shell
-      traj_file ./UO22+_aimd-pos-1.xyz
+      traj_coord_file ./UO22+_aimd-pos-1.xyz
       atom_type_pair U O
       first_shell_dist 2.5
-      dist_conv 0.2
-      init_step 65000 
+      dist_conv 0.3
+      init_step 0
       end_step 69792
       &box
         A 12.42 0.0 0.0

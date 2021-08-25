@@ -5,11 +5,11 @@
 
 &analyze
   &rdf
-    traj_file ./UO22+_aimd-pos-1.xyz
+    traj_coord_file ./UO22+_aimd-pos-1.xyz
     atom_type_pair U O
-    r_increment 0.1
+    r_increment 0.01
     init_step 0
-    end_step 18225
+    end_step 69792
     &box
       A 12.42 0.0 0.0
       B 0.0 12.42 0.0

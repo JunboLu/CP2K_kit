@@ -89,76 +89,79 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
 
     #Dump box information
     if ( box_exist and coord_exist and out_exist and frc_exist ):
-      vec = []
-      for j in range(3):
-        line_ij = linecache.getline(box_file_i, j+1)
-        line_ij_split = data_op.str_split(line_ij, ' ')
-        #vol will be used in stress calculation.
-        vec.append([float(line_ij_split[1]), \
-                    float(line_ij_split[2]), \
-                    float(line_ij_split[3])])
-        if ( j== 0 ):
-          frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
-        else:
-          frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+      grep_scf = 'grep %s %s' %("'SCF run NOT converged'", out_file_i)
+      grep_scf_info = call.call_returns_shell(save_dir, grep_scf)
+      if ( len(grep_scf_info) == 0 ):
+        vec = []
+        for j in range(3):
+          line_ij = linecache.getline(box_file_i, j+1)
+          line_ij_split = data_op.str_split(line_ij, ' ')
+          #vol will be used in stress calculation.
+          vec.append([float(line_ij_split[1]), \
+                      float(line_ij_split[2]), \
+                      float(line_ij_split[3])])
+          if ( j== 0 ):
+            frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+          else:
+            frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
 
-      vol = np.linalg.det(vec)
-      frame_str = ''.join((frame_str, '\n'))
-      box_file.write(frame_str)
+        vol = np.linalg.det(vec)
+        frame_str = ''.join((frame_str, '\n'))
+        box_file.write(frame_str)
 
-    #Dump energy information
-      cmd = "grep %s %s" % ("'ENERGY| Total FORCE_EVAL'", 'cp2k.out')
-      energy_parse = call.call_returns_shell(task_dir_i, cmd)
-      energy = float(energy_parse[0].split(':')[1].strip('\n'))
-      energy_ev = energy*hartree_to_ev
-      energy_file.write(''.join((str(energy_ev), '\n')))
+        #Dump energy information
+        cmd = "grep %s %s" % ("'ENERGY| Total FORCE_EVAL'", 'cp2k.out')
+        energy_parse = call.call_returns_shell(task_dir_i, cmd)
+        energy = float(energy_parse[0].split(':')[1].strip('\n'))
+        energy_ev = energy*hartree_to_ev
+        energy_file.write(''.join((str(energy_ev), '\n')))
 
-    #Dump coord information
-      for j in range(atoms_num):
-        line_ij = linecache.getline(coord_file_i, j+1)
-        line_ij_split = data_op.str_split(line_ij, ' ')
-        if (j==0):
-          frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
-        else:
-          frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+        #Dump coord information
+        for j in range(atoms_num):
+          line_ij = linecache.getline(coord_file_i, j+1)
+          line_ij_split = data_op.str_split(line_ij, ' ')
+          if (j==0):
+            frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+          else:
+            frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
 
-      frame_str = ''.join((frame_str, '\n'))
-      coord_file.write(frame_str)
+        frame_str = ''.join((frame_str, '\n'))
+        coord_file.write(frame_str)
 
-    #Dump force information
-      for j in range(atoms_num):
-        line_ij = linecache.getline(frc_file_i, j+4+1)
-        line_ij_split = data_op.str_split(line_ij, ' ')
-        f1 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
-        f2 = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
-        f3 = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
-        if (j==0):
-          frame_str = ' '.join((str(f1), str(f2), str(f3)))
-        else:
-          frame_str = ' '.join((frame_str, str(f1), str(f2), str(f3)))
+        #Dump force information
+        for j in range(atoms_num):
+          line_ij = linecache.getline(frc_file_i, j+4+1)
+          line_ij_split = data_op.str_split(line_ij, ' ')
+          f1 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
+          f2 = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
+          f3 = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
+          if (j==0):
+            frame_str = ' '.join((str(f1), str(f2), str(f3)))
+          else:
+            frame_str = ' '.join((frame_str, str(f1), str(f2), str(f3)))
 
-      frame_str = ''.join((frame_str, '\n'))
-      force_file.write(frame_str)
+        frame_str = ''.join((frame_str, '\n'))
+        force_file.write(frame_str)
 
-    #Dump virial information
-    #stress in 'xx-1.stress_tensor' is GPa.
-    if os.path.exists(stress_file_i):
-      for j in range(3):
-        line_ij = linecache.getline(stress_file_i, j+5)
-        line_ij_split = data_op.str_split(line_ij, ' ')
-        stress_1 = float(line_ij_split[1])*vol/160.21766208
-        stress_2 = float(line_ij_split[2])*vol/160.21766208
-        stress_3 = float(line_ij_split[3].strip('\n'))*vol/160.21766208
-        stress_str_1 = numeric.get_as_num_string(stress_1)
-        stress_str_2 = numeric.get_as_num_string(stress_2)
-        stress_str_3 = numeric.get_as_num_string(stress_3)
-        if ( j==0 ):
-          frame_str = ' '.join((stress_str_1, stress_str_2, stress_str_3))
-        else:
-          frame_str = ' '.join((frame_str, stress_str_1, stress_str_2, stress_str_3))
+        #Dump virial information
+        #stress in 'xx-1.stress_tensor' is GPa.
+        if os.path.exists(stress_file_i):
+          for j in range(3):
+            line_ij = linecache.getline(stress_file_i, j+5)
+            line_ij_split = data_op.str_split(line_ij, ' ')
+            stress_1 = float(line_ij_split[1])*vol/160.21766208
+            stress_2 = float(line_ij_split[2])*vol/160.21766208
+            stress_3 = float(line_ij_split[3].strip('\n'))*vol/160.21766208
+            stress_str_1 = numeric.get_as_num_string(stress_1)
+            stress_str_2 = numeric.get_as_num_string(stress_2)
+            stress_str_3 = numeric.get_as_num_string(stress_3)
+            if ( j==0 ):
+              frame_str = ' '.join((stress_str_1, stress_str_2, stress_str_3))
+            else:
+              frame_str = ' '.join((frame_str, stress_str_1, stress_str_2, stress_str_3))
 
-      frame_str = ''.join((frame_str, '\n'))
-      virial_file.write(frame_str)
+          frame_str = ''.join((frame_str, '\n'))
+          virial_file.write(frame_str)
 
   box_file.close()
   force_file.close()
@@ -170,7 +173,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
     cmd = "rm %s" % (''.join((save_dir, '/virial.raw')))
     call.call_simple_shell(save_dir, cmd)
 
-def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, choosed_num=0):
+def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress):
 
   '''
   load_data_from_dir : load initial training data from cp2k calculation directory.
@@ -200,7 +203,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   md_pos_file = ''.join((proj_dir, '/', proj_name, '-pos-1.xyz'))
   if os.path.exists(md_pos_file):
     atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-    traj_info.get_traj_info(md_pos_file)
+    traj_info.get_traj_info(md_pos_file, 'coord')
   else:
     log_info.log_error('There is no position trajectory file in %s' %(proj_dir))
     exit()
@@ -339,29 +342,32 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start=0, end=0, 
   force_file.close()
 
   #Dump virial information
-  stress_file = ''.join((proj_dir, '/', proj_name, '-1.stress'))
-  if os.path.exists(stress_file):
-    virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
-    for i in range(len(choosed_index)):
-      frame_str = ''
-      #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
-      line_i = linecache.getline(stress_file, int((choosed_index[i]-start_id)/each)+2)
-      line_i_split = data_op.str_split(line_i, ' ')
-      #The unit of stress tensor in 'xx-1.stress' file is bar.
-      for j in range(9):
-        if ( j != 9 ):
-          stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
-        else:
-          stress_j = float(line_i_split[j+2].strip('\n'))*vol[i]/(1602176.6208)
-        stress_j_str = numeric.get_as_num_string(stress_j)
-        if ( j == 0 ):
-          frame_str = ''.join((stress_j_str))
-        else:
-          frame_str = ' '.join((frame_str, stress_j_str))
-      frame_str = ''.join((frame_str, '\n'))
-      virial_file.write(frame_str)
+  if train_stress:
+    stress_file = ''.join((proj_dir, '/', proj_name, '-1.stress'))
+    if os.path.exists(stress_file):
+      virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
+      for i in range(len(choosed_index)):
+        frame_str = ''
+        #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
+        line_i = linecache.getline(stress_file, int((choosed_index[i]-start_id)/each)+2)
+        line_i_split = data_op.str_split(line_i, ' ')
+        #The unit of stress tensor in 'xx-1.stress' file is bar.
+        for j in range(9):
+          if ( j != 9 ):
+            stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
+          else:
+            stress_j = float(line_i_split[j+2].strip('\n'))*vol[i]/(1602176.6208)
+          stress_j_str = numeric.get_as_num_string(stress_j)
+          if ( j == 0 ):
+            frame_str = ''.join((stress_j_str))
+          else:
+            frame_str = ' '.join((frame_str, stress_j_str))
+        frame_str = ''.join((frame_str, '\n'))
+        virial_file.write(frame_str)
 
-    virial_file.close()
+      virial_file.close()
+    else:
+      log_info.log_error('Load data error: no stress data file')
 
   total_index = data_op.gen_list(start_id, end_id, each)
   no_train_data_index = copy.deepcopy(total_index)

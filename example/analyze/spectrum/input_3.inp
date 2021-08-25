@@ -7,12 +7,12 @@
   &power_spectrum
     type hydration_mode
     traj_vel_file ./UO22+_aimd-vel-1.xyz
-    traj_pos_file ./UO22+_aimd-pos-1.xyz
+    traj_coord_file ./UO22+_aimd-pos-1.xyz
     init_step 10000 
     end_step 50000
-    atom_pair U O
+    atom_type_pair U O
     hyd_shell_dist 2.5
-    dist_conv 0.3
+    dist_conv 0.4
     &box
       A 12.42 0.0 0.0
       B  0.0 12.42 0.0

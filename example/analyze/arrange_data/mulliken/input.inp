@@ -6,7 +6,7 @@
 &analyze
   &arrange_data
     &mulliken
-      traj_file ./Am_TODGA-MULLIKEN-1.mulliken
+      traj_mul_file ./Am_TODGA-MULLIKEN-1.mulliken
       atom_id 1 2
       time_step 0.5
     &end mulliken

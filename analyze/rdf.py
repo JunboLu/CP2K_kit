@@ -7,12 +7,14 @@ import linecache
 import numpy as np
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
-from CP2K_kit.analyze import center
 from CP2K_kit.tools import traj_info
+from CP2K_kit.tools import call
 from CP2K_kit.lib import geometry_mod
+from CP2K_kit.analyze import center
+from CP2K_kit.analyze import check_analyze
 
-def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end, \
-             atom_type_1, atom_type_2, a_vec, b_vec, c_vec, file_name, work_dir):
+def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
+             atom_type_1, atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir):
 
   '''
   distance : calculate distance between atom type 1 and atom type 2 over different frame.
@@ -24,14 +26,14 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
       base is the number of lines before structure in a structure block.
     pre_base : int
       pre_base is the number of lines before block of trajectory file.
-    file_start : int
-      file_start is the starting frame in trajectory file.
+    start_frame_id : int
+      start_frame_id is the starting frame in trajectory file.
     frames_num : int
       frames_num is the number of frames in trajectory file.
     each : int
       each is printing frequency of md.
-    start : int
-      start is the starting frame used to analyze.
+    init_step : int
+      init_step is the starting frame used to analyze.
     end : int
       end is the ending frame used to analyze.
     atom_type_1 : string
@@ -60,32 +62,32 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
       atom_id_2 contains atom id of atom_type_2
   '''
 
-  new_file_name = ''.join((work_dir, '/center_box.xyz'))
-  center.center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, 'center_box', 0, file_name, work_dir)
+  center_file = center.center(atoms_num, base, pre_base, frames_num, a_vec,  b_vec, \
+                c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
 
   atom_id_1 = []
   atom_id_2 = []
   for i in range(atoms_num):
-    line_i = linecache.getline(new_file_name, base+i+1)
+    line_i = linecache.getline(center_file, base+i+1)
     line_i_split = data_op.str_split(line_i, ' ')
     if ( line_i_split[0] == atom_type_1 ):
       atom_id_1.append(i+1)
     if ( line_i_split[0] == atom_type_2 ):
       atom_id_2.append(i+1)
 
-  frame_num_stat = int((end-start)/each+1)
+  frame_num_stat = int((end_step-init_step)/each+1)
 
   distance = []
   for i in range(frame_num_stat):
     distance_i = []
     for j in range(atoms_num):
-      line_j = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+base)+j+base+1)
+      line_j = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+j+base+1)
       line_j_split = data_op.str_split(line_j, ' ')
       if ( line_j_split[0] == atom_type_1 ):
         coord_1 = []
         coord_2 = []
         for k in range(atoms_num):
-          line_k = linecache.getline(new_file_name, (int((start-file_start)/each)+i)*(atoms_num+base)+k+base+1)
+          line_k = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+k+base+1)
           line_k_split = data_op.str_split(line_k, ' ')
           if ( line_k_split[0] == atom_type_2 and j != k ):
             coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3].strip('\n'))])
@@ -97,6 +99,9 @@ def distance(atoms_num, base, pre_base, file_start, frames_num, each, start, end
                                                         np.asfortranarray(c_vec, dtype='float32'))
         distance_i.append(list(dist))
     distance.append(distance_i)
+
+  cmd = 'rm %s' %(center_file)
+  call.call_simple_shell(work_dir, cmd)
 
   return distance, atom_id_1, atom_id_2
 
@@ -140,6 +145,8 @@ def rdf(distance, a_vec, b_vec, c_vec, r_increment, work_dir):
     for i in range(data_num-1):
       writer.writerow([r_increment*(i+1), rdf_value[i], integral_value[i]])
 
+  return rdf_file
+
 def rdf_run(rdf_param, work_dir):
 
   '''
@@ -154,62 +161,31 @@ def rdf_run(rdf_param, work_dir):
     none
   '''
 
-  if ( 'traj_file' in rdf_param.keys() ):
-    traj_file = rdf_param['traj_file']
-    if ( os.path.exists(traj_file) ):
-      atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(traj_file)
-    else:
-      log_info.log_error('%s file does not exist' %(traj_file))
-      exit()
-  else:
-    log_info.log_error('No trajectory file found, please set analyze/rdf/traj_file')
-    exit()
+  rdf_param = check_analyze.check_rdf_inp(rdf_param)
 
-  if ( 'atom_type_pair' in rdf_param.keys() ):
-    atom_type_pair = rdf_param['atom_type_pair']
-    atom_1 = atom_type_pair[0]
-    atom_2 = atom_type_pair[1]
-  else:
-    log_info.log_error('No atom type pair found, please set analyze/rdf/atom_pair')
-    exit()
+  traj_coord_file = rdf_param['traj_coord_file']
+  atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+  traj_info.get_traj_info(traj_coord_file, 'coord')
 
-  if ( 'box' in rdf_param.keys() ):
-    A_exist = 'A' in rdf_param['box'].keys()
-    B_exist = 'B' in rdf_param['box'].keys()
-    C_exist = 'C' in rdf_param['box'].keys()
-  else:
-    log_info.log_error('No box found, please set analyze/rdf/box')
-    exit()
+  log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-  if ( A_exist and B_exist and C_exist):
-    box_A = rdf_param['box']['A']
-    box_B = rdf_param['box']['B']
-    box_C = rdf_param['box']['C']
-  else:
-    log_info.log_error('Box setting error, please check analzye/rdf/box')
-    exit()
+  atom_type_pair = rdf_param['atom_type_pair']
+  atom_1 = atom_type_pair[0]
+  atom_2 = atom_type_pair[1]
 
-  a_vec = [float(x) for x in box_A]
-  b_vec = [float(x) for x in box_B]
-  c_vec = [float(x) for x in box_C]
+  a_vec = rdf_param['box']['A']
+  b_vec = rdf_param['box']['B']
+  c_vec = rdf_param['box']['C']
 
-  if ( 'init_step' in rdf_param.keys() ):
-    init_step = int(rdf_param['init_step'])
-  else:
-    init_step = start_frame_id
+  init_step = rdf_param['init_step']
+  end_step = rdf_param['end_step']
+  r_increment = rdf_param['r_increment']
 
-  if ( 'end_step' in rdf_param.keys() ):
-    end_step = int(rdf_param['end_step'])
-  else:
-    end_step = start_frame_id + each
-
-  if ( 'r_increment' in rdf_param.keys() ):
-    r_increment = float(rdf_param['r_increment'])
-  else:
-    r_increment = 0.1
-
+  print ('RDF'.center(80, '*'), flush=True)
+  print ('Analyze radial distribution function between %s and %s' %(atom_1, atom_2), flush=True)
   dist, atom_id_1, atom_id_2 = distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
-                                  end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_file, work_dir)
+                                        end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir)
 
-  rdf(dist, a_vec, b_vec, c_vec, r_increment, work_dir)
+  rdf_file = rdf(dist, a_vec, b_vec, c_vec, r_increment, work_dir)
+  str_print = 'The rdf file is written in %s' %(rdf_file)
+  print (data_op.str_wrap(str_print, 80), flush=True)

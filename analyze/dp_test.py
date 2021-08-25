@@ -13,6 +13,7 @@ from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
 from CP2K_kit.deepff import lammps_run
+from CP2K_kit.analyze import check_analyze
 
 hartree_to_ev = 27.2114
 ang_to_bohr = 1.8897259886
@@ -65,12 +66,18 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp
     for i in range(frames_num):
       writer.writerow([energy_cp2k[i], energy_lmp[i]])
 
+  str_print = 'cp2k energy vs lammps energy is written in %s' %(energy_file_name)
+  print (data_op.str_wrap(str_print, 80), flush=True)
+
   with open(frc_file_name, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['cp2k_force (eV/Angstrom)', 'lmp_force (eV/Angstrom)'])
     for i in range(frames_num):
       for j in range(atoms_num*3):
         writer.writerow([frc_cp2k[i][j], frc_lmp[i][j]])
+
+  str_print = 'cp2k force vs lammps force is written in %s' %(energy_file_name)
+  print (data_op.str_wrap(str_print, 80), flush=True)
 
   with open(frc_x_file_name, 'w') as csvfile:
     writer = csv.writer(csvfile)
@@ -79,6 +86,9 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp
       for j in range(atoms_num):
         writer.writerow([frc_x_cp2k[i][j], frc_x_lmp[i][j]])
 
+  str_print = 'cp2k force of x part vs lammps force of x part is written in %s' %(energy_file_name)
+  print (data_op.str_wrap(str_print, 80), flush=True)
+
   with open(frc_y_file_name, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['cp2k_force (eV/Angstrom)', 'lmp_force (eV/Angstrom)'])
@@ -86,12 +96,18 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp
       for j in range(atoms_num):
         writer.writerow([frc_y_cp2k[i][j], frc_y_lmp[i][j]])
 
+  str_print = 'cp2k force of y part vs lammps force of y part is written in %s' %(energy_file_name)
+  print (data_op.str_wrap(str_print, 80), flush=True)
+
   with open(frc_z_file_name, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['cp2k_force (eV/Angstrom)', 'lmp_force (eV/Angstrom)'])
     for i in range(frames_num):
       for j in range(atoms_num):
         writer.writerow([frc_z_cp2k[i][j], frc_z_lmp[i][j]])
+
+  str_print = 'cp2k force of z part vs lammps force of z part is written in %s' %(energy_file_name)
+  print (data_op.str_wrap(str_print, 80), flush=True)
 
 def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label, work_dir):
 
@@ -156,6 +172,8 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
 
   dpff_file_split = data_op.str_split(dpff_file, '/')
   dpff_file_name = dpff_file_split[len(dpff_file_split)-1]
+
+  print ('Run lammps jobs for %s system' %(frames_num), flush=True)
 
   for i in range(frames_num):
     frame_dir = ''.join((work_dir, '/frame_', str(i)))
@@ -262,7 +280,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
   write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp, \
              frc_y_cp2k, frc_y_lmp, frc_z_cp2k, frc_z_lmp, work_dir)
 
-def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label, work_dir):
+def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, cp2k_mpi_num, atom_label, work_dir):
 
   '''
   active_learning_test : Do test for active learning
@@ -301,6 +319,8 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label,
   cp2k_inp_split = data_op.str_split(os.path.abspath(cp2k_inp_file), '/')
   cp2k_inp_file = cp2k_inp_split[len(cp2k_inp_split)-1]
 
+  print ('Run cp2k jobs for %d systems' %(frames_num), flush=True)
+
   for i in range(frames_num):
     frame_dir = ''.join((work_dir, '/frame_', str(i)))
     cmd = "mkdir %s" %(''.join(('frame_', str(i))))
@@ -324,7 +344,7 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label,
       coord_file.write('%s    %f    %f    %f\n' %(atoms[i][j], coord[i][j][0], coord[i][j][1], coord[i][j][2]))
     coord_file.close()
 
-    cmd = "cp2k.popt %s 1> cp2k.out 2> cp2k.err" %(cp2k_inp_file)
+    cmd = "mpirun -np %d %s %s 1> cp2k.out 2> cp2k.err" %(cp2k_mpi_num, cp2k_exe, cp2k_inp_file)
     subprocess.run(cmd, shell=True, cwd=frame_dir)
 
   for i in range(frames_num):
@@ -393,72 +413,30 @@ def dp_test_run(dp_test_param, work_dir):
     none
   '''
 
-  if ( 'learn_type' in dp_test_param.keys() ):
-    learn_type = dp_test_param['learn_type']
-  else:
-    log_info.log_error('No learning type found, please set analyze/dp_test/learn_type')
-    exit()
+  dp_test_param = check_analyze.check_dp_test_inp(dp_test_param)
 
+  learn_type = dp_test_param['learn_type']
+  atom_label = dp_test_param['atom_label']
+
+  print ('DP_TEST'.center(80, '*'), flush=True)
   if ( learn_type == 'supervised' ):
-    if ( 'cp2k_frc_file' in dp_test_param.keys() ):
-      cp2k_frc_file = dp_test_param['cp2k_frc_file']
-    else:
-      log_info.log_error('No cp2k force trajectory found, please set analyze/dp_test/cp2k_frc_file')
-      exit()
-    if ( 'cp2k_pos_file' in dp_test_param.keys() ):
-      cp2k_pos_file = dp_test_param['cp2k_pos_file']
-    else:
-      log_info.log_error('No cp2k position trajectory found, please set analyze/dp_test/cp2k_pos_file')
-      exit()
-    if ( 'cp2k_cell_file' in dp_test_param.keys() ):
-      cp2k_cell_file = dp_test_param['cp2k_cell_file']
-    else:
-      log_info.log_error('No cp2k cell trajectory found, please set analyze/dp_test/cp2k_cell_file')
-      exit()
-    if ( 'dpff_file' in dp_test_param.keys() ):
-      dpff_file = dp_test_param['dpff_file']
-    else:
-      log_info.log_error('No deepmd-kit force field file found, please set analyze/dp_test/dpff_file')
-      exit()
-    if ( 'atom_label' in dp_test_param.keys() ):
-      atom_label = dp_test_param['atom_label']
-      atom_label_dic = OrderedDict()
-      for i in range (len(atom_label)):
-        lable_split = data_op.str_split(atom_label[i], ':')
-        atom_label_dic[int(lable_split[0])] = lable_split[1]
-    else:
-      log_info.log_error('No atom lable found, please set analyze/dp_test/atom_lable')
-      exit()
+    cp2k_frc_file = dp_test_param['cp2k_frc_file']
+    cp2k_pos_file = dp_test_param['cp2k_pos_file']
+    cp2k_cell_file = dp_test_param['cp2k_cell_file']
+    dpff_file = dp_test_param['dpff_file']
 
-    supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label_dic, work_dir)
+    print ('Do test for supervised learning type', flush=True)
+
+    supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label, work_dir)
 
   elif ( learn_type == 'active_learning' ):
-    if ( 'lmp_traj_file' in dp_test_param.keys() ):
-      lmp_traj_file = dp_test_param['lmp_traj_file']
-    else:
-      log_info.log_error('No lammps trajectory found, please set analyze/dp_test/lmp_traj_file')
-      exit()
-    if ( 'lmp_log_file' in dp_test_param.keys() ):
-      lmp_log_file = dp_test_param['lmp_log_file']
-    else:
-      log_info.log_error('No lammps output file found, please set analyze/dp_test/lmp_log_file')
-      exit()
-    if ( 'cp2k_inp_file' in dp_test_param.keys() ):
-      cp2k_inp_file = dp_test_param['cp2k_inp_file']
-    else:
-      log_info.log_error('No cp2k input file found, please set analyze/dp_test/cp2k_inp_file')
-      exit()
-    if ( 'atom_label' in dp_test_param.keys() ):
-      atom_label = dp_test_param['atom_label']
-      atom_label_dic = OrderedDict()
-      for i in range (len(atom_label)):
-        lable_split = data_op.str_split(atom_label[i], ':')
-        atom_label_dic[int(lable_split[0])] = lable_split[1]
-    else:
-      log_info.log_error('No atom label found, please set analyze/dp_test/atom_lable')
-      exit()
-    active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, atom_label_dic, work_dir)
+    lmp_traj_file = dp_test_param['lmp_traj_file']
+    lmp_log_file = dp_test_param['lmp_log_file']
+    cp2k_inp_file = dp_test_param['cp2k_inp_file']
+    cp2k_exe = dp_test_param['cp2k_exe']
+    cp2k_mpi_num = dp_test_param['cp2k_mpi_num']
 
-  else:
-    log_info.log_error('Could not recognize learn_type, please check')
-    exit()
+    print ('Do test for active learning type', flush=True)
+
+    active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, cp2k_mpi_num, atom_label, work_dir)
+

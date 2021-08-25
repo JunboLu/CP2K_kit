@@ -6,7 +6,7 @@
 &analyze
   &arrange_data
     &potential
-      traj_file ./UO2_REDOX_aimd-1.ener
+      traj_ener_file ./UO2_REDOX_aimd-1.ener
     &end potential
   &end arrange_data
 &end analyze

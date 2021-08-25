@@ -4,6 +4,7 @@ import copy
 import linecache
 from collections import OrderedDict
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import log_info
 
 #This module is used to read input file. It is a bit complicated!
 #We have to use it now. But the further revisions are on the way.
@@ -56,6 +57,11 @@ def get_dump(keyword_block, keyword_block_index, inp):
   for i in range(len(keyword_block)):
     if ( keyword_block[i] == 'system' ):
       keyword_block[i] = 'system' + str(sys_num)
+      sys_num = sys_num + 1
+
+  for i in range(len(keyword_block)):
+    if ( keyword_block[i] == 'connect' ):
+      keyword_block[i] = 'connect' + str(sys_num)
       sys_num = sys_num + 1
 
   if ( len(keyword_block) == 1 ):
@@ -194,7 +200,7 @@ def dump_info(work_dir, inp_file, f_key):
 
   for i in range(len(f_key_range)):
     if ( len(f_key_range[i]) != 2):
-      print ("The %s parse is incompleted" %(f_key[i]))
+      log_info.log_error('The %s parse is incompleted' %(f_key[i]))
       exit()
 
   for i in range(len(f_key_copy)):

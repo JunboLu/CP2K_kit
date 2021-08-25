@@ -57,20 +57,22 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
         task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
         if ( task_num > numb_test ):
           prev_data_dir = ''.join((cp2k_sys_dir, '/data'))
-          data_dir.append(prev_data_dir)
+          if ( os.path.exists(prev_data_dir) ):
+            data_dir.append(prev_data_dir)
+          else:
+            log_info.log_error('Previous training data error: %s does not exist' %(data_dir))
+            exit()
 
   for key in deepmd_dic['training']:
     if ( 'system' in key ):
       deepmd_param['training'].pop(key)
 
-  if ( 'model_type' in deepmd_param['training'].keys() ):
-    deepmd_param['training'].pop('model_type')
-
-  if ( 'neuron' in deepmd_param['training'].keys() ):
-    deepmd_param['training'].pop('neuron')
-
   if ( 'seed_num' in deepmd_param['training'].keys() ):
     deepmd_param['training'].pop('seed_num')
+
+  deepmd_param['training'].pop('model_type')
+  deepmd_param['training'].pop('neuron')
+  deepmd_param['training'].pop('train_stress')
 
   deepmd_param['training']['systems'] = data_dir
 
@@ -159,6 +161,7 @@ direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -207,6 +210,7 @@ direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -299,6 +303,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path, cuda_dir)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -364,6 +369,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path, cuda_dir)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -445,6 +451,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path, cuda_dir)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -515,6 +522,7 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(dp_path, cuda_dir)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -572,6 +580,7 @@ direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(cuda_dir, dp_path)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -620,6 +629,7 @@ direc=$2
 cd $direc/$x
 dp train input.json 1> log.out 2> log.err
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
+
 ''' %(cuda_dir, dp_path)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
@@ -670,9 +680,9 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
       check_deepmd_gen.append(1)
 
   if ( len(check_deepmd_gen) != 0 and all(i == 0 for i in check_deepmd_gen) ):
-    str_tmp = 'Success: generate deepmd-kit tasks in %s' %(train_dir)
-    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
-    print (str_tmp, flush=True)
+    str_print = 'Success: generate deepmd-kit tasks in %s' %(train_dir)
+    str_print = data_op.str_wrap(str_print, 80, '  ')
+    print (str_print, flush=True)
   else:
     log_info.log_error('Generating deepmd-kit tasks error, please check iteration %d' %(iter_id))
     exit()

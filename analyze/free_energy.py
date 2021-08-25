@@ -4,6 +4,7 @@ import csv
 import linecache
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.analyze import check_analyze
 
 def ti_method(force_cmd_file):
 
@@ -60,22 +61,16 @@ def redox_pka_slow_growth(vertical_ene,increment):
 
 def free_energy_run(free_energy_param, work_dir):
 
-  if ( 'method' in free_energy_param.keys() ):
-    method = free_energy_param['method']
-  else:
-    log_info.log_error('No free energy method found, please set method')
-    exit()
+  free_energy_param = check_analyze.check_free_energy_inp(free_energy_param)
+
+  method = free_energy_param['method']
 
   if ( method == 'ti' ):
-    if ( 'ti_file' in free_energy_param.keys() ):
-      ti_file = free_energy_param['ti_file']
-      target, free_energy_value = free_energy.cmd_method(ti_file)
-      ti_free_energy_file = ''.join((work_dir, '/ti_free_energy.csv'))
-      with open(ti_free_energy_file, 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['target_value', 'free_energy'])
-        for i in range(len(target)):
-          writer.writerow([garget[i],free_energy_value[i]])
-    else:
-      log_info.log_error('NO TI file found, please set ti_file')
-      exit()
+    ti_file = free_energy_param['ti_file']
+    target, free_energy_value = free_energy.cmd_method(ti_file)
+    ti_free_energy_file = ''.join((work_dir, '/ti_free_energy.csv'))
+    with open(ti_free_energy_file, 'w') as csvfile:
+      writer = csv.writer(csvfile)
+      writer.writerow(['target_value', 'free_energy'])
+      for i in range(len(target)):
+        writer.writerow([garget[i],free_energy_value[i]])

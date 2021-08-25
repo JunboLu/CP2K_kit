@@ -25,6 +25,16 @@ def log_logo():
 
   print (logo, flush=True)
 
+def log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step):
+
+  print ('Trajectory info'.center(80,'*'), flush=True)
+  print ('The number of atoms for the system is %d' %(atoms_num), flush=True)
+  print ('The number of frames in the trajectory is %d' %(frames_num), flush=True)
+  print ('The printing frequency of the trajectory is %d' %(each), flush=True)
+  print ('The trajectory is started from %d step' %(start_frame_id), flush=True)
+  print ('The trajectory is ended in %d step' %(end_frame_id), flush=True)
+  print ('The time step is %f fs\n' %(time_step), flush=True)
+
 def log_error(error, error_lable='Error'):
 
   '''

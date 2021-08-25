@@ -6,10 +6,10 @@
 &analyze
   &geometry
     &bond_length
-      traj_file ./UO2+_aimd-pos-1.xyz
+      traj_coord_file ./UO22+_aimd-pos-1.xyz
       atom_pair 1 2
       init_step 0
-      end_step 7060
+      end_step 69792
       &box
         A 12.42 0.0 0.0
         B 0.0 12.42 0.0

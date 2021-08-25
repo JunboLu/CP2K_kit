@@ -9,3 +9,4 @@ from CP2K_kit.analyze import spectrum
 from CP2K_kit.analyze import free_energy
 from CP2K_kit.analyze import arrange_data
 from CP2K_kit.analyze import time_correlation
+from CP2K_kit.analyze import check_analyze

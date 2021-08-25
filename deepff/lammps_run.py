@@ -220,6 +220,12 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
     sys = 'system' + str(i)
     box_file = lmp_param[sys]['box']
     coord_file = lmp_param[sys]['coord']
+    use_metad = lmp_param[sys]['use_metad']
+    md_type = lmp_param[sys]['md_type']
+
+    if use_metad:
+      plumed_file = lmp_param[sys]['plumed_file']
+
     tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
 
     atoms_type = data_op.list_replicate(atoms)
@@ -240,9 +246,9 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
     temp = lmp_param['temp']
     pres = lmp_param['pres']
 
-    if ( isinstance(temp, str) ):
+    if ( isinstance(temp, float) ):
       temp = [temp]
-    if ( isinstance(pres, str) ):
+    if ( isinstance(pres, float) ):
       pres = [pres]
 
     for j in range(len(temp)):
@@ -258,7 +264,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
         md_in_file = open(''.join((lmp_sys_task_dir, '/md_in.lammps')), 'w')
 
         for key in lmp_param:
-          if ( 'system' not in key and key != 'use_metad' and key != 'plumed_file' and key != 'md_type'):
+          if ( 'system' not in key ):
             s_1 = 'variable        '
             s_2 = key.upper() + '          '
             s_3 = 'equal ' + str(lmp_param_new[key]) + '\n'
@@ -288,27 +294,12 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
         md_in_file.write('pair_coeff\n')
         md_in_file.write('\n')
 
-        if ( 'use_metad' in lmp_param.keys() ):
-          use_metad = data_op.str_to_bool(lmp_param['use_metad'])
-        else:
-          use_metad = False
-
         md_in_file.write('thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n')
         md_in_file.write('thermo          ${THERMO_FREQ}\n')
         md_in_file.write('dump            1 all custom ${DUMP_FREQ} atom.dump id type x y z fx fy fz\n')
         md_in_file.write('velocity        all create ${TEMP} 835843 dist gaussian\n')
 
-        if ( 'md_type' in lmp_param.keys() ):
-          md_type = lmp_param['md_type']
-        else:
-          md_type = 'nvt'
-
         if use_metad:
-          if ( 'plumed_file' in lmp_param.keys() ):
-            plumed_file = lmp_param['plumed_file']
-          else:
-            print ('Cannot find plumed input file, please set plumed_file')
-            exit()
           md_in_file.write('fix             1 all plumed plumedfile %s outfile plumed.log\n' % (plumed_file))
           if ( md_type == 'nvt' ):
             md_in_file.write('fix             2 all %s temp ${TEMP} ${TEMP} ${TAU_T}\n' % (md_type))
@@ -529,9 +520,9 @@ def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
         check_lmp_md_gen.append(1)
 
   if ( len(check_lmp_md_gen) !=0 and all(i == 0 for i in check_lmp_md_gen) ):
-    str_tmp = 'Success: generate lammps molecular dynamics tasks in %s' %(lmp_dir)
-    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
-    print (str_tmp, flush=True)
+    str_print = 'Success: generate lammps molecular dynamics tasks in %s' %(lmp_dir)
+    str_print = data_op.str_wrap(str_print, 80, '  ')
+    print (str_print, flush=True)
   else:
     log_info.log_error('Generating lammps molecular dynamics tasks error, please check iteration %d' %(iter_id))
     exit()
@@ -640,6 +631,7 @@ lmp < ./frc_in.lammps 1> lammps.out 2> lammps.err
 export -f produce
 
 seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
+
 ''' %(model_dir, parallel_num, start, end, parallel_exe)
 
   run_file = ''.join((model_dir, '/run.sh'))
@@ -714,9 +706,9 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
             check_lmp_frc_gen.append(1)
 
   if ( len(check_lmp_frc_gen) != 0 and all(i == 0 for i in check_lmp_frc_gen) ):
-    str_tmp = 'Success: generating lammps model deviation file in %s' %(lmp_dir)
-    str_tmp = data_op.str_wrap(str_tmp, 80, '  ')
-    print (str_tmp, flush=True)
+    str_print = 'Success: generating lammps model deviation file in %s' %(lmp_dir)
+    str_print = data_op.str_wrap(str_print, 80, '  ')
+    print (str_print, flush=True)
   else:
     log_info.log_error('Generating lammps model deviation tasks error, please check iteration %d' %(iter_id))
     exit()

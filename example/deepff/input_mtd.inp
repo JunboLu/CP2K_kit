@@ -26,9 +26,9 @@
       stop_lr 3.51e-8
     &end learning_rate
     &loss
-      start_pref_e 0.0002
+      start_pref_e 0.02
       limit_pref_e 1
-      start_pref_f 10000
+      start_pref_f 1000
       limit_pref_f 1
       start_pref_v 0
       limit_pref_v 0
@@ -42,7 +42,8 @@
         choosed_frame_num 100
         set_parts 1
       &end system
-      model_type use_nodes
+      train_stress false
+      model_type use_node
       neuron 120 120 120 ... 150 150 150 ... 180 180 180
       set_prefix set    
       stop_batch 40000
@@ -69,12 +70,12 @@
     pres  1.0
     tau_t 0.1
     tau_p 0.5
-    md_type nvt
-    use_metad true
-    plumed_file ./plumed.dat
     &system
-      box ./lmp_init_data/box0
-      coord ./lmp_init_data/str0.inc
+      box ./lmp_init_data/box
+      coord ./lmp_init_data/str.inc
+      md_type nvt
+      use_metad true
+      plumed_file ./plumed.dat
     &end system
   &end lammps
 
@@ -83,7 +84,7 @@
     conv_new_data_num 5
     force_conv 0.02
     max_iter 100
-    restart_iter 1
+    restart_iter 0
   &end force_eval
 
   &cp2k
@@ -98,6 +99,7 @@
     xc_functional PBE
     dftd3 True
     dftd3_file /home/lujunbo/bin/cp2k-8.2/data/dftd3.dat
+    use_prev_wfn True
   &end cp2k
 
   &environ

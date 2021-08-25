@@ -6,11 +6,11 @@
 &analyze
   &diffusion
     method einstein_sum
-    traj_file ./cp2k-pos-1.xyz
+    traj_coord_file ./WATER_64H2O-pos-1.xyz
     atom_id 1-192
-    init_step 50000
-    end_step 90000
-    max_frame_corr 10000
+    init_step 0
+    end_step 51156
+    max_frame_corr 20000
     remove_com True
   &end diffusion
 &end analyze

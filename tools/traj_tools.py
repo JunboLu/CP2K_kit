@@ -6,7 +6,7 @@ import linecache
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 
-def get_block_base(file_name):
+def get_block_base(file_name, file_type):
 
   '''
   get_block_base : get several important information of trajectory file.
@@ -25,19 +25,19 @@ def get_block_base(file_name):
       file_start is the starting frame in trajectory file.
   '''
 
-  if (".xyz" in file_name):
+  if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
     line = linecache.getline(file_name, 1)
     b_num = int(line.strip('\n'))
     p_base = 0
     base = 2
     line = linecache.getline(file_name, 2)
     line_split = data_op.str_split(line, ' ')
-    if ( "-pos-" in file_name or "-vel-" in file_name or "-frc-" in file_name):
+    if ( data_op.eval_str(line_split[2].strip(',')) == 1 ):
       file_start = int(line_split[2].strip(','))
     else:
       file_start = 0
 
-  if ("-mix-1.ener" in file_name):
+  if ( file_type == 'mix_ener' ):
     b_num = 1
     p_base = 0
     base = 0
@@ -45,7 +45,7 @@ def get_block_base(file_name):
     line_split = data_op.str_split(line, ' ')
     file_start = int(line_split[0])
 
-  if ("-1.ener" in file_name and "mix" not in file_name):
+  if ( file_type == 'ener' ):
     b_num = 1
     p_base = 1
     base = 0
@@ -53,7 +53,7 @@ def get_block_base(file_name):
     line_split = data_op.str_split(line, ' ')
     file_start = int(line_split[0])
 
-  if ("LagrangeMultLog" in file_name):
+  if ( file_type == 'lagrange' ):
     b_num = 2
     p_base = 0
     base = 0
@@ -61,7 +61,7 @@ def get_block_base(file_name):
 
   return b_num, p_base, base, file_start
 
-def find_breakpoint(file_name):
+def find_breakpoint(file_name, file_type):
 
   '''
   find_breakpoint : find the incomplete frame in a trajectory file.
@@ -73,14 +73,13 @@ def find_breakpoint(file_name):
     breakpoint_frame : 1-d int list
   '''
 
-  blocks_num, pre_base, base, frame_start = get_block_base(file_name)
+  blocks_num, pre_base, base, frame_start = get_block_base(file_name, file_type)
 
   work_dir = os.getcwd()
   cmd = "grep %s %s" % ("'i = '", file_name)
   frames_num = len(call.call_returns_shell(work_dir, cmd))
 
   whole_line_num = len(open(file_name).readlines())
-  breakpoint_frame = []
 
   #In general, we think the first frame is always correct.
   #compare_list is used for comparing. It contains atom names.
@@ -90,39 +89,21 @@ def find_breakpoint(file_name):
     line_split = data_op.str_split(line, ' ')
     compare_list.append(line_split[0])
 
-  #This part is complicated. Maybe we need a better way.
-  breakpoint = 0
+  breakpoint = frame_start
   for i in range(frames_num-1):
+    breakpoint = i+frame_start
     frame_list = []
     for j in range(blocks_num):
-      line_num = pre_base+(blocks_num+base)*(i-len(breakpoint_frame))+breakpoint+base+j+1
-      if ( line_num == whole_line_num ):
-        breakpoint_frame.append(i+frame_start)
-        break
-      else:
-        line = linecache.getline(file_name,line_num)
-        c = data_op.str_split(line, ' ')
-        frame_list.append(c[0])
+      line_num = pre_base+(blocks_num+base)*i+base+j+1
+      line = linecache.getline(file_name,line_num)
+      c = data_op.str_split(line, ' ')
+      frame_list.append(c[0])
     if (frame_list != compare_list and frame_list != []):
-      breakpoint_frame.append(i+frame_start)
-      for k in range(blocks_num):
-        if (frame_list[k] != compare_list[k]):
-          breakpoint = breakpoint+k+base
-          break
+      break
 
-  if (breakpoint_frame == []):
-    final_block = whole_line_num-(frames_num-1)*(blocks_num+base)-pre_base
-    if (final_block != blocks_num+base):
-      breakpoint_frame.append(frame_start+frames_num-1)
+  return breakpoint
 
-  if (breakpoint_frame != []):
-    final_block = whole_line_num-(frames_num-1-len(breakpoint_frame))*(blocks_num+base)-breakpoint-pre_base
-    if (final_block != blocks_num+base):
-      breakpoint_frame.append(frame_start+frames_num-1)
-
-  return breakpoint_frame
-
-def delete_duplicate(file_name):
+def delete_duplicate(file_name, file_type):
 
   '''
   delete_duplicate : delete duplicate frames in a trajectory file.
@@ -134,19 +115,17 @@ def delete_duplicate(file_name):
     none
   '''
 
-  blocks_num, pre_base, base, frame_start = get_block_base(file_name)
+  blocks_num, pre_base, base, frame_start = get_block_base(file_name, file_type)
 
   whole_line_num = len(open(file_name).readlines())
   frames_num = math.ceil((whole_line_num-pre_base)/(blocks_num+base))
   total_line = []
   #Choose the specific line
   for i in range(frames_num):
-    if (".xyz" in file_name):
+    if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
       line = linecache.getline(file_name, i*(blocks_num+base)+2+pre_base)
-    if ("-mix-1.ener" in file_name):
-      line = linecache.getline(file_name, i*(blocks_num+base)+pre_base)
-    if ("-1.ener" in file_name and "mix" not in file_name):
-      line = linecache.getline(file_name, i*(blocks_num+base)+pre_base)
+    if ( file_type == 'mix_ener' or file_type == 'ener' ):
+      line = linecache.getline(file_name, i*(blocks_num+base)+pre_base+1)
     total_line.append(line)
 
   duplicate = []
@@ -164,7 +143,8 @@ def delete_duplicate(file_name):
     cmd = "sed -ie %s %s" % (''.join((str(start_del), ',', str(end_del), 'd')), file_name)
     call.call_simple_shell(work_dir, cmd)
 
-def choose_str(atoms_num, pre_base, base, each, start, end, file_start, file_name, choose_line, work_dir):
+def choose_str(atoms_num, pre_base, base, each, init_step, end_step, start_frame_id, \
+               traj_coord_file, choose_line, work_dir, choose_file_name):
 
   '''
   choose_str : get the coordinates or velocities of choosed atoms.
@@ -186,7 +166,7 @@ def choose_str(atoms_num, pre_base, base, each, start, end, file_start, file_nam
       file_start is the starting frame in trajectory file.
     file_name : string
       file_name is the name of trajectory file used to analyze.
-    choose_line : 1-d int list
+    choose_line : 2-d int list
       choose_line is the choosed atom id.
     work_dir : string
       work_dir is working directory of CP2K_kit.
@@ -194,13 +174,50 @@ def choose_str(atoms_num, pre_base, base, each, start, end, file_start, file_nam
     none
   '''
 
-  choose_file = ''.join((work_dir, '/choose_structure'))
+  choose_file = ''.join((work_dir, '/', choose_file_name))
   file_md = open(choose_file, 'w')
 
-  for i in range(int((end-start)/each+1)):
-    file_md.write(str(len(choose_line))+'\n')
-    second_line = linecache.getline(file_name, (start-file_start+i)*(atoms_num+base)+2+pre_base)
+  choose_num = []
+  for i in range(len(choose_line)):
+    choose_num.append(len(choose_line[i]))
+
+  for i in range(int((end_step-init_step)/each+1)):
+    file_md.write(str(sum(choose_num))+'\n')
+    second_line = linecache.getline(traj_coord_file, (init_step-start_frame_id+i)*(atoms_num+base)+2+pre_base)
     file_md.write(second_line)
-    for j in choose_line:
-      line = linecache.getline(file_name, (start-file_start+i)*(atoms_num+base)+j+pre_base+base)
-      file_md.write(line)
+    for j in range(len(choose_line)):
+      for k in choose_line[j]:
+        line = linecache.getline(traj_coord_file, (init_step-start_frame_id+i)*(atoms_num+base)+k+pre_base+base)
+        file_md.write(line)
+
+  return choose_file
+
+def order_traj_file(atoms_num, frames_num, each, init_step, traj_file, file_type, order_list, work_dir, file_name):
+
+  '''
+  order_traj_file : reorder the trajectory file.
+  '''
+
+  block_num, pre_base, base, start_frame_id = get_block_base(traj_file, file_type)
+  new_traj_file_name = ''.join((work_dir, '/', file_name))
+  new_traj_file = open(new_traj_file_name, 'w')
+
+  for i in range(frames_num):
+    line_i_1 = linecache.getline(traj_file, (base+atoms_num)*int((init_step-start_frame_id)/each+i)+1+pre_base)
+    line_i_2 = linecache.getline(traj_file, (base+atoms_num)*int((init_step-start_frame_id)/each+i)+2+pre_base)
+    new_traj_file.write(line_i_1)
+    new_traj_file.write(line_i_2)
+    for j in range(len(order_list)):
+      for k in order_list[j]:
+        line_ijk = linecache.getline(traj_file, (base+atoms_num)*int((init_step-start_frame_id)/each+i)+base+k+pre_base)
+        new_traj_file.write(line_ijk)
+  new_traj_file.close()
+
+  return new_traj_file_name
+
+if __name__ == '__main__':
+  from CP2K_kit.tools import traj_tools
+
+  file_name = '/home/lujunbo/WORK/test/TEST_CP2K_KIT/TEST_ANALYZE/center/traj_order.xyz'
+  breakpoint = traj_tools.find_breakpoint(file_name, 'coord')
+  print (breakpoint)

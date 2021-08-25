@@ -3,8 +3,9 @@
 import linecache
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.analyze import check_analyze
 
-def xyz2pdb(file_name, work_dir):
+def xyz2pdb(transd_file, work_dir, file_name):
 
   '''
   xyz2pdb : transfer pdb file to xyz file
@@ -18,16 +19,14 @@ def xyz2pdb(file_name, work_dir):
     none
   '''
 
-  print ('The transfered pdb file is a crude file, please revise it in detail!', flush=True)
-
-  line = linecache.getline(file_name, 1)
+  line = linecache.getline(transd_file, 1)
   atoms_num = int(line.strip('\n'))
 
-  pdb_file_name = ''.join((work_dir, '/file.pdb'))
+  pdb_file_name = ''.join((work_dir, '/', file_name))
   pdb_file = open(pdb_file_name, 'w')
 
   for i in range(atoms_num):
-    line = linecache.getline(file_name, i+2+1)
+    line = linecache.getline(transd_file, i+2+1)
     line_split = data_op.str_split(line, ' ')
     atom = line_split[0]
     atom_label = atom+'R'
@@ -39,7 +38,9 @@ def xyz2pdb(file_name, work_dir):
 
   pdb_file.close()
 
-def pdb2xyz(file_name, work_dir):
+  return pdb_file_name
+
+def pdb2xyz(transd_file, work_dir, file_name):
 
   '''
   pdb2xyz : transfer xyz file to pdb file
@@ -53,20 +54,20 @@ def pdb2xyz(file_name, work_dir):
     none
   '''
 
-  line_num = len(open(file_name).readlines())
+  line_num = len(open(transd_file).readlines())
   for i in range(line_num):
-    line = linecache.getline(file_name, i+1)
+    line = linecache.getline(transd_file, i+1)
     line_split = data_op.str_split(line, ' ')
     if ( line_split[0] == 'ATOM' ):
       line_start = i
       break
 
-  xyz_file_name = ''.join((work_dir, '/file.xyz'))
+  xyz_file_name = ''.join((work_dir, '/', file_name))
   xyz_file = open(xyz_file_name, 'w')
 
   total_atom_num = 0
   for i in range(line_num-line_start):
-    line = linecache.getline(file_name, i+line_start+1)
+    line = linecache.getline(transd_file, i+line_start+1)
     line_split = data_op.str_split(line.strip('\n'), ' ')
     if ( len(line_split) == 11 ):
       total_atom_num = total_atom_num + 1
@@ -83,6 +84,8 @@ def pdb2xyz(file_name, work_dir):
   xyz_file.write('%d\n'%(total_atom_num) + '\n' + content)
   xyz_file.close()
 
+  return xyz_file_name
+
 def file_trans_run(file_trans_param, work_dir):
 
   '''
@@ -97,19 +100,28 @@ def file_trans_run(file_trans_param, work_dir):
     none
   '''
 
-  if ( 'file_name' in file_trans_param.keys() ):
-    file_name = file_trans_param['file_name']
-  else:
-    log_info.log_error('No file need to be transfered, please set analzye/file_trans/file_name')
-    exit()
+  file_trans_param = check_analyze.check_file_trans_inp(file_trans_param)
 
-  if ( 'trans_type' in file_trans_param.keys() ):
-    trans_type = file_trans_param['trans_type']
-  else:
-    log_info.log_error('No transfer type found, please set analyze/file_trans/trans_type')
-    exit()
+  transd_file = file_trans_param['transd_file']
+  trans_type = file_trans_param['trans_type']
+
+  print ('FILE_TRANS'.center(80, '*'), flush=True)
 
   if ( trans_type == 'pdb2xyz' ):
-    pdb2xyz(file_name, work_dir)
+    str_print = 'The %s pdb file will be transfered to xyz type file' %(transd_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+    xyz_file_name = pdb2xyz(transd_file, work_dir, 'coord.xyz')
+
+    str_print = 'The xyz type file is written in %s' %(xyz_file_name)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
   elif ( trans_type == 'xyz2pdb' ):
-    xyz2pdb(file_name, work_dir)
+    str_print = 'The %s xyz file will be transfered to pdb type file' %(transd_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+    print ('The transfered pdb file is a crude file, please revise it in detail!', flush=True)
+
+    pdb_file_name  = xyz2pdb(transd_file, work_dir, 'coord.pdb')
+
+    str_print = 'The pdb type file is written in %s' %(pdb_file_name)
+    print (data_op.str_wrap(str_print, 80), flush=True)

@@ -6,10 +6,10 @@
 &analyze
   &geometry
     &bond_angle
-      traj_file ./cp2k-pos-1.xyz
+      traj_coord_file ./UO22+_aimd-pos-1.xyz
       atom_pair 2 1 3
       init_step 0
-      end_step 200
+      end_step 69792
     &end bond_angle
   &end geometry
 &end analyze

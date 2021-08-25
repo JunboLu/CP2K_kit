@@ -1,0 +1,21 @@
+&global
+  run_type analyze
+  analyze_job geometry 
+&end global
+
+&analyze
+  &geometry
+    &order_structure
+      traj_coord_file ./mfo3-pos-1.xyz
+      &box
+        A 18.898 0.0 0.0
+        B 0.0 18.898 0.0
+        C 0.0 0.0 18.898
+      &end box
+      &connect
+        atom_id 1-250
+        group_atom Mn O O O F
+      &end connect
+    &end order_structure
+  &end geometry
+&end analyze

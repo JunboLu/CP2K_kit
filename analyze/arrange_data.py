@@ -13,6 +13,7 @@ from CP2K_kit.tools import traj_tools
 from CP2K_kit.tools import numeric
 from CP2K_kit.lib import statistic_mod
 from CP2K_kit.analyze import free_energy
+from CP2K_kit.analyze import check_analyze
 
 mulliken_pre_base = 5
 mulliken_late_base = 3
@@ -55,6 +56,8 @@ def arrange_temp(frames_num, pre_base, time_step, file_name, work_dir, each=1):
     for i in range(frames_num):
       writer.writerow([time[i], temp[i]])
 
+  return temp_file
+
 def arrange_pot(frames_num, pre_base, time_step, file_name, work_dir, each=1):
 
   '''
@@ -86,12 +89,14 @@ def arrange_pot(frames_num, pre_base, time_step, file_name, work_dir, each=1):
     line_i_split = data_op.str_split(line_i, ' ')
     pot.append(float(line_i_split[4])) #The potential energy is in 5th row in energy file. 
 
-  pop_file = ''.join((work_dir, '/potential.csv')) #The energy unit is Hartree.
-  with open(pop_file, 'w') as csvfile:
+  pot_file = ''.join((work_dir, '/potential.csv')) #The energy unit is Hartree.
+  with open(pot_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['time', 'energy'])
     for i in range(frames_num):
       writer.writerow([time[i], pot[i]])
+
+  return pot_file
 
 def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, file_name, work_dir, each=1):
 
@@ -141,6 +146,8 @@ def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, file_name, work_
     writer.writerow(['time', 'mulliken'])
     for i in range(frames_num):
       writer.writerow([time[i], mulliken[i]])
+
+  return mulliken_file
 
 def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, mix_ene_file, \
                             row_ox, row_red, redox_type, slow_growth, work_dir, each=1):
@@ -289,7 +296,7 @@ def arrange_ti_force(stat_num, lagrange_file):
   '''
 
   #Get trajectory information of lagrange file.
-  blocks_num, pre_base, base, frame_start = traj_tools.get_block_base(lagrange_file)
+  blocks_num, pre_base, base, frame_start = traj_tools.get_block_base(lagrange_file, 'lagrange')
   whole_line_num = len(open(lagrange_file).readlines())
   frames_num = int((whole_line_num-pre_base)/(blocks_num+base))
 
@@ -320,159 +327,93 @@ def arrange_data_run(arrange_data_param, work_dir):
       work_dir is working directory of CP2K_kit.
   '''
 
+  arrange_data_param = check_analyze.check_arrange_data_inp(arrange_data_param)
+
+  print ('ARRANGE_DATA'.center(80, '*'), flush=True)
   #arrange temperature
   if ( 'temperature' in arrange_data_param ):
     temp_param = arrange_data_param['temperature']
+    traj_ener_file = temp_param['traj_ener_file']
+    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    traj_info.get_traj_info(traj_ener_file, 'ener')
 
-    if ( 'traj_file' in temp_param.keys() ):
-      traj_file = temp_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(traj_file)
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/arranage_data/temperature/traj_file')
-      exit()
+    str_print = 'Analyze temperature vs time from %s' %(traj_ener_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
-    arrange_temp(frames_num, pre_base, time_step, traj_file, work_dir, each)
+    temp_file = arrange_temp(frames_num, pre_base, time_step, traj_ener_file, work_dir, each)
+
+    str_print = 'Temperature vs time is written in %s' %(temp_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
   #arrange potential energy
   elif ( 'potential' in arrange_data_param ):
     pot_param = arrange_data_param['potential']
+    traj_ener_file = pot_param['traj_ener_file']
+    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    traj_info.get_traj_info(traj_ener_file, 'ener')
 
-    if ( 'traj_file' in pot_param.keys() ):
-      traj_file = pot_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(traj_file)
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/arranage_data/potential/traj_file')
-      exit()
+    str_print = 'Analyze potential energy vs time from %s' %(traj_ener_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
-    arrange_pot(frames_num, pre_base, time_step, traj_file, work_dir, each)
+    pot_file = arrange_pot(frames_num, pre_base, time_step, traj_ener_file, work_dir, each)
+
+    str_print = 'Potential energy vs time is written in %s' %(pot_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
   #arrange mulliken charge
   elif ( 'mulliken' in arrange_data_param ):
     mulliken_param = arrange_data_param['mulliken']
+    traj_mul_file = mulliken_param['traj_mul_file']
+    atom_id = mulliken_param['atom_id']
+    time_step = mulliken_param['time_step']
+    each = mulliken_param['each']
 
-    if ( 'traj_file' in mulliken_param.keys() ):
-      traj_file = mulliken_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        pass
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/arranage_data/mulliken/traj_file')
-      exit()
-
-    if ( 'atom_id' in mulliken_param.keys() ):
-      if ( len(mulliken_param['atom_id']) == 1 ):
-        atom_id = int(mulliken_param['atom_id'])
-      elif ( len(mulliken_param['atom_id']) > 1 ):
-        atom_id = [int(x) for x in mulliken_param['atom_id']]
-    else:
-      log_info.log_error('No atom id found, please set analyze/arranage_data/mulliken/atom_id')
-      exit()
-
-    if ( 'time_step' in mulliken_param.keys() ):
-      time_step = float(mulliken_param['time_step'])
-    else:
-      time_step = 0.5
-
-    if ( 'each' in mulliken_param.keys() ):
-      each = int(mulliken_param['each'])
-    else:
-      each = 1
+    str_print = 'Analyze mulliken charge vs time from %s' %(traj_mul_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
     #line 322-330 used to get the number of atoms.
-    cmd = "grep -n '#  Atom  Element' %s" % (traj_file)
+    cmd = "grep -n '#  Atom  Element' %s" % (traj_mul_file)
     cmd_return = call.call_returns_shell(work_dir, cmd)
     line_num_1 = int(cmd_return[0].split(':')[0])
 
-    cmd = "grep -n '# Total charge' %s" % (traj_file)
+    cmd = "grep -n '# Total charge' %s" % (traj_mul_file)
     cmd_return = call.call_returns_shell(work_dir, cmd)
     line_num_2 = int(cmd_return[0].split(':')[0])
 
     atoms_num = line_num_2-line_num_1-1
     #'#  Atom  Element' and '# Total charge' are two keywords.
 
-    whole_line_num_1 = len(open(traj_file).readlines())
+    whole_line_num_1 = len(open(traj_mul_file).readlines())
     frames_num = math.ceil(whole_line_num_1/(mulliken_pre_base+atoms_num+mulliken_late_base))
 
-    arrange_mulliken(frames_num, atoms_num, time_step, atom_id, traj_file, work_dir, each)
+    mulliken_file = arrange_mulliken(frames_num, atoms_num, time_step, atom_id, traj_mul_file, work_dir, each)
+
+    str_print = 'Mulliken charge vs time is written in %s' %(mulliken_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
   #arrange vertical energy
   elif ( 'vertical_energy' in arrange_data_param ):
     vert_ene_param = arrange_data_param['vertical_energy']
 
-    if ( 'traj_file' in vert_ene_param.keys() ):
-      traj_file = vert_ene_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(traj_file)
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/arranage_data/vertical_energy/traj_file')
-      exit()
-
-    if ( 'row_ox' in vert_ene_param.keys() ):
-      row_ox = int(vert_ene_param['row_ox'])
-    else:
-      log_info.log_error('No row of oxidation species found, please set analyze/arranage_data/vertical_energy/row_ox')
-      exit()
-
-    if ( 'row_red' in vert_ene_param.keys() ):
-      row_red = int(vert_ene_param['row_red'])
-    else:
-      log_info.log_error('No row of reduction species found, please set analyze/arranage_data/vertical_energy/row_red')
-      exit()
-
-    if ( 'redox_type' in vert_ene_param.keys() ):
-      redox_type = vert_ene_param['redox_type']
-    else:
-      log_info.log_error('No redox type found, please set analyze/arranage_data/vertical_energy/redox_type')
-      exit()
-
-    if ( 'slow_growth' in vert_ene_param.keys() ):
-      slow_growth = int(vert_ene_param['slow_growth'])
-    else:
-      slow_growth = 0 #0 means no slow_growth
-
-    if ( 'init_step' in vert_ene_param.keys() ):
-      init_step = int(vert_ene_param['init_step'])
-    else:
-      init_step = start_id
-
-    if ( 'end_step' in vert_ene_param.keys() ):
-      end_step = int(vert_ene_param['end_step'])
-    else:
-      end_step = start_id+each
-
-    if ( 'final_time_unit' in vert_ene_param.keys() ):
-      final_time_unit = vert_ene_param['final_time_unit']
-    else:
-      final_time_unit = 'fs'
+    traj_mix_ener_file = vert_ene_param['traj_mix_ener_file']
+    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    traj_info.get_traj_info(traj_mix_ene_file, 'ener')
+    row_ox = vert_ene_param['row_ox']
+    row_red = vert_ene_param['row_red']
+    redox_type = vert_ene_param['redox_type']
+    slow_growth = vert_ene_param['slow_growth']
+    init_step = vert_ene_param['init_step']
+    end_step = vert_ene_param['end_step']
+    final_time_unit = vert_ene_param['final_time_unit']
 
     if ( slow_growth == 0 ):
       delta_ene, rmse = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step,start_id, \
-                                                traj_file, row_ox, row_red, redox_type, slow_growth, work_dir)
+                                                traj_mix_ener_file, row_ox, row_red, redox_type, slow_growth, work_dir)
       print ('Average vertical energy is %f eV, and error is %f eV' % (delta_ene, rmse), flush=True)
     elif ( slow_growth == 1 ):
       vert_ene = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step, start_id, \
-                                         traj_file, row_ox, row_red, redox_type, slow_growth, work_dir)
-      if ( 'increment' in vert_ene_param.keys() ):
-        increment = float(vert_ene_param['increment'])
-      else:
-        log_info.log_error('No increment found, please set analyze/arranage_data/vertical_energy/increment')
-        exit()
+                                         traj_mix_ener_file, row_ox, row_red, redox_type, slow_growth, work_dir)
+      increment = vert_ene_param['increment']
       redox_pka_free_ene = free_energy.redox_pka_slow_growth(vert_ene, increment)
       print ('The redox free energy is %f ev' %(redox_pka_free_ene), flush=True)
 
@@ -480,21 +421,11 @@ def arrange_data_run(arrange_data_param, work_dir):
   elif ( 'ti_force' in arrange_data_param ):
     ti_force_param = arrange_data_param['ti_force']
 
-    if ( 'traj_file' in ti_force_param.keys() ):
-      traj_file = ti_force_param['traj_file']
-      if ( os.path.exists(traj_file) ):
-        pass
-      else:
-        log_info.log_error('%s file does not exist' %(traj_file))
-        exit()
-    else:
-      log_info.log_error('No trajectory file found, please set analyze/arrange_data/ti_force/traj_file')
-      exit()
+    traj_lag_file = ti_force_param['traj_lag_file']
+    stat_num = ti_force_param['stat_num']
 
-    if ( 'stat_num' in ti_force_param.keys() ):
-      stat_num = int(ti_force_param['stat_num'])
-    else:
-      stat_num = 1
+    str_print = 'Extract lagrange force from %s' %(traj_lag_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
-    force_avg, error_avg = arrange_ti_force(stat_num, traj_file)
+    force_avg, error_avg = arrange_ti_force(stat_num, traj_lag_file)
     print ("The averaged force is %f and averaged error is %f" %(force_avg, error_avg), flush=True)

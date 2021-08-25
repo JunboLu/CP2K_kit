@@ -5,7 +5,7 @@
 
 &analyze
   &file_trans
-    file_name ./file.xyz
+    transd_file ./coord.xyz
     trans_type xyz2pdb
   &end file_trans
 &end analyze

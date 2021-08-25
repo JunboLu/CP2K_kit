@@ -42,6 +42,7 @@
         choosed_frame_num 100
         set_parts 1
       &end system
+      train_stress false
       model_type use_node
       neuron 120 120 120 ... 180 180 180
       set_prefix set    
@@ -69,10 +70,10 @@
     pres 1.0 2.0
     tau_t 0.1
     tau_p 0.5
-    md_type nvt
     &system
       box ./lmp_init_data/box
       coord ./lmp_init_data/str.inc
+      md_type nvt
     &end system
   &end lammps
 
@@ -90,6 +91,7 @@
     potential_file_name /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
     cell_periodic xyz
     poisson_periodic xyz
+    use_prev_wfn false
     charge 0
     multiplicity 1
     cutoff 300

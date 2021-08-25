@@ -27,7 +27,8 @@ analyze_job = str(sys.argv[3])
 log_info.log_logo()
 
 print (data_op.str_wrap('ANALYZE| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
-print ('ANALYZE| Input file name %s\n' %(inp_file), flush=True)
+print ('ANALYZE| INPUT FILE NAME %s' %(inp_file), flush=True)
+print ('ANALYZE| JOB TYPE OF ANALYZE %s\n' %(analyze_job.upper()))
 
 job_type_param = read_input.dump_info(work_dir, inp_file, [analyze_job])
 

@@ -6,10 +6,10 @@
 &analyze
   &power_spectrum
     type water_mode
-    traj_vel_file ./cp2k-vel-1.xyz
-    traj_pos_file ./cp2k-pos-1.xyz
-    init_step 50000 
-    end_step 90000
+    traj_vel_file ./WATER_64H2O-vel-1.xyz
+    traj_coord_file ./WATER_64H2O-pos-1.xyz
+    init_step 0
+    end_step 51156
     &box
       A 12.42 0.0 0.0
       B  0.0 12.42 0.0

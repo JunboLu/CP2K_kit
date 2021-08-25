@@ -249,12 +249,16 @@ contains
 
   end subroutine expand_cell
 
-  subroutine periodic_center_box(coord, a_vec, b_vec, c_vec, trans_type, exclude_group_id, &
-                                 group_atom_1_id, group_atoms_mass, new_coord, m, n, l, x, y, z)
+  subroutine periodic_center_box(coord, a_vec, b_vec, c_vec, trans_type, group_atom_1_id, &
+                                 group_atoms_mass, id_list_len, mass_list_len, new_coord, m, n, x, y, z)
 
-    integer::m, n, l, x, y, z
+    integer::m, n, x, y, z
     integer::i, j, k, q, a
     integer::trans_type
+    integer::atom_1_num, atoms_num
+    integer,dimension(x)::id_list_len
+    integer,dimension(x)::mass_list_len
+    integer,dimension(x,y)::group_atom_1_id
     real(kind=4)::sign_value_a,sign_value_b,sign_value_c
     real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
@@ -263,19 +267,18 @@ contains
     real(kind=4),dimension(n)::a_vec, b_vec, c_vec
     real(kind=4),dimension(n)::a_vec_basis, b_vec_basis, c_vec_basis
     real(kind=4),dimension(n)::proj_a_vec, proj_b_vec, proj_c_vec
-    integer,dimension(l)::exclude_group_id
     real(kind=4),dimension(x,z)::group_atoms_mass
-    integer,dimension(x,y)::group_atom_1_id
     real(kind=4),dimension(m,n)::coord
     real(kind=4),dimension(m,n)::new_coord
 
     !f2py intent(in)::trans_type
-    !f2py intent(in)::m, n, l, x, y
+    !f2py intent(in)::m, n, x, y, z
     !f2py intent(in)::coord
     !f2py intent(in)::a_vec, b_vec, c_vec
-    !f2py intent(in)::exclude_group_id
     !f2py intent(in)::group_atom_1_id
     !f2py intent(in)::group_atoms_mass
+    !f2py intent(in)::id_list_len
+    !f2py intent(in)::mass_list_len
     !f2py intent(out)::new_coord
 
     i = 0
@@ -316,52 +319,14 @@ contains
       end do
     end do
 
-    if ( l /= 0 ) then
-      do i=1,l
-        a=exclude_group_id(i)
-        do j=1,n
-          coord_temp(j) = coord(a,j)
-        end do
-
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
-
-        call get_vec_len(proj_a_vec, proj_a_vec_len, n)
-        call get_vec_len(proj_b_vec, proj_b_vec_len, n)
-        call get_vec_len(proj_c_vec, proj_c_vec_len, n)
-
-        if ( DOT_PRODUCT(a_vec_basis,coord_temp) > 0 ) then
-          shift_a_len = a_vec_len*anint(proj_a_vec_len/a_vec_len)
-        else
-          shift_a_len = a_vec_len*anint(-proj_a_vec_len/a_vec_len)
-        end if
-        if ( DOT_PRODUCT(b_vec_basis,coord_temp) > 0 ) then
-          shift_b_len = b_vec_len*anint(proj_b_vec_len/b_vec_len)
-        else
-          shift_b_len = b_vec_len*anint(-proj_b_vec_len/b_vec_len)
-        end if
-        if ( DOT_PRODUCT(c_vec_basis,coord_temp) > 0 ) then
-          shift_c_len = c_vec_len*anint(proj_c_vec_len/c_vec_len)
-        else
-          shift_c_len = c_vec_len*anint(-proj_c_vec_len/c_vec_len)
-        end if
-
-        coord_temp = coord_temp - shift_a_len*a_vec_basis - &
-                     shift_b_len*b_vec_basis - shift_c_len*c_vec_basis
-
-        do j=1,n
-          new_coord(a,j) = coord_temp(j)
-        end do
-
-      end do
-    end if
-
     if (trans_type == 0) then !center the system based on the center of mass of group
       do i =1,x
-        do j=1,y
+        atom_1_num = id_list_len(i)
+        atoms_num = mass_list_len(i)
+        do j=1,atom_1_num
           a=group_atom_1_id(i,j)
-          call center_of_mass(group_atoms_mass(i,:), coord(a:(a+z-1),:), coord_center_mass, z, n)
+          call center_of_mass(group_atoms_mass(i,1:atoms_num), coord(a:(a+atoms_num-1),:), &
+                              coord_center_mass, atoms_num, n)
           
           call project_vec(coord_center_mass, a_vec_basis, n, proj_a_vec, sign_value_a)
           call project_vec(coord_center_mass, b_vec_basis, n, proj_b_vec, sign_value_b)
@@ -387,7 +352,7 @@ contains
             shift_c_len = c_vec_len*anint(-proj_c_vec_len/c_vec_len)
           end if
 
-          do k=0,z-1
+          do k=0,atoms_num-1
             do q=1,n
               coord_temp(q) = coord(a+k,q)
             end do
@@ -442,18 +407,20 @@ contains
 
   end subroutine
 
-  subroutine periodic_center_image(coord, a_vec, b_vec, c_vec, center_coord, trans_type, exclude_group_id, &
-                                   group_atom_1_id, group_atoms_mass, new_coord, m, n, l, x, y, z)
+  subroutine periodic_center_image(coord, a_vec, b_vec, c_vec, center_coord, trans_type, group_atom_1_id, &
+                                   group_atoms_mass, id_list_len, mass_list_len, new_coord, m, n, x, y, z)
 
-    integer::m, n, l, x, y, z
+    integer::m, n, x, y, z
     integer::i, j, k, q, a
     integer::trans_type
+    integer::atom_1_num, atoms_num
+    integer,dimension(x,y)::group_atom_1_id
+    integer,dimension(x)::id_list_len
+    integer,dimension(x)::mass_list_len
     real(kind=4)::sign_value_a, sign_value_b, sign_value_c
     real(kind=4)::a_vec_len, b_vec_len, c_vec_len
     real(kind=4)::shift_a_len, shift_b_len, shift_c_len
     real(kind=4)::proj_a_vec_len, proj_b_vec_len, proj_c_vec_len
-    integer,dimension(l)::exclude_group_id
-    integer,dimension(x,y)::group_atom_1_id
     real(kind=4),dimension(x,z)::group_atoms_mass
     real(kind=4),dimension(n)::center_coord, group_center_coord
     real(kind=4),dimension(n)::coord_temp
@@ -464,13 +431,13 @@ contains
     real(kind=4),dimension(m,n)::new_coord
 
     !f2py intent(in)::trans_type
-    !f2py intent(in)::m, n, l, x, y, z
+    !f2py intent(in)::m, n, x, y, z
     !f2py intent(in)::center_coord
     !f2py intent(in)::coord
-    !f2py intent(in)::exclude_group_id
     !f2py intent(in)::group_atom_1_id
     !f2py intent(in)::group_atoms_mass
     !f2py intent(in)::a_vec, b_vec, c_vec
+    !f2py intent(in)::id_list_len, mass_list_len
     !f2py intent(out)::new_coord
 
     i = 0
@@ -513,63 +480,13 @@ contains
     call norm_vec(b_vec, b_vec_basis, n)
     call norm_vec(c_vec, c_vec_basis, n)
 
-    if ( l /= 0 ) then
-      do i=1,l
-        a=exclude_group_id(i)
-        do j=1,n
-          coord_temp(j) = coord(a,j) - center_coord(j)
-        end do
-
-        call project_vec(coord_temp, a_vec_basis, n, proj_a_vec, sign_value_a)
-        call project_vec(coord_temp, b_vec_basis, n, proj_b_vec, sign_value_b)
-        call project_vec(coord_temp, c_vec_basis, n, proj_c_vec, sign_value_c)
-
-        call get_vec_len(proj_a_vec, proj_a_vec_len, n)
-        call get_vec_len(proj_b_vec, proj_b_vec_len, n)
-        call get_vec_len(proj_c_vec, proj_c_vec_len, n)
-
-        if ( DOT_PRODUCT(coord_temp,a_vec_basis) < 0 .and. proj_a_vec_len > a_vec_len/2.0 ) then
-          shift_a_len = a_vec_len
-        end if
-        if ( DOT_PRODUCT(coord_temp,a_vec_basis) > 0 .and. proj_a_vec_len > a_vec_len/2.0 ) then
-          shift_a_len = -a_vec_len
-        end if
-
-        if ( DOT_PRODUCT(coord_temp,b_vec_basis) < 0 .and. proj_b_vec_len > b_vec_len/2.0 ) then
-          shift_b_len = b_vec_len
-        end if
-        if ( DOT_PRODUCT(coord_temp,b_vec_basis) > 0 .and. proj_b_vec_len > b_vec_len/2.0 ) then
-          shift_b_len = -b_vec_len
-        end if
-
-        if ( DOT_PRODUCT(coord_temp,c_vec_basis) < 0 .and. proj_c_vec_len > c_vec_len/2.0 ) then
-          shift_c_len = c_vec_len
-        end if
-        if ( DOT_PRODUCT(coord_temp,c_vec_basis) > 0 .and. proj_c_vec_len > c_vec_len/2.0 ) then
-          shift_c_len = -c_vec_len
-        end if
-
-        do j=1,n
-          coord_temp(j) = coord(a,j)
-        end do
-
-        coord_temp = coord_temp + shift_a_len*a_vec_basis + &
-                     shift_b_len*b_vec_basis + shift_c_len*c_vec_basis
-
-        shift_a_len = 0.0
-        shift_b_len = 0.0
-        shift_c_len = 0.0
-        do j=1,n
-          new_coord(a,j) = coord_temp(j)
-        end do
-      end do
-    end if
-
     if (trans_type == 0) then !center the system based on the center of mass of group
       do i =1,x
-        do j=1,y
+        atom_1_num = id_list_len(i)
+        atoms_num = mass_list_len(i)
+        do j=1,atom_1_num
           a=group_atom_1_id(i,j)
-          call center_of_mass(group_atoms_mass(i,:), coord(a:(a+z-1),:), group_center_coord, z, n)
+          call center_of_mass(group_atoms_mass(i,1:atoms_num), coord(a:(a+atoms_num-1),:), group_center_coord, atoms_num, n)
           do k=1,n
             coord_temp(k) = group_center_coord(k) - center_coord(k)
           end do
@@ -603,7 +520,7 @@ contains
             shift_c_len = -c_vec_len
           end if
 
-          do k=0,z-1
+          do k=0,atoms_num-1
             do q=1,n
               coord_temp(q) = coord(a+k,q)
             end do
@@ -810,7 +727,7 @@ contains
     sum_value_2 = 0.0
     pi=3.1415926
 
-    density = v/vol
+    density = w/vol
 
     do i=1,u
       do j=1,v
