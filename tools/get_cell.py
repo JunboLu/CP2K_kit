@@ -5,30 +5,30 @@ import numpy as np
 def get_cell_const(a_vec, b_vec, c_vec):
 
   '''
-  get_cell_const : get cell constant from cell vectors.
+  get_cell_const: get cell constant from cell vectors.
 
-  Args :
-    a_vec : 1-d float array, dim = 3
+  Args:
+    a_vec: 1-d float array, dim = 3
       a_vec is the cell vector of a.
-      Example : array([12.42, 0.0, 0.0])
-    b_vec : 1-d float array, dim = 3
+      Example: array([12.42, 0.0, 0.0])
+    b_vec: 1-d float array, dim = 3
       b_vec is the cell vector of b.
-      Example : array([0.0, 12.42, 0.0])
-    c_vec : 1-d float array, dim = 3
+      Example: array([0.0, 12.42, 0.0])
+    c_vec: 1-d float array, dim = 3
       c_vec is the cell vector of c
-      Example : array([0.0, 0.0, 12.42])
-  Returns :
-    a : float
+      Example: array([0.0, 0.0, 12.42])
+  Returns:
+    a: float
       a is the length of a_vec.
-    b : float
+    b: float
       b is the length of b_vec.
-    c : float
+    c: float
       c is the length of c_vec.
-    alpha : float
+    alpha: float
       alpha is the angle between b_vec and c_vec.
-    beta : float
+    beta: float
       beta is the angle between a_vec and c_vec.
-    gamma : float
+    gamma: float
       gamma is the angle between a_vec and b_vec.
   '''
 
@@ -50,27 +50,27 @@ def get_cell_const(a_vec, b_vec, c_vec):
 def get_triclinic_cell(a_vec, b_vec, c_vec):
 
   '''
-  get_triclinic_cell : get triclinic cell from conventional cell vectors.
+  get_triclinic_cell: get triclinic cell from conventional cell vectors.
 
-  Args :
-    a_vec : 1-d float array, dim = 3
+  Args:
+    a_vec: 1-d float array, dim = 3
       a_vec is the cell vector of a.
       Example : array([12.42, 0.0, 0.0])
-    b_vec : 1-d float array, dim = 3
+    b_vec: 1-d float array, dim = 3
       b_vec is the cell vector of b.
       Example : array([0.0, 12.42, 0.0])
-    c_vec : 1-d float array, dim = 3
+    c_vec: 1-d float array, dim = 3
       c_vec is the cell vector of c.
       Example : array([0.0, 0.0, 12.42])
-  Returns :
-    tri_a_vec : 1-d float array, dim = 3
+  Returns:
+    tri_a_vec: 1-d float array, dim = 3
       tri_a_vec is the cell vector of a in triclinic cell.
-      Example : array([Lx, 0.0, 0.0])
-    tri_b_vec : 1-d float array, dim = 3
+      Example: array([Lx, 0.0, 0.0])
+    tri_b_vec: 1-d float array, dim = 3
       tri_b_vec is the cell vector of b in triclinic cell.
-      Example : array([xy, Ly, 0.0])
-    tri_c_vec : 1-d float array, dim = 3
-      Example : array([xz, yz, Lz])
+      Example: array([xy, Ly, 0.0])
+    tri_c_vec: 1-d float array, dim = 3
+      Example: array([xz, yz, Lz])
   '''
 
   a, b, c, alpha, beta, gamma = get_cell_const(a_vec, b_vec, c_vec)
@@ -92,17 +92,17 @@ def get_triclinic_cell(a_vec, b_vec, c_vec):
 def get_triclinic_cell_six(box_param):
 
   '''
-  get_triclinic_cell_six : get triclinic cell from six parameters
-  Args :
-    box_param : 1-d float list, dim = 6
-      Example : [Lx, Ly, Lz, xy, xz, yz]
-  Returns :
-    tri_a_vec : 1-d float array, dim = 3
-      Example : array([Lx, 0.0, 0.0])
-    tri_b_vec : 1-d float array, dim = 3
-      Example : array([xy, Ly, 0.0])
-    tri_c_vec : 1-d float array, dim = 3
-      Example : array([xz, yz, Lz])
+  get_triclinic_cell_six: get triclinic cell from six parameters
+  Args:
+    box_param: 1-d float list, dim = 6
+      Example: [Lx, Ly, Lz, xy, xz, yz]
+  Returns:
+    tri_a_vec: 1-d float array, dim = 3
+      Example: array([Lx, 0.0, 0.0])
+    tri_b_vec: 1-d float array, dim = 3
+      Example: array([xy, Ly, 0.0])
+    tri_c_vec: 1-d float array, dim = 3
+      Example: array([xz, yz, Lz])
   '''
 
   tri_a_vec = np.zeros(3)

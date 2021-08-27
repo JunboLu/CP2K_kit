@@ -3,15 +3,15 @@
 def get_atom_mass(atom_name):
 
   '''
-  get_atom_mass : get atom number and mass.
+  get_atom_mass: get atom number and mass.
 
-  Args :
-    atom_name : string or 1-d string list
+  Args:
+    atom_name: string or 1-d string list
       atom_name is atom name. Example : 'O'/['O','H']
-  Returns :
-    atom_num : int or 1-d int list
+  Returns:
+    atom_num: int or 1-d int list
       atom_num is atom number. Example : 6/[6,1]
-    atom_mass : float or 1-d float list
+    atom_mass: float or 1-d float list
       atom_mass is atom mass. Example : 16.00/[16.00,1.01]
   '''
 
@@ -64,14 +64,14 @@ def get_atom_mass(atom_name):
 def get_atom_cov_radius(atom):
 
   '''
-  get_atom_cov_radius : get atom covalence radius.
+  get_atom_cov_radius: get atom covalence radius.
 
-  Args :
-    atom : string or 1-d string list
-      atom is atom name. Example : 'O'/['O','H']
-  Returns :
-    atom_cov_rad : float or 1-d float list
-      atom_cov_rad is atom covalence radius. Example : 0.66/[0.66, 0.3]
+  Args:
+    atom: string or 1-d string list
+      atom is atom name. Example: 'O'/['O','H']
+  Returns:
+    atom_cov_rad: float or 1-d float list
+      atom_cov_rad is atom covalence radius. Example: 0.66/[0.66, 0.3]
   '''
 
   #Unit of covalence radius is Angstrom.
@@ -120,18 +120,18 @@ def get_atom_cov_radius(atom):
 def get_q_info(atom, q_type='large'):
 
   '''
-  get_q_info : get the number of valence electrons for a atom.
+  get_q_info: get the number of valence electrons for a atom.
     This function is used to be in generating CP2K input file.
 
-  Args :
-    atom : string
-      atom is atom name. Example : 'O'
-    q_type : string
+  Args:
+    atom: string
+      atom is atom name. Example: 'O'
+    q_type: string
       q_type is the core type for GTH pseudopotential.
       There are three choices: 'large', 'medium', 'small'
-  Returns :
-    q_num : string
-      q_num is the number of valence electrons. Example : 'q6'
+  Returns:
+    q_num: string
+      q_num is the number of valence electrons. Example: 'q6'
   '''
 
   atom_q_large = {'H':'q1', 'He':'q2', 'Li':'q3', 'Be':'q4', 'B':'q3', 'C':'q4',

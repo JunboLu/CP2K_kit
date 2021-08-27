@@ -11,42 +11,44 @@ from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import dynamic_mod
 from CP2K_kit.analyze import check_analyze
 
-def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, \
-                  end_step, time_num, atom_id, traj_coord_file, remove_com, work_dir, file_name):
+def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, \
+                  max_frame_corr, atom_id, traj_coord_file, remove_com, work_dir, file_name):
 
   '''
-  diffusion : calculate diffusion coefficient for choosed atoms.
+  diffusion_msd: calculate diffusion coefficient for choosed atoms via mean square displacement.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
-      each is printing frequency of md.
-    file_start : int
-      file_start is the starting frame in trajectory file.
-    time_step : float
+    pre_base: int
+      pre_base is the number of lines before block of trajectory.
+    each: int
+      each is printing frequency of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    method : string
-      method is the method to calculate diffusion coefficient. Two method choices: einstein and green-Kubo.
-      The einstein mthod is better!
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
-    none
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    atom_id: 1-d int list
+      atom_id is the id of atoms.
+    traj_coord_file: string
+      file_name is the name of coordination trajectory file.
+    remove_com: bool
+      remove_com is whether we need to remove center of mass.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    msd_file: string
+      msd_file is the file_name of mean square displacement.
   '''
 
   frames_num_stat = int((end_step-init_step)/each+1)
@@ -71,7 +73,7 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
     atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
     coord = dynamic_mod.dynamic.remove_coord_com(coord,atom_mass_array)
 
-  einstein_sum = dynamic_mod.dynamic.diffusion_einstein_sum(coord, time_num)
+  einstein_sum = dynamic_mod.dynamic.diffusion_einstein_sum(coord, max_frame_corr)
 
   msd_file = ''.join((work_dir, '/', file_name))
   with open(msd_file, 'w') as csvfile:
@@ -83,39 +85,37 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
   return msd_file
 
 def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
-                  init_step, end_step, time_num, atom_id, traj_vel_file):
+                  init_step, end_step, max_frame_corr, atom_id, traj_vel_file):
 
   '''
-  diffusion : calculate diffusion coefficient for choosed atoms.
+  diffusion_tcf: calculate diffusion coefficient for choosed atoms via velocity time correlation function.
 
-  Args :
-    atoms_num : int
+  Args:
+    atoms_num: int
       atoms_num is the number of atoms in trajectory file.
-    base : int
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
-      each is printing frequency of md.
-    file_start : int
-      file_start is the starting frame in trajectory file.
-    time_step : float
+    pre_base: int
+      pre_base is the number of lines before block of trajectory.
+    each: int
+      each is printing frequency of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    method : string
-      method is the method to calculate diffusion coefficient. Two method choices: einstein and green-Kubo.
-      The einstein mthod is better!
-  Returns :
-    none
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    atom_id: 1-d int list
+      atom_id is the id of atoms.
+    traj_vel_file: string
+      traj_vel_file is the name of velocity trajectory file.
+  Returns:
+    diff_coeff: float
+      diff_coeff is the diffusion coefficient.
   '''
 
   #Do we need to substract com velocity?
@@ -133,7 +133,7 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
   #Here we use non-normalized velocity time correlation function.
   normalize = 0
 
-  vel_tcf = dynamic_mod.dynamic.time_correlation(vel, time_num, normalize)
+  vel_tcf = dynamic_mod.dynamic.time_correlation(vel, max_frame_corr, normalize)
 
   sum_value = 0.0
   for i in range(len(vel_tcf)):
@@ -145,14 +145,14 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
 def diffusion_run(diffusion_param, work_dir):
 
   '''
-  diffusion_run : kernel function to run diffusion. It will call diffusion function.
+  diffusion_run: kernel function to run diffusion. It will call diffusion function.
 
-  Args :
-    diffusion_param : dictionary
+  Args:
+    diffusion_param: dictionary
       diffusion_param contains keywords used in diffusion function.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
     none
   '''
 

@@ -12,44 +12,40 @@ from CP2K_kit.tools import traj_tools
 def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=False):
 
   '''
-  get_traj_info : get several important information of trajectory
+  get_traj_info: get several important information of trajectory
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of trajectory file used to analyze.
-    file_type : string
+    file_type: string
       file_type is the type of file.
-    group : 2-d string list
+    group: 2-d string list
       group contain the basic atom info in a set of atoms.
-      Example : [['O', 'H', 'H']]
-    atom_id : 2-d int list
+      Example: [['O', 'H', 'H']]
+    atom_id: 2-d int list
       atom_id is the atom id of the group atoms.
       Example: [[1,2,3,4,5,6...192]]
-    return_group : bool
-  Returns :
-    blocks_num : int
+    return_group: bool
+  Returns:
+    blocks_num: int
       blocks_num is the number of lines in one block in trajectory file.
-    base : int
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
+    pre_base: int
       pre_base is the number of lines before block of trajectory file.
-    frames_num : int
+    frames_num: int
       frames_num is the number of frames in trajectory file.
-    each : int
+    each: int
       each is printing frequency of md.
-    start_frame_id : int
+    start_frame_id: int
       start_frame_id is the starting frame used to choose.
-    end_frame_id : int
+    end_frame_id: int
       end_frame_id is the ending frame used to choose.
-    file_start : int
-      file_start is the starting frame in trajectory file.
-    time_step : float
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    exclude_group_id : 1d int list
-      exclude_group_id is the id of atoms that have no group.
-    group_atom_1_id : 2-d int list
+    group_atom_1_id: 2-d int list
       group_atom_1_id is the id of first atoms in the molecules in the group.
-    group_atoms_mass : 2-d float list
+    group_atoms_mass: 2-d float list
       group_atoms_mass contains the atoms mass for each group.
   '''
 

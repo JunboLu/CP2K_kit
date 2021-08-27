@@ -22,30 +22,30 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp
                frc_y_cp2k, frc_y_lmp, frc_z_cp2k, frc_z_lmp, work_dir):
 
   '''
-  write_file : write the energy and force data in a file
+  write_file: write the energy and force data in a file
 
-  Args :
-    energy_cp2k : 1-d float list
+  Args:
+    energy_cp2k: 1-d float list
       energy_cp2k contains cp2k energy values along with trajectory.
-    energy_lmp : 1-d float list
+    energy_lmp: 1-d float list
       energy_lmp contains lammps energy values along with trajectory.
-    frc_cp2k : 2-d float list, dim = Num of frames * (3*(Num of atoms))
+    frc_cp2k: 2-d float list, dim = Num of frames * (3*(Num of atoms))
       frc_cp2k contains cp2k force values along with trajectory.
-    frc_lmp : 2-d float list, dim = Num of frames * (3*(Num of atoms))
+    frc_lmp: 2-d float list, dim = Num of frames * (3*(Num of atoms))
       frc_lmp contains lammps force values along with trajectory.
-    frc_x_cp2k : 2-d float list, dim = Num of frames * Num of atoms
+    frc_x_cp2k: 2-d float list, dim = Num of frames * Num of atoms
       frc_x_cp2k contains cp2k force values of x part along with trajectory.
-    frc_x_lmp : 2-d float list, dim = Num of frames * Num of atoms
+    frc_x_lmp: 2-d float list, dim = Num of frames * Num of atoms
       frc_x_lmp contains lammps force values of x part along with trajectory.
-    frc_y_cp2k : 2-d float list, dim = Num of frames * Num of atoms
+    frc_y_cp2k: 2-d float list, dim = Num of frames * Num of atoms
       frc_y_cp2k contains cp2k force values of y part along with trajectory.
-    frc_y_lmp : 2-d float list, dim = Num of frames * Num of atoms
+    frc_y_lmp: 2-d float list, dim = Num of frames * Num of atoms
       frc_y_lmp contains lammps force values of y part along with trajectory.
-    frc_z_cp2k : 2-d float list, dim = Num of frames * Num of atoms
+    frc_z_cp2k: 2-d float list, dim = Num of frames * Num of atoms
       frc_z_cp2k contains cp2k force values of z part along with trajectory.
-    frc_z_lmp : 2-d float list, dim = Num of frames * Num of atoms
+    frc_z_lmp: 2-d float list, dim = Num of frames * Num of atoms
       frc_z_lmp contains lammps force values of z part along with trajectory.
-    work_dir : string
+    work_dir: string
       working_dir is the working directory.
   Returns:
     none
@@ -109,29 +109,35 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp
   str_print = 'cp2k force of z part vs lammps force of z part is written in %s' %(energy_file_name)
   print (data_op.str_wrap(str_print, 80), flush=True)
 
-def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label, work_dir):
+def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_mpi_num, lmp_omp_num, dpff_file, atom_label, work_dir):
 
   '''
-  supervise_test : Do test for supervised learning
+  supervise_test: Do test for supervised learning
 
   Args :
-    cp2k_pos_file : string
+    cp2k_pos_file: string
       cp2k_pos_file is the cp2k position trajectory file.
-    cp2k_cell_file : string
+    cp2k_cell_file: string
       cp2k_cell_file is the cp2k cell trajectory file.
-    cp2k_frc_file : string
+    cp2k_frc_file: string
       cp2k_frc_file is the cp2k force trajectory file.
-    dpff_file : string
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
+    lmp_mpi_num: int
+      lmp_mpi_num is the lammps mpi number.
+    lmp_omp_num: int
+      lmp_omp_num is the lammps openmp number.
+    dpff_file: string
       dpff_file is the deepmd force field file.
-    atom_label : dictionary
+    atom_label: dictionary
       atom_label is the atom label.
-    work_dir : string
+    work_dir: string
       work_dir is the working directory
   Returns:
     none
   '''
 
-  atoms_num, base, pre_base, frames_num, each, start, end, time_step = traj_info.get_traj_info(cp2k_pos_file)
+  atoms_num, base, pre_base, frames_num, each, start, end, time_step = traj_info.get_traj_info(cp2k_pos_file, 'coord')
 
   tri_cell_tot = []
   atom_type_tot = []
@@ -202,7 +208,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
 
     lmp_in_file.close()
 
-    cmd = 'lmp < ./in.lammps > out'
+    cmd = 'export OMP_NUM_THREADS=%d && mpirun -np %d %s < ./in.lammps > out' %(lmp_omp_num, lmp_mpi_num, lmp_exe)
     subprocess.run(cmd, shell=True, cwd=frame_dir)
 
   energy_cp2k = []
@@ -283,20 +289,24 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, ato
 def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, cp2k_mpi_num, atom_label, work_dir):
 
   '''
-  active_learning_test : Do test for active learning
+  active_learning_test: Do test for active learning
 
-  Args :
-    lmp_traj_file : string
+  Args:
+    lmp_traj_file: string
       lmp_traj_file is the lammps trajectory file.
-    lmp_log_file : string
+    lmp_log_file: string
       lmp_log_file is the lammps output file.
-    cp2k_inp_file : string
+    cp2k_inp_file: string
       cp2k_inp_file is the cp2k input file.
-    atom_label : dictionary
+    cp2k_exe: string
+      cp2k_exe is the cp2k executable file.
+    cp2k_mpi_num: int
+      cp2k_mpi_num is the cp2k mpi number.
+    atom_label: dictionary
       atom_label is the atom label.
-    work_dir : string
+    work_dir: string
       work_dir is the workding directory.
-  Returns :
+  Returns:
     none
   '''
 
@@ -402,14 +412,14 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, c
 def dp_test_run(dp_test_param, work_dir):
 
   '''
-  dp_test_run : kernel function to run dp_test
+  dp_test_run: kernel function to run dp_test
 
-  Args :
-    dp_test_param : dictionary
+  Args:
+    dp_test_param: dictionary
       dp_test_param contains keywords used in deep potential test.
-    work_dir : string
+    work_dir: string
       work_dir is the working directory.
-  Returns :
+  Returns:
     none
   '''
 
@@ -424,10 +434,13 @@ def dp_test_run(dp_test_param, work_dir):
     cp2k_pos_file = dp_test_param['cp2k_pos_file']
     cp2k_cell_file = dp_test_param['cp2k_cell_file']
     dpff_file = dp_test_param['dpff_file']
+    lmp_exe = dp_test_param['lmp_exe']
+    lmp_mpi_num = dp_test_param['lmp_mpi_num']
+    lmp_omp_num = dp_test_param['lmp_omp_num']
 
     print ('Do test for supervised learning type', flush=True)
 
-    supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label, work_dir)
+    supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_mpi_num, lmp_omp_num, dpff_file, atom_label, work_dir)
 
   elif ( learn_type == 'active_learning' ):
     lmp_traj_file = dp_test_param['lmp_traj_file']

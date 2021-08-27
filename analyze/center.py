@@ -17,45 +17,48 @@ def center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, center_ty
   #Reference literature: Computer simulation of liquids, Oxford University press.
 
   '''
-  center : center the system in trajectory file. This function if complicated!
+  center: center the system in trajectory file.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    frames_num : int
+    pre_base: int
+      pre_base is the number of lines before block of trajectory.
+    frames_num: int
       frames_num is the number of frames in trajectory file.
-    a_vec : 1d float list, dim = 3
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
+      Example: [0.0, 0.0, 12.42]
     center_type : string
       center_type is the type of center. Two choices : center_box, center_image.
-    center_id : int
+    center_id: int
       center_id is the id of center atom. If we use center_box, center_id is 0.
       If we use center_image, we must set it.
-    traj_coord_file : string
-      traj_coord_file is the name of trajectory file used to center.
-    work_dir : string
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    trans_type : int
+    file_name: string
+      file_name is the name of generated file.
+    trans_type: int
       trans_type is the translation type when doing center.
       If trans_type is 0, we will consider the connectivity of molecules in the group.
       If trans_type is 1, we will never consider the connectivity of molecules in the group.
-    group_atom_1_id : 2d int list
+    group_atom_1_id: 2-d int list
       group_atom_1_id is the id of first atoms in the molecules in the group.
-    group_atoms_mass : 2d float list
+    group_atoms_mass: 2-d float list
       group_atoms_mass contains the atoms mass for each group.
-  Return :
-    none
+  Return:
+    center_file_name: string
+      center_file_name is the name of centered file.
   '''
 
   #In general, the center function will not consider connectivity.
@@ -134,13 +137,13 @@ def center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, center_ty
 def center_run(center_param, work_dir):
 
   '''
-  center_run : kernel function to run center. It will call center function.
+  center_run: kernel function to run center. It will call center function.
 
-  Args :
-    center_param : dictionary
+  Args:
+    center_param: dictionary
       center_param contains keywords used in center function.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
   Returns :
     none
   '''
@@ -165,9 +168,9 @@ def center_run(center_param, work_dir):
 
   print ('CENTER'.center(80,'*'), flush=True)
 
-  if 'connect' in center_param.keys():
-    atom_id = center_param['connect']['atom_id']
-    group_atom = center_param['connect']['group_atom']
+  if 'connect0' in center_param.keys():
+    atom_id = center_param['connect0']['atom_id']
+    group_atom = center_param['connect0']['group_atom']
 
     atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, \
     time_step, group_atom_1_id, group_atoms_mass = \

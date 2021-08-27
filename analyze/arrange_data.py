@@ -18,26 +18,27 @@ from CP2K_kit.analyze import check_analyze
 mulliken_pre_base = 5
 mulliken_late_base = 3
 
-def arrange_temp(frames_num, pre_base, time_step, file_name, work_dir, each=1):
+def arrange_temp(frames_num, pre_base, time_step, traj_ener_file, work_dir, each):
 
   '''
-  arrange_temp : arrange temperatures from trajectory file.
+  arrange_temp: arrange temperatures from trajectory file.
 
-  Args :
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    time_step : float
+  Args:
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-    each : int
+    traj_ener_file: string
+      traj_ener_file is the name of energy trajectory file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    each: int
       each is printing frequency of md.
-  Returns :
-    none
+  Returns:
+    temp_file: string
+      temp_file is the generated temperature file.
   '''
 
   time = []
@@ -45,7 +46,7 @@ def arrange_temp(frames_num, pre_base, time_step, file_name, work_dir, each=1):
 
   for i in range(frames_num):
     time.append(time_step*i*each)
-    line_i = linecache.getline(file_name, i+pre_base+1)
+    line_i = linecache.getline(traj_ener_file, i+pre_base+1)
     line_i_split = data_op.str_split(line_i, ' ')
     temp.append(float(line_i_split[3])) #The temperature is in 4th row in energy file.
 
@@ -58,26 +59,27 @@ def arrange_temp(frames_num, pre_base, time_step, file_name, work_dir, each=1):
 
   return temp_file
 
-def arrange_pot(frames_num, pre_base, time_step, file_name, work_dir, each=1):
+def arrange_pot(frames_num, pre_base, time_step, traj_ener_file, work_dir, each=1):
 
   '''
-  arrange_pot : Arrange potential energies from trajectory file.
+  arrange_pot: Arrange potential energies from trajectory file.
 
-  Args :
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    time_step : float
+  Args:
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-    each : int
+    traj_ener_file: string
+      traj_ener_file is the name of energy trajectory file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    each: int
       each is printing frequency of md.
-  Returns :
-    none
+  Returns:
+    pot_file: string
+      pot_file is the generated potential energy file.
   '''
 
   time = []
@@ -85,7 +87,7 @@ def arrange_pot(frames_num, pre_base, time_step, file_name, work_dir, each=1):
 
   for i in range(frames_num):
     time.append(time_step*i*each)
-    line_i = linecache.getline(file_name, i+pre_base+1)
+    line_i = linecache.getline(traj_ener_file, i+pre_base+1)
     line_i_split = data_op.str_split(line_i, ' ')
     pot.append(float(line_i_split[4])) #The potential energy is in 5th row in energy file. 
 
@@ -98,29 +100,30 @@ def arrange_pot(frames_num, pre_base, time_step, file_name, work_dir, each=1):
 
   return pot_file
 
-def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, file_name, work_dir, each=1):
+def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, traj_mul_file, work_dir, each):
 
   '''
-  arrange_mulliken : arrange mulliken charge from trajectory file.
+  arrange_mulliken: arrange mulliken charge from trajectory file.
 
-  Args :
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    time_step : float
+  Args:
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-      Example : [1,2,3,7,8]
-    file_name : string
-      file_name is the name of file used to analyze.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-    each : int
+    atom_id: int list
+      atom_id is the id of atoms.
+      Example: [1,2,3,7,8]
+    traj_mul_file: string
+      traj_mul_file is the name of mulliken trajectory file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    each: int
       each is printing frequency of md.
-  Returns :
-    none
+  Returns:
+    mulliken_file: string
+      mulliken_file is the generated mulliken charge file.
   '''
 
   time = []
@@ -153,40 +156,40 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
                             row_ox, row_red, redox_type, slow_growth, work_dir, each=1):
 
   '''
-  arrange_vertical_energy : arrange vertical energy from trajectory file.
+  arrange_vertical_energy: arrange vertical energy from trajectory file.
 
-  Args :
-    time_step : float
+  Args:
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    final_time_unit : string
+    final_time_unit: string
       final_time_unit is the unit of time in the result.
-    start : int
+    start: int
       start is the starting frame used to analyze.
-    end : int
+    end: int
       end is the ending frame used to analyze.
-    file_start : int
+    file_start: int
       file_start is the starting frame in trajectory file.
-    mix_ene_file : string
+    mix_ene_file: string
       mix_ene_file is the mixing energy trajctory file.
-    row_ox : int
+    row_ox: int
       row_ox is the row of oxidation species in trajectory file.
-    row_red : int
+    row_red: int
       row_red is the row of reduced species in trajectory file.
-    redox_type : string
+    redox_type: string
       redox_type is the type of redox. Two choices: oxidation, reduction.
-    slow_growth : int
+    slow_growth: int
       slow_growth is the keyword show whether user use slow-growth method.
-      Example : 0 means no slow-growth method, 1 means slow-growth method
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-    each : int
+      Example: 0 means no slow-growth method, 1 means slow-growth method
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    each: int
       each is printing frequency of md.
-  Returns :
-    delta_e_avg : float
+  Returns:
+    delta_e_avg: float
       delta_e_avg is the averaged value of vertical energy.
-    rmse : float
+    rmse: float
       rmse is the statistical error of delta_e_avg
-    vertical_ene_array : 1d float array
+    vertical_ene_array: 1d float array
       vertical_ene_array is vertical energy along MD.
   '''
 
@@ -281,17 +284,17 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
 def arrange_ti_force(stat_num, lagrange_file):
 
   '''
-  arrange_ti_force : arrange force in thermodynamic integration calculation.
+  arrange_ti_force: arrange force in thermodynamic integration calculation.
 
-  Args :
-    stat_num : int
+  Args:
+    stat_num: int
       stat_num is the number of data used to be analyzed.
-    lagrange_file : string
+    lagrange_file: string
       lagrange_file is the file containg lagrange force.
-  Returns :
-    s_avg : float
+  Returns:
+    s_avg: float
       s_avg is the averaged value of lagrange force.
-    sq_avg : float
+    sq_avg: float
       sq_avg is the averaged value of square of lagrange force.
   '''
 
@@ -318,13 +321,15 @@ def arrange_ti_force(stat_num, lagrange_file):
 def arrange_data_run(arrange_data_param, work_dir):
 
   '''
-  arrange_data_run : kernel function to run arrange_data.
+  arrange_data_run: kernel function to run arrange_data.
 
-  Args :
-    arrange_data_param : dictionary
+  Args:
+    arrange_data_param: dictionary
       arrange_data_param contains information of arrange_data.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
+  Returns:
+    none
   '''
 
   arrange_data_param = check_analyze.check_arrange_data_inp(arrange_data_param)

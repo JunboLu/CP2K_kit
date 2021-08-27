@@ -9,23 +9,23 @@ from CP2K_kit.tools import data_op
 def lmp_traj_info(lmp_traj_file, lmp_log_file):
 
   '''
-  lmp_traj_info : Dump information from lammps trajectory file and output file.
+  lmp_traj_info: Dump information from lammps trajectory file and output file.
 
-  Args :
-    lmp_traj_file : string
+  Args:
+    lmp_traj_file: string
       lmp_traj_file is the lammps trajectory file.
-    lmp_log_file : string
+    lmp_log_file: string
       lmp_log_file is the lammps output file.
-  Returns :
-    atoms_num : int
+  Returns:
+    atoms_num: int
       atoms_num is the number of atoms for one frame in lammps trajectory.
-    frames_num : int
+    frames_num: int
       frames_num is the number of frames in lammps trajectory.
-    start_id : int
+    start_id: int
       start_id is the starting index.
-    end_id : int
+    end_id: int
       end_id is the endding index.
-    each : int
+    each: int
       each is the increment.
   '''
 
@@ -60,39 +60,39 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
                       coord_return=False, vel_return=False, frc_return=False, cell_return=False):
 
   '''
-  read_lmp_log_traj : read lammps trajectory and output files.
+  read_lmp_log_traj: read lammps trajectory and output files.
 
-  Args :
-    lmp_traj_file : string
+  Args:
+    lmp_traj_file: string
       lmp_traj_file is the lammps trajectory file.
-    lmp_log_file : string
+    lmp_log_file: string
       lmp_log_file is the lammps output file.
-    atom_label : dictionary
+    atom_label: dictionary
       atom_label is the atomic label.
-    frames : 1-d int list
+    frames: 1-d int list
       frames is the choosed frame_id
-    ene_return : bool
+    ene_return: bool
       ene is whether we need to return energy.
-    coord_return : bool
+    coord_return: bool
       ene is whether we need to return coordinates.
-    vel_return : bool
+    vel_return: bool
       vel is whether we need to return velocities.
-    frc_return : bool
+    frc_return: bool
       ene is whether we need to return forces.
-    cell_return : bool
+    cell_return: bool
       ene is whether we need to return cells.
-  Returns :
-    atoms : 2-d string list, dim = (num of frames)*(num of atoms)
+  Returns:
+    atoms: 2-d string list, dim = (num of frames)*(num of atoms)
       atoms is the atom name along with the trajectory.
-    energy : 2-d float list, dim = (num of frames)*(num of atoms)
+    energy: 2-d float list, dim = (num of frames)*(num of atoms)
       energy is the energy along with the trajectory.
-    coord : 3-d float list, dim = (num of frames)*(num of atoms)*3
+    coord: 3-d float list, dim = (num of frames)*(num of atoms)*3
       coord is the coordinates along with the trajectory.
-    vel : 3-d float list, dim = (num of frames)*(num of atoms)*3
+    vel: 3-d float list, dim = (num of frames)*(num of atoms)*3
       vel is the velocity along with the trajectory.
-    frc : 3-d float list, dim = (num of frames)*(num of atoms)*3
+    frc: 3-d float list, dim = (num of frames)*(num of atoms)*3
       frc is the force along with the trajectory.
-    cell : 3-d float list, dim = (num of frames)*3*3
+    cell: 3-d float list, dim = (num of frames)*3*3
       cell is the cell vector along with the trajectory.
   '''
 

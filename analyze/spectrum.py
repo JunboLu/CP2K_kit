@@ -16,51 +16,58 @@ from CP2K_kit.lib import statistic_mod
 
 #The unit of velocity is CP2K trajectory is Bohr/au_t
 
-def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, time_num,
+def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr,
                    lower_wave, upper_wave, increment_wave, atom_id, traj_vel_file, normalize, work_dir):
 
   '''
-  power_spectrum : calculate power_spectrum of the system
+  power_spectrum: calculate power_spectrum of the system
 
   Args :
-    atoms_num : int
+    atoms_num: int
       atoms_num is the number of atoms in trajectory file.
-    base : int
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    each: int
       each is printing frequency of md.
-    file_start : int
-      file_start is the starting frame in trajectory file.
-    time_step : float
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    lower_wave : float
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    lower_wave: float
       lower_wave is the starting wave value. The unit is cm^-1.
-    upper_wave : float
+    upper_wave: float
       upper_wave is the ending wave value. The unit is cm^-1.
-    increment_wave : float
+    increment_wave: float
       increment_wave is the increment of wave. The unit is cm^-1.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    normalize : int
+    atom_id: int list
+      atom_id is the id of atoms.
+    traj_vel_file: string
+      traj_vel_file is the name of velocity trajectory file.
+    normalize: int
       normalize is whether to use normalize. There are two choices: 0 and 1.
       0 means not using normalize, 1 means using normalize.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
   Returns :
-    none
+    wave_num: 1-d float list
+      wave_num is the list of wave number.
+    intensity: 1-d float array
+      intensity is the list of intensity for each wave number.
+    intensity_fit: 1-d float array
+      intensity_fit is the list of fitted intensity for each wave number.
   '''
 
   print ('Calculate velocity-velocity auto correlation function at first', flush=True)
   vel_tcf, tcf_file = time_correlation.time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, \
-                      init_step, end_step, time_num, atom_id, traj_vel_file, work_dir, 'tcf.csv', normalize)
+                      init_step, end_step, max_frame_corr, atom_id, traj_vel_file, work_dir, 'tcf.csv', normalize)
   str_print = 'The velocity-velocity auto correlation function is written in %s' %(tcf_file)
   print (data_op.str_wrap(str_print, 80), flush=True)
 
@@ -84,55 +91,79 @@ def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, i
 
   return wave_num, intensity, intensity_fit
 
-def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, time_num, cluster_group_id,
+def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, cluster_group_id,
                         lower_wave, upper_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir):
 
   #Reference literature: Chem. Phys. 1986, 106, 205-212.
 
   '''
-  power_spectrum : calculate mode power_spectrum of the system
+  power_spectrum_mode: calculate mode power_spectrum of the system
 
   Args :
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    base : int
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    each: int
       each is printing frequency of md.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    time_step : float
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    init_step : int
-      init_step is the starting frame used to analyze.
-    end_step : int
-      end_step is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    cluster_group_id : 1-d int list
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    cluster_group_id: 1-d int list
       cluster_group_id is the id of first atoms in the molecules in the group.
-    lower_wave : float
+    lower_wave: float
       lower_wave is the starting wave value. The unit is cm^-1.
-    upper_wave : float
+    upper_wave: float
       upper_wave is the ending wave value. The unit is cm^-1.
-    increment_wave : float
+    increment_wave: float
       increment_wave is the increment of wave. The unit is cm^-1.
-    pos_file : string
-      pos_file is the position trajectory file.
-    vel_file : string
-      vel_file is the velocity trajectory file.
-    normalize : int
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    traj_vel_file: string
+      traj_vel_file is the name of velocity trajectory file.
+    a_vec: 1-d float list, dim = 3
+      a_vec is the cell vector a.
+      Example : [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
+      b_vec is the cell vector b.
+      Example : [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
+      c_vec is the cell vector c.
+      Example: [0.0, 0.0, 12.42]
+    normalize: int
       normalize is whether to use normalize. There are two choices: 0 and 1.
       0 means not using normalize, 1 means using normalize.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
   Returns :
-    none
+    wave_num: 1-d float list
+      wave_num is the list of wave number.
+    Q1_intensity: 1-d float array
+      intensity is the list of Q1 mode intensity for each wave number.
+    Q1_intensity_fit: 1-d float array
+      intensity_fit is the list of Q1 mode fitted intensity for each wave number.
+    Q2_intensity: 1-d float array
+      intensity is the list of Q2 mode intensity for each wave number.
+    Q2_intensity_fit: 1-d float array
+      intensity_fit is the list of Q2 mode fitted intensity for each wave number.
+    Q3_intensity: 1-d float array
+      intensity is the list of Q3 mode intensity for each wave number.
+    Q3_intensity_fit: 1-d float array
+      intensity_fit is the list of Q3 mode fitted intensity for each wave number.
   '''
 
   print ('Calculate velocity-velocity auto correlation function at first', flush=True)
   Q1_vel_tcf, Q2_vel_tcf, Q3_vel_tcf, tcf_q1_file, tcf_q2_file, tcf_q3_file = \
-  time_correlation.time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, time_num, \
+  time_correlation.time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
                                        cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize)
 
   str_print = 'The velocity-velocity auto correlation function of mode 1 (symmetric strech) is written in %s' %(tcf_q1_file)
@@ -172,14 +203,14 @@ def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_st
 def power_spectrum_run(spectrum_param, work_dir):
 
   '''
-  power_spectrum_run : the kernel function to run power_spectrum function.
+  power_spectrum_run: the kernel function to run power_spectrum function.
 
-  Args :
-    spectrum_param : dictionary
+  Args:
+    spectrum_param: dictionary
       spectrum_param contains keywords used in power_spectrum functions.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-  Returns :
+  Returns:
     none
   '''
 
@@ -215,7 +246,10 @@ def power_spectrum_run(spectrum_param, work_dir):
     freq_int_file = ''.join((work_dir, '/freq_intensity.csv'))
     with open(freq_int_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['wave(cm^-1)', 'intensity', 'intensity_fit'])
+      if ( normalize == 0 ):
+        writer.writerow(['wave(cm^-1)', 'intensity(cm^2/s)', 'intensity_fit(cm^2/s)'])
+      elif ( normalize == 1):
+        writer.writerow(['wave(cm^-1)', 'intensity', 'intensity_fit'])
       for i in range(len(wave_num)):
         writer.writerow([wave_num[i], intensity[i], intensity_fit[i]])
     str_tmp = 'The power spectrum is written in %s' %(freq_int_file)
@@ -331,21 +365,30 @@ def power_spectrum_run(spectrum_param, work_dir):
     freq_int_q1_file = ''.join((work_dir, '/freq_intensity_q1.csv'))
     with open(freq_int_q1_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['wave', 'intensity', 'intensity_fit'])
+      if ( normalize == 0 ):
+        writer.writerow(['wave(cm^-1)', 'intensity(cm^2/s)', 'intensity_fit(cm^2/s)'])
+      elif ( normalize == 1 ):
+        writer.writerow(['wave(cm^-1)', 'intensity', 'intensity_fit'])
       for i in range(len(wave_num)):
         writer.writerow([wave_num[i], q1_int[i], q1_int_fit[i]])
 
     freq_int_q2_file = ''.join((work_dir, '/freq_intensity_q2.csv'))
     with open(freq_int_q2_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['wave', 'intensity', 'intensity_fit'])
+      if ( normalize == 0 ):
+        writer.writerow(['wave(cm^-1)', 'intensity(cm^2/s)', 'intensity_fit(cm^2/s)'])
+      elif ( normalize == 1 ):
+        writer.writerow(['wave(cm^-1)', 'intensity', 'intensity_fit'])
       for i in range(len(wave_num)):
         writer.writerow([wave_num[i], q2_int[i], q2_int_fit[i]])
 
     freq_int_q3_file = ''.join((work_dir, '/freq_intensity_q3.csv'))
     with open(freq_int_q3_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['wave', 'intensity', 'intensity_fit'])
+      if ( normalize == 0 ):
+        writer.writerow(['wave(cm^-1)', 'intensity(cm^2/s)', 'intensity_fit(cm^2/s)'])
+      elif ( normalize == 1 ):
+        writer.writerow(['wave(cm^-1)', 'intensity', 'intensity_fit'])
       for i in range(len(wave_num)):
         writer.writerow([wave_num[i], q3_int[i], q3_int_fit[i]])
 

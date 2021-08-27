@@ -17,48 +17,48 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
              atom_type_1, atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir):
 
   '''
-  distance : calculate distance between atom type 1 and atom type 2 over different frame.
+  distance: calculate distance between atom type 1 and atom type 2 over different frame.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    each: int
       each is printing frequency of md.
-    init_step : int
-      init_step is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    atom_type_1 : string
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    atom_type_1: string
       atom_type_1 is the name of atom 1.
-    atom_type_2 : int
+    atom_type_2: int
       atom_type_2 is the name of atom 2.
-    a_vec : 1d float list, dim = 3
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
       Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
       Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
-    distance : 3-d float list, dim = frames_num*(number of atom_1)*(number of atom_2)
-               if atom_type_1 = atom_type_2, dim = frames_num*(number of atom_1 - 1)*(number of atom_2 - 1)
-    atom_id_1 : 1-d int list
+      Example: [0.0, 0.0, 12.42]
+    traj_coord_file: string
+      file_name is the name of coordination trajectory file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+    distance: 3-d float list, dim = frames_num*(number of atom_1)*(number of atom_2)
+              if atom_type_1 = atom_type_2, dim = frames_num*(number of atom_1 - 1)*(number of atom_2 - 1)
+    atom_id_1: 1-d int list
       atom_id_1 contains atom id of atom_type_1.
-    atom_id_2 : 1-d int list
+    atom_id_2: 1-d int list
       atom_id_2 contains atom id of atom_type_2
   '''
 
@@ -108,25 +108,26 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
 def rdf(distance, a_vec, b_vec, c_vec, r_increment, work_dir):
 
   '''
-  rdf : get rdf between atom_1 and atom_2
+  rdf: get rdf between atom type 1 and atom type 2
 
-  Args :
-    distance : 3-d float list, dim = frames_num*(number of atom_1)*(number of atom_2)
-    a_vec : 1d float list, dim = 3
+  Args:
+    distance: 3-d float list, dim = frames_num*(number of atom_1)*(number of atom_2)
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Exampl : [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
+      Example: [0.0, 0.0, 12.42]
     r_increment: float
       r_increment is the increment of r.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
-    none
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+    rdf_file: string
+      rdf_file contains rdf information.
   '''
 
   vec = a_vec+b_vec+c_vec
@@ -141,7 +142,7 @@ def rdf(distance, a_vec, b_vec, c_vec, r_increment, work_dir):
   rdf_file = ''.join((work_dir, '/rdf_integral.csv'))
   with open(rdf_file ,'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['distance', 'rdf', 'int'])
+    writer.writerow(['distance(Ang)', 'rdf', 'int'])
     for i in range(data_num-1):
       writer.writerow([r_increment*(i+1), rdf_value[i], integral_value[i]])
 
@@ -150,14 +151,14 @@ def rdf(distance, a_vec, b_vec, c_vec, r_increment, work_dir):
 def rdf_run(rdf_param, work_dir):
 
   '''
-  rdf_run : the kernel function to run rdf function. It will call rdf.
+  rdf_run: the kernel function to run rdf function. It will call rdf.
 
-  Args :
-    rdf_param : dictionary
+  Args:
+    rdf_param: dictionary
       rdf_param contains keywords used in rdf functions.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
     none
   '''
 

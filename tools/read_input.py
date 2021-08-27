@@ -54,11 +54,13 @@ def get_dump(keyword_block, keyword_block_index, inp):
       keyword_block[i] = 'group' + str(sys_num)
       sys_num = sys_num + 1
 
+  sys_num = 0
   for i in range(len(keyword_block)):
     if ( keyword_block[i] == 'system' ):
       keyword_block[i] = 'system' + str(sys_num)
       sys_num = sys_num + 1
 
+  sys_num = 0
   for i in range(len(keyword_block)):
     if ( keyword_block[i] == 'connect' ):
       keyword_block[i] = 'connect' + str(sys_num)

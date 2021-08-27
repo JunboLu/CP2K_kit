@@ -6,14 +6,14 @@ from math import factorial
 def get_float_power(f_temp):
 
   '''
-  get_float_power : get the power value of a float in a scientific notation.
+  get_float_power: get the power value of a float in a scientific notation.
 
-  Args :
-    f_temp : float
-      Example : 0.001
-  Returns :
+  Args:
+    f_temp: float
+      Example: 0.001
+  Returns:
     int, the power value of a float in a scientific notation.
-    Example : -3
+    Example: -3
   '''
 
   f_temp_str = '{:e}'.format(f_temp)
@@ -24,14 +24,14 @@ def get_float_power(f_temp):
 def get_as_num_string(f_temp):
 
   '''
-  get_as_num_string : transform a float with 8 decimal into string.
+  get_as_num_string: transform a float with 8 decimal into string.
 
-  Args :
-    f_temp : float
-      Example : 0.001
-  Returns :
-    y : string
-      Example : '0.00100000'
+  Args:
+    f_temp: float
+      Example: 0.001
+  Returns:
+    y: string
+      Example: '0.00100000'
   '''
 
   y = '{:.8f}'.format(f_temp)
@@ -41,13 +41,13 @@ def get_as_num_string(f_temp):
 def get_cosine(a_arr, b_arr):
 
   '''
-  get_cosine : get cosine similarity between two data sets
+  get_cosine: get cosine similarity between two data sets
 
-  Args :
-    a_arr : 1-d float array
-    b_arr : 1-d float array
+  Args:
+    a_arr: 1-d float array
+    b_arr: 1-d float array
   Return :
-    cos_value : float
+    cos_value: float
       cos_value is cosine value between two vector.
   '''
 
@@ -64,13 +64,13 @@ def get_cosine(a_arr, b_arr):
 def get_euclid_dist(a_arr, b_arr):
 
   '''
-  get_euclid_dist : get euclid distance between two data sets
+  get_euclid_dist: get euclid distance between two data sets
 
-  Args :
-    a_arr : 1-d float array
-    b_arr : 1-d float array
-  Return :
-    euclid_dist : float
+  Args:
+    a_arr: 1-d float array
+    b_arr: 1-d float array
+  Return:
+    euclid_dist: float
       euclid_dist is euclid distance between two vector.
   '''
 
@@ -85,9 +85,9 @@ def get_euclid_dist(a_arr, b_arr):
 def get_abs_list(list_a, list_b):
 
   '''
-  get_abs_list : get abs of difference between list_a and list_b
+  get_abs_list: get abs of difference between list_a and list_b
 
-  Args :
+  Args:
     list_a : 1-d float list
     list_b : 1-d float list
   '''
@@ -101,13 +101,13 @@ def get_abs_list(list_a, list_b):
 def get_corr_coeff(a_arr, b_arr):
 
   '''
-  get_corr_coeff : get correlation coefficient between two data sets
+  get_corr_coeff: get correlation coefficient between two data sets
 
-  Args :
-    a_arr : 1-d float array
-    b_arr : 1-d float array
-  Return :
-    corr_value : float
+  Args:
+    a_arr: 1-d float array
+    b_arr: 1-d float array
+  Return:
+    corr_value: float
       corr_value is correlation coefficient between two data sets.
   '''
 
@@ -136,7 +136,7 @@ def get_corr_coeff(a_arr, b_arr):
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
   '''
-  savitzky_golay : fit the curve by using savitzky-golay method.
+  savitzky_golay: fit the curve by using savitzky-golay method.
   '''
 
   window_size = np.abs(np.int(window_size))

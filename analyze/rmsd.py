@@ -16,30 +16,31 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
   #Reference literature: J. Comput. Chem. 2004, 25, 1849-1857.
 
   '''
-  rmsd : get rmsd of choosed atoms in md trajectory.
+  rmsd: get rmsd of choosed atoms in md trajectory.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    each: int
       each is printing frequency of md.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-      Example : [1,2,3,7,8]
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    ref_frame : int
+    atom_id: int list
+      atom_id is the id of atoms.
+      Example: [1,2,3,7,8]
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    ref_frame: int
       ref_frame is the reference frame.
-    comp_frame_list : 1-d int list
+    comp_frame_list: 1-d int list
       comp_frame_list is comparring frames.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-  Returns :
-    rmsd_value_list : 1-d float list
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+  Returns:
+    rmsd_value_list: 1-d float list
+      rmsd_value_list is the list of rmsd value.
   '''
 
   coord_ref = np.asfortranarray(np.zeros((len(atom_id),3)),dtype='float32')
@@ -94,14 +95,14 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
 def rmsd_run(rmsd_param, work_dir):
 
   '''
-  rmsd_run : the kernel function to run rmsd function.
+  rmsd_run: the kernel function to run rmsd function.
 
-  Args :
-    rmsd_param : dictionary
+  Args:
+    rmsd_param: dictionary
       rmsd_param contains keywords used in rmsd functions.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
     none
   '''
 

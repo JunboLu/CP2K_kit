@@ -20,27 +20,30 @@ from CP2K_kit.lib import statistic_mod
 def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
 
   '''
-  get_coord_num : get coordination number for an atom type in a trajectory file.
+  get_coord_num: get coordination number for different atom types in a trajectory file.
 
-  Args :
-    atoms : 1-d string list
-      atoms is the collection of atom names.
-      Example : ['O', 'H', 'H', 'O', 'H', 'H']
-    coord : 2-d float list, dim = (atoms_num)*3
-    a_vec : 1d float list, dim = 3
+  Args:
+    atoms: 1-d string list
+      atoms is the list of atom names.
+      Example: ['O', 'H', 'H', 'O', 'H', 'H']
+    coord: 2-d float list, dim = (atoms_num)*3
+      coord is the coordinations of atoms.
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
-    r_cut : float
+      Example: [0.0, 0.0, 12.42]
+    r_cut: float
       r_cut is the cutoff value.
-  Returns :
-    atoms_type_coord_num : dictionary
-      Example : {'O':80.0, 'H':90.0}
+  Returns:
+    atoms_type: 1-d string list
+      atoms_type is the list of atom types.
+    coord_num_avg: 1-d int list, dim = len(atoms_type)
+      coord_num_avg contains the averaged coordination number for each atom type.
   '''
 
   atoms_type = data_op.list_replicate(atoms)
@@ -136,50 +139,50 @@ def bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each
                      time_step, traj_coord_file, a_vec, b_vec, c_vec, atom_1_id, atom_2_id, work_dir):
 
   '''
-  bond_length_stat : get the bond length between two atoms over different frames.
+  bond_length_stat: get the bond length between two atoms over different frames.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    each : int
-      each is printing frequency of md.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    time_step : float
-      time_step is time step of md. Its unit is fs in CP2K_kit.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    a_vec : 1d float list, dim = 3
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    each: int
+      each is the printing frequency of of the trajectory.
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    time_step: float
+      time_step is the time step of md. Its unit is fs in CP2K_kit.
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
       Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
       Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
       Example : [0.0, 0.0, 12.42]
-    atom_1_id : int
+    atom_1_id: int
       atom_1_id is the id for atom 1.
-    atom_2_id : int
+    atom_2_id: int
       atom_2_id is the id for atom 2.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-  Returns :
-    time : 1-d float list
+  Returns:
+    time: 1-d float list
       time contains time for different frames.
-    distance : 1-d float array
+    distance: 1-d float array
       distance contains distance between atom 1 and atom 2 for different frames.
-    distance_avg : float
+    distance_avg: float
       ditance_avg is the averaged distance between atom 1 and atom 2.
   '''
 
@@ -220,44 +223,44 @@ def bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each
 def bond_angle_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
                     end_step, time_step, traj_coord_file, atom_1_id, atom_2_id, atom_3_id):
 
-  #atom_2_id is the center for bond angle analysis.
+  #atom_2_id is the center atom for bond angle analysis.
 
   '''
-  bond_angle_stat : get the bond angle between three atoms over different frames.
+  bond_angle_stat: get the bond angle between three atoms over different frames.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    each: int
       each is printing frequency of md.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    time_step : float
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    atom_1_id : int
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    atom_1_id: int
       atom_1_id is the id for atom 1.
-    atom_2_id : int
+    atom_2_id: int
       atom_2_id is the id for atom 2.
-    atom_3_id : int
+    atom_3_id: int
       atom_3_id is the id for atom 3.
-  Returns :
-    time : 1-d float list
+  Returns:
+    time: 1-d float list
       time contains time for different frames.
-    angle : 1-d float array
+    angle: 1-d float array
       angle contains angle between three atoms for different frames.
-    angle_avg : float
+    angle_avg: float
       angle_avg is the averaged angle between three atoms.
   '''
 
@@ -304,40 +307,48 @@ def bond_angle_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each,
 
   return time, angle, angle_avg, sigma
 
-def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, traj_file, a_vec, b_vec, c_vec, work_dir, file_name):
+def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, traj_coord_file, a_vec, b_vec, c_vec, work_dir, file_name):
 
   #This function works for small molecule where there is a center atom, and other atoms are ligands.
 
   '''
-  order_struct : reorder the system in the trajectory file.
+  order_struct: reorder the system in the trajectory file.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    group_tot : dictionary
-      Example : [{'atom_id':'1-250','group_atom':['Mn','F','O','O','O']}]
-    traj_file : string
-      file_name is the name of trajectory file used to analyze.
-    a_vec : 1d float list, dim = 3
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    group_atom: 2-d string list
+      group_atom is the list of name of atoms in a group.
+      Example: [['Mn','F','O','O','O']]
+    atom_id: 2-d int list
+      atomd_id is the list of atom id for a group.
+      Example: [[1,2,3,4,...,298,299,300]]
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
-    new_file_name : string
+      Example: [0.0, 0.0, 12.42]
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    new_file_name: string
       new_file_name is the new file name.
+    order_list: 2-d int list
+      order_list is the order.
   '''
 
   order_list = []
@@ -363,7 +374,7 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, tra
           group_coord_j = []
           group_atom_id_j = []
           for k in atom_id_i:
-            line_k = linecache.getline(traj_file, pre_base+base+k)
+            line_k = linecache.getline(traj_coord_file, pre_base+base+k)
             line_k_split = data_op.str_split(line_k, ' ')
             if ( line_k_split[0] == group_atom_type[j] ):
               group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3].strip('\n'))])
@@ -400,66 +411,68 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, tra
   new_file_name = ''.join((work_dir, '/', file_name))
   new_traj_file = open(new_file_name, 'w')
   for i in range(frames_num):
-    line_i_1 = linecache.getline(traj_file, (base+atoms_num)*i+1+pre_base)
-    line_i_2 = linecache.getline(traj_file, (base+atoms_num)*i+2+pre_base)
+    line_i_1 = linecache.getline(traj_coord_file, (base+atoms_num)*i+1+pre_base)
+    line_i_2 = linecache.getline(traj_coord_file, (base+atoms_num)*i+2+pre_base)
     new_traj_file.write(line_i_1)
     new_traj_file.write(line_i_2)
     for j in range(len(order_list)):
       for k in order_list[j]:
-        line_ijk = linecache.getline(traj_file, (base+atoms_num)*i+base+k+pre_base)
+        line_ijk = linecache.getline(traj_coord_file, (base+atoms_num)*i+base+k+pre_base)
         new_traj_file.write(line_ijk)
 
   return new_file_name, order_list
 
 def first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, atom_type_1, \
-                atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, dist_first_shell, converge, work_dir):
+                atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, dist_first_shell, dist_conv, work_dir):
 
   #Before you run this function, please do a rdf, then you will know the distance of first shell.
 
   '''
-  first_shell : get the first shell number for each frame.
+  first_shell: get the first shell number for each frame.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms of the system.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    frames_num : int
-      frames_num is the number of frames in trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    each: int
       each is printing frequency of md.
-    start : int
-      start is the starting frame used to analyze.
-    end : int
-      end is the ending frame used to analyze.
-    atom_type_1 : string
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    atom_type_1: string
       atom_type_1 is the name of atom 1.
-    atom_type_2 : int
+    atom_type_2: int
       atom_type_2 is the name of atom 2.
-    a_vec : 1d float list, dim = 3
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    dist_first_shell : float
+      Example: [0.0, 0.0, 12.42]
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    dist_first_shell: float
       dist_first_shell is the distance of the first shell.
-    converge : float
-      converge is the converge value for the dist_first_shell.
-    work_dir : string
+    dist_conv: float
+      dist_conv is the converge value for the dist_first_shell.
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-  Returns :
-    first_shell : 2-d int list
-    dist : 2-d float list
+  Returns:
+    first_shell: 2-d int list
+      first_shell is the list of atom id in the first shell.
+    dist: 2-d float list
+      dist is the list of distance of the first shell.
   '''
 
   #distance is 3-d float list (frames_num*(number of atom_1)*(number of atom_2)).
@@ -477,7 +490,7 @@ def first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, ini
       first_shell_i_j = [atom_1[j]]
       dist_i_j = []
       for k in range(dim3):
-        if ( abs((distance[i][j][k]-dist_first_shell)) < converge ):
+        if ( abs((distance[i][j][k]-dist_first_shell)) < dist_conv ):
           first_shell_i_j.append(atom_2[k])
           dist_i_j.append(distance[i][j][k])
       first_shell_i.append(first_shell_i_j)
@@ -493,6 +506,19 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
   '''
   This function is complicated, it is not very general. It is used in spectrum mode analysis.
   It is mainly designed to get the nearest triangle atoms in plane.
+
+  Args:
+    center_atom_id: int
+      center_atom_id is the id of center atom.
+    sur_atom_id: 1-d int list
+      sur_atom_id is the list of atom id of surrounding atoms.
+    frame_id: int
+      frame_id is the id of given frame.
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+  Returns:
+    order : 1-d int list
+      order is the order.
   '''
 
   atoms_num, pre_base, base, start_frame_id = traj_tools.get_block_base(traj_coord_file, 'coord')
@@ -555,14 +581,14 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
 def geometry_run(geometry_param, work_dir):
 
   '''
-  geometry_run : the kernel function of geometry module.
+  geometry_run: the kernel function of geometry module.
 
-  Args :
-    geometry_param : dictionary
+  Args:
+    geometry_param: dictionary
       geometry_param contains keywords used in geometry functions.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
     none
   '''
 

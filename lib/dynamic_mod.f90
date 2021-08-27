@@ -119,7 +119,7 @@ contains
           if (normalize == 1) then
             new_data_array(i,j,k)=data_array(i,j,k)
           else
-            new_data_array(i,j,k)=data_array(i,j,k)*100.0*0.529*(1.0E-10)/(2.4188843265857*1.0E-17)
+            new_data_array(i,j,k)=data_array(i,j,k)*100.0*0.5291772489940979*(1.0E-10)/(2.4188843265857*1.0E-17)
           end if
         end do
       end do

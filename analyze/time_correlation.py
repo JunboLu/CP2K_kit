@@ -16,45 +16,47 @@ from CP2K_kit.analyze import check_analyze
 #We transfer velocity in cm/s
 #The unit of intensity is cm^2/s
 
-def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, \
-                   end_step, time_num, atom_id, traj_vel_file, work_dir, file_name, normalize=1):
+def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, \
+                   max_frame_corr, atom_id, traj_vel_file, work_dir, file_name, normalize):
 
   '''
-  time_corr_func : calculate time correlation function.
+  time_corr_func: calculate time correlation function.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    each: int
       each is printing frequency of md.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    time_step : float
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    init_step : int
-      init_step is the starting frame used to analyze.
-    end_step : int
-      end_step is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    atom_id : int list
-      atom_id is the id of atoms to be analyzed.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-    normalize : int
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the endding step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    atom_id: int list
+      atom_id is the id of atoms.
+    traj_vel_file: string
+      traj_vel_file is the name of velocity trajectory file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+    normalize: int
       normalize is whether to use normalize. There are two choices: 0 and 1.
       0 means not using normalize, 1 means using normalize.
-    return_func : bool
-      return_func is whether to return time correlation function.
-  Returns :
-    data_tcf : 1-d float array
+  Returns:
+    data_tcf: 1-d float array
       data_tcf is the time correlation function for a physical quantity.
+    tcf_file: string
+      tcf_file is the generated time correlation file
   '''
 
   frame_num_stat = int((end_step-init_step)/each+1)
@@ -66,62 +68,78 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
       data[i,j,0] = float(line_ij_split[1])
       data[i,j,1] = float(line_ij_split[2])
       data[i,j,2] = float(line_ij_split[3].strip('\n'))
-  data_tcf = dynamic_mod.dynamic.time_correlation(data, time_num, normalize)
+  data_tcf = dynamic_mod.dynamic.time_correlation(data, max_frame_corr, normalize)
 
   tcf_file = ''.join((work_dir, '/', file_name))
   with open(tcf_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['time', 'acf'])
+    if ( normalize == 0 ):
+      writer.writerow(['time(fs)', 'acf(cm^2/s^2)'])
+    elif ( normalize == 1 ):
+      writer.writerow(['time(fs)', 'acf'])
     for i in range(len(data_tcf)):
       writer.writerow([i*time_step,data_tcf[i]])
 
   return data_tcf, tcf_file
 
-def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, time_num, \
+def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
                         cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize=1):
 
   '''
-  time_corr_mode_func : calculate mode time correlation function.
+  time_corr_mode_func: calculate mode time correlation function.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    base: int
       base is the number of lines before structure in a structure block.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    each : int
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    each: int
       each is printing frequency of md.
-    start_frame_id : int
-      start_frame_id is the starting frame in trajectory file.
-    time_step : float
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    time_step: float
       time_step is time step of md. Its unit is fs in CP2K_kit.
-    init_step : int
-      init_step is the starting frame used to analyze.
-    end_step : int
-      end_step is the ending frame used to analyze.
-    time_num : int
-      time_num is the max correlation frame number.
-    cluster_group_id : 3-d int list
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the ending step frame id.
+    max_frame_corr: int
+      max_frame_corr is the max number of correlation frames.
+    cluster_group_id: 3-d int list
       cluster_group_id is the id of atoms in the molecule group.
-    traj_coord_file : string
-      traj_coord_file is the position trajectory file.
-    traj_vel_file : string
+    traj_coord_file: string
+      traj_coord_file is the coordination trajectory file.
+    traj_vel_file: string
       traj_vel_file is the velocity trajectory file.
-    work_dir : string
+    a_vec: 1-d float list, dim = 3
+      a_vec is the cell vector a.
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
+      b_vec is the cell vector b.
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
+      c_vec is the cell vector c.
+      Example: [0.0, 0.0, 12.42]
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    normalize : int
+    normalize: int
       normalize is whether to use normalize. There are two choices: 0 and 1.
       0 means not using normalize, 1 means using normalize.
-    return_func : bool
-      return_func is whether to return time correlation function.
   Returns :
-    data_q1_tcf : 1-d float array
+    data_q1_tcf: 1-d float array
       data_q1_tcf is the time correlation function for a physical quantity of q1 mode.
-    data_q2_tcf : 1-d float array
+    data_q2_tcf: 1-d float array
       data_q2_tcf is the time correlation function for a physical quantity of q2 mode.
-    data_q3_tcf : 1-d float array
+    data_q3_tcf: 1-d float array
       data_q3_tcf is the time correlation function for a physical quantity of q3 mode.
+    tcf_q1_file: string
+      tcf_q1_file is the time correlation function file for q1 mode.
+    tcf_q2_file: string
+      tcf_q2_file is the time correlation function file for q2 mode.
+    tcf_q1_file: string
+      tcf_q3_file is the time correlation function file for q3 mode.
   '''
 
   frame_num_stat = int((end_step-init_step)/each+1)
@@ -164,14 +182,17 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
       Q3_data[i,j,1] = q3[1]
       Q3_data[i,j,2] = q3[2]
 
-  data_q1_tcf = dynamic_mod.dynamic.time_correlation(Q1_data, time_num, normalize)
-  data_q2_tcf = dynamic_mod.dynamic.time_correlation(Q2_data, time_num, normalize)
-  data_q3_tcf = dynamic_mod.dynamic.time_correlation(Q3_data, time_num, normalize)
+  data_q1_tcf = dynamic_mod.dynamic.time_correlation(Q1_data, max_frame_corr, normalize)
+  data_q2_tcf = dynamic_mod.dynamic.time_correlation(Q2_data, max_frame_corr, normalize)
+  data_q3_tcf = dynamic_mod.dynamic.time_correlation(Q3_data, max_frame_corr, normalize)
 
   tcf_q1_file = ''.join((work_dir, '/tcf_q1.csv'))
   with open(tcf_q1_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['time', 'acf'])
+    if ( normalize == 0 ):
+      writer.writerow(['time(fs)', 'acf(cm^2/s^2)'])
+    elif ( normalize == 1 ):
+      writer.writerow(['time(fs)', 'acf'])
     for i in range(len(data_q1_tcf)):
       writer.writerow([i*time_step,data_q1_tcf[i]])
 
@@ -194,14 +215,14 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
 def time_corr_run(time_corr_param, work_dir):
 
   '''
-  time_corr_run : the kernel function to run time correlation function.
+  time_corr_run: the kernel function to run time correlation function.
 
-  Args :
-    time_corr_param : dictionary
+  Args:
+    time_corr_param: dictionary
       time_corr_param contains keywords used in time correlation functions.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-  Returns :
+  Returns:
     none
   '''
 

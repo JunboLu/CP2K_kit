@@ -8,17 +8,17 @@ from CP2K_kit.tools import data_op
 def read_gpuinfo(work_dir, gpuinfo_file):
 
   '''
-  read_gpuinfo : read gpu information from gpu info file.
+  read_gpuinfo: read gpu information from gpu info file.
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is the working directory.
-    gpuinfo_file : string
+    gpuinfo_file: string
       gpuinfo_file is a file containing gpu information.
-  Returns :
-    device : 1-d string list
+  Returns:
+    device: 1-d string list
       device is the gpu device name.
-    usage : 1-d float list
+    usage: 1-d float list
       usage is the memory use of gpu device.
   '''
 
@@ -47,17 +47,20 @@ def read_gpuinfo(work_dir, gpuinfo_file):
 def analyze_gpu(host, ssh, work_dir):
 
   '''
-  analyze_gpu : analyze the gpu node information
+  analyze_gpu: analyze the gpu node information
 
-  Args :
-    host : 1-d string list
+  Args:
+    host: 1-d string list
       host is the computational nodes.
-    ssh : bool
+    ssh: bool
       ssh is whether we need to ssh.
-    work_dir : string
+    work_dir: string
       work_dir is the working directory.
-  Returns :
-
+  Returns:
+    device: 2-d string list
+      device is the gpu device name.
+    usage: 2-d float list
+      usage is the memory use of gpu device.
   '''
 
   device = []

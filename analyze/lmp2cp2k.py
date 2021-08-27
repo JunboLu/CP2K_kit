@@ -13,31 +13,34 @@ from CP2K_kit.lib.geometry_mod import geometry
 def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_step, unwrap, a_vec, b_vec, c_vec):
 
   '''
-  lmp2cp2k : transfer LAMMPS trajectory in CP2K format
+  lmp2cp2k: transform LAMMPS trajectory into CP2K format
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is the working directory of CP2K_kit
-    lmp_log_file : string
+    lmp_log_file: string
       lmp_log_file is the lammps output file.
-    lmp_traj_file : string
+    lmp_traj_file: string
       lmp_traj_file is the lammps trajectory file.
-    lmp_unit : string
+    lmp_unit: string
       lmp_unit is the lammps unit format. Usually, we use metal.
-    atom_label : dictionary
+    atom_label: dictionary
       atom_label defines the atom name and atom id.
       Example : {1:'O', 2:'H'}
-    time_step : float
+    time_step: float
       time_step is the time step of lammps md calculation.
-    a_vec : 1d float list, dim = 3
+    unwrap: bool
+      unwrap is whether we need to unwrap the system.
+      In general, lammps trajectory is wrapped.
+    a_vec: 1-d float list, dim = 3
       a_vec is the cell vector a.
-      Example : [12.42, 0.0, 0.0]
-    b_vec : 1d float list, dim = 3
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
       b_vec is the cell vector b.
-      Example : [0.0, 12.42, 0.0]
-    c_vec : 1d float list, dim = 3
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
       c_vec is the cell vector c.
-      Example : [0.0, 0.0, 12.42]
+      Example: [0.0, 0.0, 12.42]
   Returns :
     none
   '''
@@ -286,13 +289,13 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
 def lmp2cp2k_run(lmp2cp2k_param, work_dir):
 
   '''
-  lmp2cp2k_run : kernel function to run lmp2cp2k
+  lmp2cp2k_run: kernel function to run lmp2cp2k
 
   Args :
-    lmp2cp2k_param : dictionary
+    lmp2cp2k_param: dictionary
       lmp2cp2k_param contains keywords used in tranforming lammps file to cp2k file.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
   Returns :
     none
   '''

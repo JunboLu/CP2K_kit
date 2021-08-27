@@ -6,15 +6,15 @@ from CP2K_kit.tools import data_op
 def upper_file(file_name, save_dir):
 
   '''
-  upper_file : make the character in the file to be upper
+  upper_file: make the character in the file to be upper
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of the file needed to be revised.
-    save_dir : string
+    save_dir: string
       save_dir is the saving dir for revised file.
-  Returns :
-    rev_file_name : string
+  Returns:
+    rev_file_name: string
       rev_file_name is the name of revised file.
   '''
 
@@ -37,14 +37,14 @@ def space_file(file_name, space_char, save_dir):
   '''
   space_file
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of the file needed to be revised.
-    space_char : string
-    save_dir : string
+    space_char: string
+    save_dir: string
       save_dir is the saving dir for revised file.
-  Returns :
-    rev_file_name : string
+  Returns:
+    rev_file_name: string
       rev_file_name is the name of revised file.
   '''
 

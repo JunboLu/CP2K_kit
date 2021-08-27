@@ -14,26 +14,30 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
                     descr_seed, fit_seed, tra_seed, neuron, model_type):
 
   '''
-  gen_deepmd_task : generate deepmd tasks
+  gen_deepmd_task: generate deepmd tasks
 
   Args :
-    deepmd_dic : dictionary
+    deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    iter_id : int
+    iter_id: int
       iter_id is the iteration id.
-    init_train_data : 1-d string list
+    init_train_data: 1-d string list
       init_train_data contains initial training data directories.
-    numb_test : int
+    numb_test: int
       numb_test is number of testing data sets when run deepmd
-    seed : 1-d int list or int
-      seed is the seed number to generate random number.
-    neuron : 1-d int list or int
+    descr_seed: 1-d int list
+      descr_seed is the seed number in descriptor part.
+    fit_seed: 1-d int list
+      fit_seed is the seed number in fitting part.
+    tra_seed: 1-d int list
+      tra_seed is the seed number in training part.
+    neuron: 1-d int list or int
       neuron is the number of nodes in neural network.
-    model_type : string
+    model_type: string
       model_type has two choices: 'use_seed', 'use_node'
-  Returns :
+  Returns:
     none
   '''
 
@@ -59,9 +63,6 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
           prev_data_dir = ''.join((cp2k_sys_dir, '/data'))
           if ( os.path.exists(prev_data_dir) ):
             data_dir.append(prev_data_dir)
-          else:
-            log_info.log_error('Previous training data error: %s does not exist' %(data_dir))
-            exit()
 
   for key in deepmd_dic['training']:
     if ( 'system' in key ):
@@ -107,25 +108,26 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
 def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, usage, cuda_dir):
 
   '''
-  deepmd_parallel : run deepmd calculation in parallel.
+  deepmd_parallel: run deepmd calculation in parallel.
 
-  Args :
-    deepmd_train_dir : string
+  Args:
+    deepmd_train_dir: string
       deepmd_train_dir is the directory of deepmd training for each iteration.
-    start : int
+    start: int
       start is the starting model id.
-    end : int
+    end: int
       end is the endding model id.
-    parallel_exe : string
+    parallel_exe: string
       parallel_exe is the parallel exacutable file.
-    host : 1-d string list
+    host: 1-d string list
       host is the name of computational nodes.
-    device : 2-d string list
+    device: 2-d string list
       device is the GPU device.
-    usage : 2-d float list
+    usage: 2-d float list
       usage is the memory use of GPU.
-    cuda_dir : cuda_dir is the directory of cuda.
-  Returns :
+    cuda_dir: string
+      cuda_dir is the directory of cuda.
+  Returns:
     none
   '''
 
@@ -652,16 +654,24 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
 
   '''
-  run_deepmd : kernel function to run deepmd.
+  run_deepmd: kernel function to run deepmd.
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    iter_id : int
+    iter_id: int
       iter_id is the iteration id.
-    parallel_exe: str
-      parallel_exe is the executable file parallel.
-  Returns :
+    parallel_exe: string
+      parallel_exe is the parallel exacutable file.
+    host: 1-d string list
+      host is the name of computational nodes.
+    device: 2-d string list
+      device is the GPU device.
+    usage: 2-d float list
+      usage is the memory use of GPU.
+    cuda_dir: string
+      cuda_dir is the directory of cuda.
+  Returns:
     none
   '''
 
@@ -709,12 +719,17 @@ if __name__ == '__main__':
   from CP2K_kit.deepff import deepmd_run
   from CP2K_kit.tools import read_input
   from CP2K_kit.deepff import load_data
+  from CP2K_kit.deepff import check_deepff
 
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
   work_dir = '/home/lujunbo/code/github/CP2K_kit/deepff/work_dir'
 
   deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
   read_input.dump_info(work_dir, 'input.inp', deepff_key)
+  proc_num = 4
+  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+
   seed = [1,2,3,4]
   numb_test = int(deepmd_dic['training']['numb_test'])
 

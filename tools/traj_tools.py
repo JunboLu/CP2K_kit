@@ -9,19 +9,21 @@ from CP2K_kit.tools import data_op
 def get_block_base(file_name, file_type):
 
   '''
-  get_block_base : get several important information of trajectory file.
+  get_block_base: get several important information of trajectory file.
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of trajectory file used to analyze.
-  Returns :
-    b_num : int
+    file_type: string
+      file_type is the type of file.
+  Returns:
+    b_num: int
       b_num is the number of lines in a block in trajectory file.
-    pre_base : int
+    pre_base: int
       pre_base is the number of lines before block of trajectory file.
-    base : int
+    base: int
       base is the number of lines before structure in a structure block.
-    file_start : int
+    file_start: int
       file_start is the starting frame in trajectory file.
   '''
 
@@ -64,13 +66,16 @@ def get_block_base(file_name, file_type):
 def find_breakpoint(file_name, file_type):
 
   '''
-  find_breakpoint : find the incomplete frame in a trajectory file.
+  find_breakpoint: find the incomplete frame in a trajectory file.
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of trajectory file used to analyze.
-  Returns :
-    breakpoint_frame : 1-d int list
+    file_type: string
+      file_type is the type of file.
+  Returns:
+    breakpoint: int
+      breakpoint is the incomplete frame id.
   '''
 
   blocks_num, pre_base, base, frame_start = get_block_base(file_name, file_type)
@@ -106,12 +111,14 @@ def find_breakpoint(file_name, file_type):
 def delete_duplicate(file_name, file_type):
 
   '''
-  delete_duplicate : delete duplicate frames in a trajectory file.
+  delete_duplicate: delete duplicate frames in a trajectory file.
 
-  Args :
-    file_name : string
+  Args:
+    file_name: string
       file_name is the name of trajectory file used to analyze.
-  Returns :
+    file_type: string
+      file_type is the type of file.
+  Returns:
     none
   '''
 
@@ -147,31 +154,34 @@ def choose_str(atoms_num, pre_base, base, each, init_step, end_step, start_frame
                traj_coord_file, choose_line, work_dir, choose_file_name):
 
   '''
-  choose_str : get the coordinates or velocities of choosed atoms.
+  choose_str: get the coordinates or velocities of choosed atoms.
 
-  Args :
-    atoms_num : int
-      atoms_num is the number of atoms in trajectory file.
-    pre_base : int
-      pre_base is the number of lines before block of trajectory file.
-    base : int
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    pre_base: int
+      pre_base is the number of lines before block of the trajectory.
+    base: int
       base is the number of lines before structure in a structure block.
-    each : int
+    each: int
       each is printing frequency of md.
-    start : int
-      start is the starting frame used to choose.
-    end : int
-      end is the ending frame used to choose.
-    file_start : int
-      file_start is the starting frame in trajectory file.
-    file_name : string
-      file_name is the name of trajectory file used to analyze.
-    choose_line : 2-d int list
+    init_step: int
+      init_step is the initial step frame id.
+    end_step: int
+      end_step is the endding step frame id.
+    start_frame_id: int
+      start_frame_id is the starting frame id in trajectory file.
+    traj_coord_file: string
+      traj_coord_file is the name of coordination trajectory file.
+    choose_line: 2-d int list
       choose_line is the choosed atom id.
-    work_dir : string
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-  Returns :
-    none
+    choose_file_name: string
+      choose_file_name is the name of generated file.
+  Returns:
+    choose_file: string
+      choose_file is the name of choosed structure.
   '''
 
   choose_file = ''.join((work_dir, '/', choose_file_name))
@@ -196,6 +206,29 @@ def order_traj_file(atoms_num, frames_num, each, init_step, traj_file, file_type
 
   '''
   order_traj_file : reorder the trajectory file.
+
+  Args:
+    atoms_num: int
+      atoms_num is the number of atoms in the system.
+    frames_num: int
+      frames_num is the number of frames in the trajectory file.
+    each: int
+      each is printing frequency of md.
+    init_step: int
+      init_step is the initial step frame id.
+    traj_file: string
+      traj_file is the name of trajectory file.
+    file_type: string
+      file_type is the type of file.
+    order_list: 2-d int list
+      order_list is the order list.
+    work_dir: string
+      work_dir is working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    new_traj_file_name: string
+      new_traj_file_name is the name of ordered structure.
   '''
 
   block_num, pre_base, base, start_frame_id = get_block_base(traj_file, file_type)

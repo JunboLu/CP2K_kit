@@ -7,15 +7,15 @@ from subprocess import check_call, Popen, STDOUT, CalledProcessError
 def call_simple_shell(exe_dir, cmd):
 
   '''
-  call_simple_shell : call shell scripts, and we do not need returns.
+  call_simple_shell: call shell scripts, and we do not need returns.
 
-  Args :
-    exe_dir : string
+  Args:
+    exe_dir: string
       exe_dir is the directory where shell script will be excuted.
-      Example : '/home/lujunbo/code/github/CP2K_kit/tools'
-    cmd : string
+      Example: '/home/lujunbo/code/github/CP2K_kit/tools'
+    cmd: string
       cmd is the shell command.
-      Example : 'ls -la'
+      Example: 'ls -la'
   Returns:
     none
   '''
@@ -32,17 +32,17 @@ def call_simple_shell(exe_dir, cmd):
 def call_returns_shell(exe_dir, cmd):
 
   '''
-  call_returns_shell : call shell scripts, and we need returns.
+  call_returns_shell: call shell scripts, and we need returns.
 
-  Args :
-    exe_dir : string
+  Args:
+    exe_dir: string
       exe_dir is the directory where shell script will be excuted.
-      Example : '/home/lujunbo/code/github/CP2K_kit/tools'
-    cmd : string
+      Example: '/home/lujunbo/code/github/CP2K_kit/tools'
+    cmd: string
       cmd is the shell command.
-      Example : 'ls -la'
+      Example: 'ls -la'
   Returns:
-    none
+    output: 1-d string list
   '''
 
   p = Popen(cmd, cwd=exe_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -56,12 +56,12 @@ def call_returns_shell(exe_dir, cmd):
 def kills(parent_pid):
 
   '''
-  kills : kill all process including parent and child processes.
+  kills: kill all process including parent and child processes.
 
-  Args :
-    parent_id : int
+  Args:
+    parent_id: int
       parent_id is parent process.
-  Returns :
+  Returns:
     none
   '''
 

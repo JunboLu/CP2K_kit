@@ -14,7 +14,7 @@ def get_box_coord(box_file, coord_file):
   get_box_coord: get box and coord from box and coord file.
 
   Args:
-    box_file : file including cell vectors
+    box_file: file including cell vectors
       general box_file is like this:
       a  xx  xx  xx
       b  xx  xx  xx
@@ -26,112 +26,112 @@ def get_box_coord(box_file, coord_file):
       atom_c  xx  xx  xx
       ......
   Returns:
-    tri_cell_vec : 1-d string list, dim = 6
+    tri_cell_vec: 1-d string list, dim = 6
       tri_cell_vec contains six parameters of triclinic cell.
-    atoms : 1-d string list, dim = the number of atoms
+    atoms: 1-d string list, dim = the number of atoms
       atoms contains all atom names.
-    x : 1-d string list, dim = num of atoms
+    x: 1-d string list, dim = num of atoms
       x contains x component coordinate for all atoms.
-    y : 1-d string list, dim = num of atoms
+    y: 1-d string list, dim = num of atoms
       y contains y component coordinate for all atoms.
-    z : 1-d string list, dim = num of atoms
+    z: 1-d string list, dim = num of atoms
       z contains z component coordinate for all atoms.
   '''
 
   #Get box information from box file.
-  cell_vec = []
-  if os.path.exists(box_file):
-    for i in range(3):
-      cell_vec_i = []
-      line_i = linecache.getline(box_file, i+1)
-      line_i_split = data_op.str_split(line_i, ' ')
-      cell_vec_i.append(float(line_i_split[1]))
-      cell_vec_i.append(float(line_i_split[2]))
-      cell_vec_i.append(float(line_i_split[3].strip('\n')))
-      cell_vec.append(cell_vec_i)
-  else:
-    print ('Can not find %s' %(box_file))
-    exit()
+  whole_line_num = len(open(box_file).readlines())
+  cell_vec_a = []
+  cell_vec_b = []
+  cell_vec_c = []
+  for i in range(whole_line_num):
+    line_i = linecache.getline(box_file, i+1)
+    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    if ( len(line_i_split) == 4 and all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
+      if ( line_i_split[0] == 'a' ):
+        cell_vec_a.append(float(line_i_split[1]))
+        cell_vec_a.append(float(line_i_split[2]))
+        cell_vec_a.append(float(line_i_split[3]))
+      elif ( line_i_split[0] == 'b' ):
+        cell_vec_b.append(float(line_i_split[1]))
+        cell_vec_b.append(float(line_i_split[2]))
+        cell_vec_b.append(float(line_i_split[3]))
+      elif ( line_i_split[0] == 'c' ):
+        cell_vec_c.append(float(line_i_split[1]))
+        cell_vec_c.append(float(line_i_split[2]))
+        cell_vec_c.append(float(line_i_split[3]))
 
   #Convert cell to triclinic cell. Triclinic cell just needs six parameter.
   #Triclinic cell: Lx, Ly, Lz, xy, xz, yz
 
-  cell_vec_arr = np.array(cell_vec)
-  tri_cell_a, tri_cell_b, tri_cell_c = \
-  get_cell.get_triclinic_cell(cell_vec_arr[0], cell_vec_arr[1], cell_vec_arr[2])
-  tri_cell_vec = []
-  a_0_str = numeric.get_as_num_string(tri_cell_a[0])
-  b_1_str = numeric.get_as_num_string(tri_cell_b[1])
-  c_2_str = numeric.get_as_num_string(tri_cell_c[2])
-  b_0_str = numeric.get_as_num_string(tri_cell_b[0])
-  c_0_str = numeric.get_as_num_string(tri_cell_c[0])
-  c_1_str = numeric.get_as_num_string(tri_cell_c[1])
-  tri_cell_vec.append(a_0_str)
-  tri_cell_vec.append(b_1_str)
-  tri_cell_vec.append(c_2_str)
-  tri_cell_vec.append(b_0_str)
-  tri_cell_vec.append(c_0_str)
-  tri_cell_vec.append(c_1_str)
+  if ( len(cell_vec_a) != 0 and len(cell_vec_b) != 0 and len(cell_vec_c) != 0 ):
+    tri_cell_a, tri_cell_b, tri_cell_c = \
+    get_cell.get_triclinic_cell(np.array(cell_vec_a), np.array(cell_vec_b), np.array(cell_vec_c))
+    tri_cell_vec = []
+    a_0_str = numeric.get_as_num_string(tri_cell_a[0])
+    b_1_str = numeric.get_as_num_string(tri_cell_b[1])
+    c_2_str = numeric.get_as_num_string(tri_cell_c[2])
+    b_0_str = numeric.get_as_num_string(tri_cell_b[0])
+    c_0_str = numeric.get_as_num_string(tri_cell_c[0])
+    c_1_str = numeric.get_as_num_string(tri_cell_c[1])
+    tri_cell_vec.append(a_0_str)
+    tri_cell_vec.append(b_1_str)
+    tri_cell_vec.append(c_2_str)
+    tri_cell_vec.append(b_0_str)
+    tri_cell_vec.append(c_0_str)
+    tri_cell_vec.append(c_1_str)
 
-  #Get atom numbers from coord file.
-  if os.path.exists(coord_file):
-    whole_line_num = len(open(coord_file).readlines())
-    atom_num = 0
-    for i in range(whole_line_num):
-      line_i = linecache.getline(coord_file, i+1)
-      if ( line_i != '\n' ):
-        atom_num = atom_num + 1
-  else:
-    print ('can not find %' % (coord_file))
-    exit()
+  whole_line_num = len(open(coord_file).readlines())
 
+  #Get atom and coord from coord file.
   atoms = []
   x = []
   y = []
   z = []
-
-  #Get atom coord from coord file.
-  for i in range(atom_num):
+  for i in range(whole_line_num):
     line_i = linecache.getline(coord_file, i+1)
     line_i_split = data_op.str_split(line_i, ' ')
-    atoms.append(line_i_split[0])
-    x_float = float(line_i_split[1])
-    y_float = float(line_i_split[2])
-    z_float = float(line_i_split[3].strip('\n'))
-    x_float_str = numeric.get_as_num_string(x_float)
-    y_float_str = numeric.get_as_num_string(y_float)
-    z_float_str = numeric.get_as_num_string(z_float)
-    x.append(x_float_str)
-    y.append(y_float_str)
-    z.append(z_float_str)
+    line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 and \
+         all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
+      atoms.append(line_i_split[0])
+      x_float = float(line_i_split[1])
+      y_float = float(line_i_split[2])
+      z_float = float(line_i_split[3])
+      x_float_str = numeric.get_as_num_string(x_float)
+      y_float_str = numeric.get_as_num_string(y_float)
+      z_float_str = numeric.get_as_num_string(z_float)
+      x.append(x_float_str)
+      y.append(y_float_str)
+      z.append(z_float_str)
 
   return tri_cell_vec, atoms, x, y, z
 
 def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
   '''
-  gen_data_file : generate lammps data file. Lammps data file contains box and coord.
+  gen_data_file: generate lammps data file. Lammps data file contains box and coord.
 
   Args:
-    tri_cell_vec : 1-d string list, dim = 6
+    tri_cell_vec: 1-d string list, dim = 6
       tri_cell_vec contains six parameters (Lx, Ly, Lz, x, y, z) for triclinic cell.
-    atoms_type_index : 1-d int list, dim = atom numbers
+    atoms_type_index: 1-d int list, dim = atom numbers
       atoms_type_index contains atom type index.
-    x : 1-d string list, dim = num of atoms
+    x: 1-d string list, dim = num of atoms
       x component of all atoms
-    y : 1-d string list, dim = num of atoms
+    y: 1-d string list, dim = num of atoms
       y component of all atoms
-    z : 1-d string list, dim = num of atoms
+    z: 1-d string list, dim = num of atoms
       z component of all atoms
-    task_dir : string
+    task_dir: string
       the directory to generate data file
-    file_name : string
+    file_name: string
       lammps data file name
   Returns:
-    atoms_type_dic_tot : dictionary, dim = the number of lammps md systems
-      example : {1:{'O':1,'H':2,'N':3},2:{'O':1,'S':2,'N':3}}
+    atoms_type_dic_tot: dictionary, dim = the number of lammps md systems
+      example: {1:{'O':1,'H':2,'N':3},2:{'O':1,'S':2,'N':3}}
     atoms_num_tot: dictionary, dim = num of lammps systems
-      example : {1:192,2:90}
+      example: {1:192,2:90}
   '''
 
   data_file = open(task_dir + '/' + file_name, 'w')
@@ -173,21 +173,21 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
 
   '''
-  gen_lmpmd_in_file : generate lammps md paramter file (.in file)
+  gen_lmpmd_in_file: generate lammps md paramter file (.in file)
 
   Args:
-    lmp_dic : dict
+    lmp_dic: dict
       lmp_dic contains parameters for lammps.
-    work_dir : string
+    work_dir: string
       work_dir is workding directory.
-    iter_id : int
+    iter_id: int
       iter_id is current iteration number.
   Returns:
     atom_type_dic_tot : dictionary
-      Example : {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
-    atoms_num_tot : dictionary
+      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
+    atoms_num_tot: dictionary
       atoms_num_tot contains number of atoms for different systems.
-      Example : {0:3, 1:3}
+      Example: {0:3, 1:3}
   '''
 
   #copy should be done at first, because the following operators will change it!
@@ -320,19 +320,19 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
 def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
   '''
-  gen_lmpfrc_file : generate lammps parameter (.in file) for force calculations.
+  gen_lmpfrc_file: generate lammps parameter (.in file) for force calculations.
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is workding directory.
-    iter_id : int
+    iter_id: int
       iter_id is current iteration number.
-    atom_type_dic_tot : dictionary
-      Example : {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
-    atoms_num_tot : dictionary
+    atom_type_dic_tot: dictionary
+      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
+    atoms_num_tot: dictionary
       atoms_num_tot contains number of atoms for different systems.
-      Example : {0:3, 1:3}
-  Returns :
+      Example: {0:3, 1:3}
+  Returns:
     none
   '''
 
@@ -480,20 +480,20 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
 
   '''
-  rum_lmpmd : kernel function to run lammps md.
+  rum_lmpmd: kernel function to run lammps md.
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    iter_id : int
+    iter_id: int
       iter_id is the iteration id.
-    lmp_mpi_num : int
+    lmp_mpi_num: int
       lmp_mpi_num is the number of mpi ranks for lammps.
-    lmp_openmp_num : int
+    lmp_openmp_num: int
       lmp_openmp_num is the number of openmp for lammps.
-    device : 1-d int list
+    device: 1-d int list
       device is the name of gpu devices for first node.
-  Returns :
+  Returns:
     none
   '''
 
@@ -581,7 +581,7 @@ mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
         check_lmp_md_run.append(1)
 
   if ( len(check_lmp_md_run) != 0 and  all(i == 0 for i in check_lmp_md_run) ):
-    print ('  Success: lammps molecular dynamics calculations for %d systems' %(sys_num))
+    print ('  Success: molecular dynamics calculations for %d systems by lammps' %(sys_num))
   else:
     log_info.log_error('lammps molecular dynamics error, please check iteration %d' %(iter_id))
     exit()
@@ -644,19 +644,17 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
 def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
 
   '''
-  rum_lmpfrc : kernel function to run lammps force calculation.
+  rum_lmpfrc: kernel function to run lammps force calculation.
 
-  Args :
-    work_dir : string
+  Args:
+    work_dir: string
       work_dir is working directory of CP2K_kit.
-    iter_id : int
+    iter_id: int
       iter_id is the iteration id.
-    parallel_exe : string
+    parallel_exe: string
       parallel_exe is parallel exacutable file.
-    lmp_mpi_num : int
+    lmp_mpi_num: int
       lmp_mpi_num is the number of mpi ranks for lammps.
-    lmp_openmp_num : int
-      lmp_openmp_num is the number of openmp for lammps.
   Returns :
     none
   '''
@@ -784,7 +782,7 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
             check_lmp_frc_run.append(1)
 
   if ( len(check_lmp_frc_run) != 0 and all(i == 0 for i in check_lmp_frc_run)):
-    print ('  Success: lammps model deviation calculations for %d systems' %(sys_num), flush=True)
+    print ('  Success: model deviation calculations for %d systems by lammps' %(sys_num), flush=True)
   else:
     log_info.log_error('lammps model deviation calculations error, please check iteration %d' %(iter_id))
     exit()
@@ -792,11 +790,15 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
 if __name__ == '__main__':
   from CP2K_kit.tools import read_input
   from CP2K_kit.deepff import lammps_run
+  from CP2K_kit.deepff import check_deepff
 
   work_dir = '/home/lujunbo/code/github/CP2K_kit/deepff/work_dir'
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
   deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic = \
   read_input.dump_info(work_dir, 'input.inp', deepff_key)
+  proc_num = 4
+  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
 
   #Test gen_lmpmd_task function
   atoms_type_dic_tot, atoms_num_tot = \

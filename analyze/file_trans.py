@@ -8,15 +8,18 @@ from CP2K_kit.analyze import check_analyze
 def xyz2pdb(transd_file, work_dir, file_name):
 
   '''
-  xyz2pdb : transfer pdb file to xyz file
+  xyz2pdb: transform pdb file to xyz file
 
-  Args :
-    file_name : string
-      file_name is the name of transformed pdb file.
-    work_dir : string
-      work_dir is the working directory
-  Returns :
-    none
+  Args:
+    transd_file: string
+      transd_file is the name of transformed pdb file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    pdb_file_name: string
+      pdb_file_name is the name of transformed pdb file.
   '''
 
   line = linecache.getline(transd_file, 1)
@@ -43,15 +46,18 @@ def xyz2pdb(transd_file, work_dir, file_name):
 def pdb2xyz(transd_file, work_dir, file_name):
 
   '''
-  pdb2xyz : transfer xyz file to pdb file
+  pdb2xyz: transform xyz file to pdb file
 
-  Args :
-    file_name : string
-      file_name is the name of transformed xyz file.
-    work_dir : string
-      work_dir is the working directory
-  Returns :
-    none
+  Args:
+    transd_file: string
+      transd_file is the name of transformed xyz file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    xyz_file_name: string
+      xyz_file_name is the name of transformed xyz file.
   '''
 
   line_num = len(open(transd_file).readlines())
@@ -89,14 +95,14 @@ def pdb2xyz(transd_file, work_dir, file_name):
 def file_trans_run(file_trans_param, work_dir):
 
   '''
-  file_trans_run : kernel function to transform file with different format
+  file_trans_run: kernel function to transform file with different format.
 
-  Args :
-    file_trans_param : dictionary
+  Args:
+    file_trans_param: dictionary
       file_trans_param contains keywords used in transforming file.
-    work_dir : string
-      work_dir is working directory of CP2K_kit.
-  Returns :
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
     none
   '''
 

@@ -7,16 +7,46 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
 
+def check_step(init_step, end_step, start_frame_id, end_frame_id):
+
+  '''
+  check_step: check the input step
+
+  Args:
+    init_step : int
+      init_step is the initial frame id.
+    end_step : int
+      end_step is the endding frame id.
+    start_frame_id: int
+      start_frame_id is the starting frame id in the trajectory file.
+    end_frame_id: int
+      end_frame_id is the endding frame id in the trajectory file.
+  Returns :
+    none
+  '''
+
+  if ( init_step > end_step ):
+    log_info.log_error('Input error: the endding step is less than initial step, please check or reset init_step and end_step')
+    exit()
+
+  if ( init_step < start_frame_id ):
+    log_info.log_error('Input error: the initial step is less than initial step in trajectory, please check or reset init_step')
+    exit()
+
+  if ( end_step > end_frame_id ):
+    log_info.log_error('Input error: the endding step is large than endding step in trajectory, please check or reset end_step')
+    exit()
+
 def check_center_inp(center_dic):
 
   '''
-  check_center_inp : check the input file of center.
+  check_center_inp: check the input file of center.
 
-  Args :
-    center_dic : dictionary
+  Args:
+    center_dic: dictionary
       center_dic contains the parameter for center.
-  Returns :
-    new_center_dic : dictionary
+  Returns:
+    new_center_dic: dictionary
       new_center_dic is the revised center_dic
   '''
 
@@ -49,7 +79,7 @@ def check_center_inp(center_dic):
   if ( 'traj_coord_file' in new_center_dic.keys() ):
     traj_coord_file = new_center_dic['traj_coord_file']
     if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-      new_center_dic['traj_file'] = os.path.abspath(traj_coord_file)
+      new_center_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
     else:
       log_info.log_error('%s file does not exist' %(traj_coord_file))
       exit()
@@ -95,17 +125,17 @@ def check_center_inp(center_dic):
     group_atom = []
     atom_id = []
     group_num = 0
-    for i in new_center_dic['connect'].keys():
+    for i in new_center_dic['connect0'].keys():
       if ( 'group' in i ):
         group_num = group_num+1
-        if ( 'atom_id' in new_center_dic['connect'][i].keys() ):
-          atom_id_i = data_op.get_id_list(new_center_dic['connect'][i]['atom_id'])
+        if ( 'atom_id' in new_center_dic['connect0'][i].keys() ):
+          atom_id_i = data_op.get_id_list(new_center_dic['connect0'][i]['atom_id'])
           atom_id.append(atom_id_i)
         else:
           log_info.log_error('Input error: no atom id, please set analyze/center/connect/group/atom_id')
           exit()
-        if ( 'group_atom' in new_center_dic['connect'][i].keys() ):
-          group_atom_i = new_center_dic['connect'][i]['group_atom']
+        if ( 'group_atom' in new_center_dic['connect0'][i].keys() ):
+          group_atom_i = new_center_dic['connect0'][i]['group_atom']
           if ( isinstance(group_atom_i, list)):
             if ( all(data_op.eval_str(x) == 0 for x in group_atom_i) ):
               group_atom.append(group_atom_i)
@@ -129,12 +159,12 @@ def check_center_inp(center_dic):
 def check_diffusion_inp(diffusion_dic):
 
   '''
-  check_diffusion_inp : check the input of diffusion.
+  check_diffusion_inp: check the input of diffusion.
 
-  Args :
-    diffusion_dic : dictionary
+  Args:
+    diffusion_dic: dictionary
       diffusion_dic contains parameters for diffusion
-  Returns :
+  Returns:
     diffusion_dic: dictionary
       diffusion_dic is the revised diffusion_dic
   '''
@@ -163,7 +193,7 @@ def check_diffusion_inp(diffusion_dic):
         log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
         exit()
     else:
-      log_info.log_error('Input error: no traj_file, please set analyze/diffusion/traj_coord_file')
+      log_info.log_error('Input error: no coordination trajectory file, please set analyze/diffusion/traj_coord_file')
       exit()
 
     if ( 'remove_com' in diffusion_dic.keys() ):
@@ -179,14 +209,14 @@ def check_diffusion_inp(diffusion_dic):
     if ( 'traj_vel_file' in diffusion_dic.keys() ):
       traj_vel_file = diffusion_dic['traj_vel_file']
       if ( os.path.exists(os.path.abspath(traj_vel_file)) ):
-        diffusion_dic['traj_file'] = os.path.abspath(traj_vel_file)
+        diffusion_dic['traj_vel_file'] = os.path.abspath(traj_vel_file)
         atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_vel_file, 'vel')
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_vel_file))
         exit()
     else:
-      log_info.log_error('Input error: no traj_file, please set analyze/diffusion/traj_vel_file')
+      log_info.log_error('Input error: no velocity trajectory file, please set analyze/diffusion/traj_vel_file')
       exit()
 
   if ( 'atom_id' in diffusion_dic.keys() ):
@@ -216,6 +246,10 @@ def check_diffusion_inp(diffusion_dic):
   else:
     diffusion_dic['end_step'] = end_frame_id
 
+  init_step = diffusion_dic['init_step']
+  end_step = diffusion_dic['end_step']
+  check_step(init_step, end_step, start_frame_id, end_frame_id)
+
   if ( 'max_frame_corr' in diffusion_dic.keys() ):
     max_frame_corr = diffusion_dic['max_frame_corr']
     if ( data_op.eval_str(max_frame_corr) == 1 ):
@@ -235,12 +269,12 @@ def check_diffusion_inp(diffusion_dic):
 def check_file_trans_inp(file_trans_dic):
 
   '''
-  check_file_trans_inp : check the input of file_trans.
+  check_file_trans_inp: check the input of file_trans.
 
-  Args :
-    file_trans_dic : dictionary
+  Args:
+    file_trans_dic: dictionary
       file_trans_dic contains parameters for file_trans.
-  Returns :
+  Returns:
     file_trans_dic: dictionary
       file_trans_dic is the revised file_trans_dic
   '''
@@ -272,12 +306,12 @@ def check_file_trans_inp(file_trans_dic):
 def check_geometry_inp(geometry_dic):
 
   '''
-  check_geometry_inp : check the input of geometry.
+  check_geometry_inp: check the input of geometry.
 
-  Args :
-    geometry_dic : dictionary
+  Args:
+    geometry_dic: dictionary
       geometry_dic contains parameters for geometry.
-  Returns :
+  Returns:
     geometry_dic: dictionary
       geometry_dic is the revised geometry_dic
   '''
@@ -317,6 +351,10 @@ def check_geometry_inp(geometry_dic):
         exit()
     else:
       geometry_dic['coord_num']['end_step'] = end_frame_id
+
+    init_step = geometry_dic['coord_num']['init_step']
+    end_step = geometry_dic['coord_num']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
 
     if ( 'r_cut' in coord_num_dic.keys() ):
       r_cut = coord_num_dic['r_cut']
@@ -410,6 +448,10 @@ def check_geometry_inp(geometry_dic):
     else:
       geometry_dic['bond_length']['end_step'] = end_frame_id
 
+    init_step = geometry_dic['bond_length']['init_step']
+    end_step = geometry_dic['bond_length']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
+
     if ( 'box' in bond_length_dic.keys() ):
       A_exist = 'A' in bond_length_dic['box'].keys()
       B_exist = 'B' in bond_length_dic['box'].keys()
@@ -492,6 +534,10 @@ def check_geometry_inp(geometry_dic):
     else:
       geometry_dic['bond_angle']['end_step'] = end_frame_id
 
+    init_step = geometry_dic['bond_angle']['init_step']
+    end_step = geometry_dic['bond_angle']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
+
     return geometry_dic
 
   elif ( 'first_shell' in geometry_dic ):
@@ -557,6 +603,10 @@ def check_geometry_inp(geometry_dic):
     else:
       geometry_dic['first_shell']['end_step'] = end_frame_id
 
+    init_step = geometry_dic['first_shell']['init_step']
+    end_step = geometry_dic['first_shell']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
+
     if ( 'box' in first_shell_dic.keys() ):
       A_exist = 'A' in first_shell_dic['box'].keys()
       B_exist = 'B' in first_shell_dic['box'].keys()
@@ -620,7 +670,7 @@ def check_geometry_inp(geometry_dic):
         log_info.log_error('Input error: %s file does not exist' %(traj_file))
         exit()
     else:
-      log_info.log_error('Input error: no coordination trajectory file, please set analyze/geometry/choose_structure/traj_file')
+      log_info.log_error('Input error: no trajectory file, please set analyze/geometry/choose_structure/traj_file')
       exit()
 
     if ( 'init_step' in choose_str_dic.keys() ):
@@ -640,6 +690,10 @@ def check_geometry_inp(geometry_dic):
         log_info.log_error('Input error: end_step should be integer, please check or reset analyze/geometry/choose_structure/end_step')
     else:
       geometry_dic['choose_structure']['end_step'] = end_frame_id
+
+    init_step = geometry_dic['choose_structure']['init_step']
+    end_step = geometry_dic['choose_structure']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
 
     if ( 'atom_id' in choose_str_dic.keys() ):
       geometry_dic['choose_structure']['atom_id'] = data_op.get_id_list(choose_str_dic['atom_id'])
@@ -740,12 +794,12 @@ def check_geometry_inp(geometry_dic):
 def check_lmp2cp2k_inp(lmp2cp2k_dic):
 
   '''
-  check_lmp2cp2k_inp : check the input of lmp2cp2k.
+  check_lmp2cp2k_inp: check the input of lmp2cp2k.
 
-  Args :
-    lmp2cp2k_dic : dictionary
+  Args:
+    lmp2cp2k_dic: dictionary
       lmp2cp2k_dic contains parameters for lmp2cp2k.
-  Returns :
+  Returns:
     lmp2cp2k_dic: dictionary
       lmp2cp2k_dic is the revised lmp2cp2k_dic.
   '''
@@ -778,8 +832,8 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
     atom_label = lmp2cp2k_dic['atom_label']
     atom_label_dic = OrderedDict()
     for i in range (len(atom_label)):
-      lable_split = data_op.str_split(atom_label[i], ':')
-      atom_label_dic[int(lable_split[0])] = lable_split[1]
+      label_split = data_op.str_split(atom_label[i], ':')
+      atom_label_dic[int(label_split[0])] = label_split[1]
     lmp2cp2k_dic['atom_label'] = atom_label_dic
   else:
     log_info.log_error('Input error: no atom_label, please set analyze/lmp2cp2k/atom_label')
@@ -857,12 +911,12 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
 def check_rdf_inp(rdf_dic):
 
   '''
-  check_lmp2cp2k_inp : check the input of rdf.
+  check_lmp2cp2k_inp: check the input of rdf.
 
-  Args :
-    rdf_dic : dictionary
+  Args:
+    rdf_dic: dictionary
       rdf_dic contains parameters for rdf.
-  Returns :
+  Returns:
     rdf_dic: dictionary
       rdf_dic is the revised rdf_dic.
   '''
@@ -910,6 +964,10 @@ def check_rdf_inp(rdf_dic):
       log_info.log_error('Input error: end_step should be integer, please check or reset analyze/rdf/end_step')
   else:
     rdf_dic['end_step'] = end_frame_id
+
+  init_step = rdf_dic['init_step']
+  end_step = rdf_dic['end_step']
+  check_step(init_step, end_step, start_frame_id, end_frame_id)
 
   if ( 'r_increment' in rdf_dic.keys() ):
     r_increment = rdf_dic['r_increment']
@@ -959,12 +1017,12 @@ def check_rdf_inp(rdf_dic):
 def check_spectrum_inp(spectrum_dic):
 
   '''
-  check_spectrum_inp : check the input of spectrum.
+  check_spectrum_inp: check the input of spectrum.
 
-  Args :
-    spectrum_dic : dictionary
+  Args:
+    spectrum_dic: dictionary
       spectrum_dic contains parameters for spectrum.
-  Returns :
+  Returns:
     spectrum_dic: dictionary
       spectrum_dic is the revised spectrum_dic.
   '''
@@ -1027,6 +1085,10 @@ def check_spectrum_inp(spectrum_dic):
   else:
     spectrum_dic['end_step'] = end_frame_id
 
+  init_step = spectrum_dic['init_step']
+  end_step = spectrum_dic['end_step']
+  check_step(init_step, end_step, start_frame_id, end_frame_id)
+
   if ( 'max_frame_corr' in spectrum_dic.keys() ):
     max_frame_corr = spectrum_dic['max_frame_corr']
     if ( data_op.eval_str(max_frame_corr) == 1 ):
@@ -1061,7 +1123,7 @@ def check_spectrum_inp(spectrum_dic):
     normalize = spectrum_dic['normalize']
     if ( data_op.eval_str(normalize) == 1 ):
       if ( int(normalize) == 0 or int(normalize) == 1 ):
-        pass
+        spectrum_dic['normalize'] = int(normalize)
       else:
         log_info.log_error('Input error: normalize should be 0 or 1, please check or reset analyze/power_spectrum/normalize')
         exit()
@@ -1151,12 +1213,12 @@ def check_spectrum_inp(spectrum_dic):
 def check_v_hartree_inp(v_hartree_dic):
 
   '''
-  check_v_hartree_inp : check the input of v_hartree.
+  check_v_hartree_inp: check the input of v_hartree.
 
-  Args :
-    v_hartree_dic : dictionary
+  Args:
+    v_hartree_dic: dictionary
       v_hartree_dic contains parameters for v_hartree.
-  Returns :
+  Returns:
     v_hartree_dic: dictionary
       v_hartree_dic is the revised v_hartree_dic.
   '''
@@ -1190,12 +1252,12 @@ def check_v_hartree_inp(v_hartree_dic):
 def check_arrange_data_inp(arrange_data_dic):
 
   '''
-  check_arrange_data_inp : check the input of arrange_data.
+  check_arrange_data_inp: check the input of arrange_data.
 
-  Args :
-    arrange_data_dic : dictionary
+  Args:
+    arrange_data_dic: dictionary
       arrange_data_dic contains parameters for arrange_data.
-  Returns :
+  Returns:
     arrange_data_dic: dictionary
       arrange_data_dic is the revised arrange_data_dic.
   '''
@@ -1367,6 +1429,10 @@ def check_arrange_data_inp(arrange_data_dic):
     else:
       arrange_data_dic['vertical_energy']['end_step'] = end_id
 
+    init_step = arrange_data_dic['vertical_energy']['init_step']
+    end_step = arrange_data_dic['vertical_energy']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
+
     if ( 'final_time_unit' in vert_ene_dic.keys() ):
       final_time_unit = vert_ene_dic['final_time_unit']
       if ( final_time_unit in ['fs', 'ps', 'ns'] ):
@@ -1388,7 +1454,7 @@ def check_arrange_data_inp(arrange_data_dic):
         log_info.log_error('Input error: %s file does not exist' %(traj_lag_file))
         exit()
     else:
-      log_info.log_error('Input error: no traj_file, please set analyze/arrange_data/ti_force/traj_lag_file')
+      log_info.log_error('Input error: no lagrange trajectory file, please set analyze/arrange_data/ti_force/traj_lag_file')
       exit()
 
     if ( 'stat_num' in ti_force_dic.keys() ):
@@ -1406,12 +1472,12 @@ def check_arrange_data_inp(arrange_data_dic):
 def check_dp_test_inp(dp_test_dic):
 
   '''
-  check_dp_test_inp : check the input of dp_test.
+  check_dp_test_inp: check the input of dp_test.
 
-  Args :
-    dp_test_dic : dictionary
+  Args:
+    dp_test_dic: dictionary
       dp_test_dic contains parameters for dp_test.
-  Returns :
+  Returns:
     dp_test_dic: dictionary
       dp_test_dic is the revised dp_test_dic.
   '''
@@ -1478,14 +1544,43 @@ def check_dp_test_inp(dp_test_dic):
       atom_label = dp_test_dic['atom_label']
       atom_label_dic = OrderedDict()
       for i in range (len(atom_label)):
-        lable_split = data_op.str_split(atom_label[i], ':')
-        atom_label_dic[int(lable_split[0])] = lable_split[1]
-      dp_test_dic['atom_lable'] = atom_lable_dic
+        label_split = data_op.str_split(atom_label[i], ':')
+        atom_label_dic[int(label_split[0])] = label_split[1]
+      dp_test_dic['atom_label'] = atom_label
     else:
-      log_info.log_error('Input error: no atom_lable, please set analyze/dp_test/atom_lable')
+      log_info.log_error('Input error: no atom label, please set analyze/dp_test/atom_label')
       exit()
 
-    supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, dpff_file, atom_label_dic, work_dir)
+    if ( 'lmp_exe' in dp_test_dic.keys() ):
+      lmp_exe = dp_test_dic['lmp_exe']
+      if ( os.path.exists(os.path.abspath(lmp_exe)) ):
+        dp_test_dic['lmp_exe'] = os.path.abspath(lmp_exe)
+      else:
+        log_info.log_error('Input error: %s does not exist' %(lmp_exe))
+        exit()
+    else:
+      log_info.log_error('Input error: no lammps executable file, please set analyze/dp_test/lmp_exe')
+      exit()
+
+    if ( 'lmp_mpi_num' in dp_test_dic.keys() ):
+      lmp_mpi_num = dp_test_dic['lmp_mpi_num']
+      if ( data_op.eval_str(lmp_mpi_num) == 1 ):
+        dp_test_dic['lmp_mpi_num'] = int(lmp_mpi_num)
+      else:
+        log_info.log_error('Input error: lammps mpi number shoule be integer, please set analyze/dp_test/lmp_mpi_num')
+        exit()
+    else:
+      dp_test_dic['lmp_mpi_num'] = 1
+
+    if ( 'lmp_omp_num' in dp_test_dic.keys() ):
+      lmp_omp_num = dp_test_dic['lmp_omp_num']
+      if ( data_op.eval_str(lmp_omp_num) == 1 ):
+        dp_test_dic['lmp_omp_num'] = int(lmp_omp_num)
+      else:
+        log_info.log_error('Input error: lammps openmp number shoule be integer, please set analyze/dp_test/lmp_omp_num')
+        exit()
+    else:
+      dp_test_dic['lmp_omp_num'] = 1
 
   elif ( learn_type == 'active_learning' ):
     if ( 'lmp_traj_file' in dp_test_dic.keys() ):
@@ -1562,12 +1657,12 @@ def check_dp_test_inp(dp_test_dic):
 def check_free_energy_inp(free_energy_dic):
 
   '''
-  check_free_energy_inp : check the input of free_energy.
+  check_free_energy_inp: check the input of free_energy.
 
-  Args :
-    free_energy_dic : dictionary
+  Args:
+    free_energy_dic: dictionary
       free_energy_dic contains parameters for free_energy.
-  Returns :
+  Returns:
     free_energy_dic: dictionary
       free_energy_dic is the revised free_energy_dic.
   '''
@@ -1597,12 +1692,12 @@ def check_free_energy_inp(free_energy_dic):
 def check_rmsd_inp(rmsd_dic):
 
   '''
-  check_rmsd_inp : check the input of rmsd.
+  check_rmsd_inp: check the input of rmsd.
 
-  Args :
-    rmsd_dic : dictionary
+  Args:
+    rmsd_dic: dictionary
       rmsd_dic contains parameters for rmsd.
-  Returns :
+  Returns:
     rmsd_dic: dictionary
       rmsd_dic is the revised rmsd_dic.
   '''
@@ -1647,12 +1742,12 @@ def check_rmsd_inp(rmsd_dic):
 def check_time_correlation_inp(time_corr_dic):
 
   '''
-  check_time_correlation_inp : check the input of time_correlation.
+  check_time_correlation_inp: check the input of time_correlation.
 
-  Args :
-    time_corr_dic : dictionary
+  Args:
+    time_corr_dic: dictionary
       time_corr_dic contains parameters for time_corr.
-  Returns :
+  Returns:
     time_corr_dic: dictionary
       time_corr_dic is the revised time_corr_dic.
   '''
@@ -1667,7 +1762,7 @@ def check_time_correlation_inp(time_corr_dic):
       log_info.log_error('Input error: %s file does not exists' %(traj_file))
       exit()
   else:
-    log_info.log_error('Input error: no traj_file, please set analyze/time_correlation/traj_file')
+    log_info.log_error('Input error: no trajectory file, please set analyze/time_correlation/traj_file')
     exit()
 
   if ( 'atom_id' in time_corr_dic.keys() ):
@@ -1707,11 +1802,15 @@ def check_time_correlation_inp(time_corr_dic):
   else:
     time_corr_dic['end_step'] = end_frame_id
 
+  init_step = time_corr_dic['init_step']
+  end_step = time_corr_dic['end_step']
+  check_step(init_step, end_step, start_frame_id, end_frame_id)
+
   if ( 'normalize' in time_corr_dic.keys() ):
     normalize = time_corr_dic['normalize']
     if ( data_op.eval_str(normalize) == 1 ):
       if ( int(normalize) == 0 or int(normalize) == 1 ):
-        time_corr_dic['normalize'] = int(init_step)
+        time_corr_dic['normalize'] = int(normalize)
       else:
         log_info.log_error('Input error: only 0 and 1 are supported for normalize, please check or reset analyze/time_correlation/normalize')
         exit()
