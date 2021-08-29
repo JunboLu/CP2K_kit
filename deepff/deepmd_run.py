@@ -11,7 +11,7 @@ from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
-                    descr_seed, fit_seed, tra_seed, neuron, model_type):
+                    descr_seed, fit_seed, tra_seed, neuron, model_type, tot_data_num):
 
   '''
   gen_deepmd_task: generate deepmd tasks
@@ -37,6 +37,8 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       neuron is the number of nodes in neural network.
     model_type: string
       model_type has two choices: 'use_seed', 'use_node'
+    tot_data_num: int
+      tot_data_num is the total numbers of training data.
   Returns:
     none
   '''
@@ -63,6 +65,15 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
           prev_data_dir = ''.join((cp2k_sys_dir, '/data'))
           if ( os.path.exists(prev_data_dir) ):
             data_dir.append(prev_data_dir)
+
+  batch_size = deepmd_param['training']['batch_size']
+  epoch_num = deepmd_param['training']['epoch_num']
+  stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
+  decay_step = math.ceil(int(tot_data_num/batch_size)/1000)*1000
+
+  deepmd_param['learning_rate']['decay_step'] = decay_step
+  deepmd_param['training'].pop('epoch_num')
+  deepmd_param['training']['stop_batch'] = stop_batch
 
   for key in deepmd_dic['training']:
     if ( 'system' in key ):

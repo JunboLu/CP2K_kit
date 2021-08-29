@@ -477,13 +477,14 @@ cd $direc/task_${x_arr[0]}
 
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 
-grep "SCF run NOT converged" cp2k.out
+grep "SCF run NOT converged" cp2k.out > converge_info
 if [ $? -eq 0 ]; then
-line=`grep -n "WFN_RESTART_FILE_NAME" | awk -F ":" '{print $1}'`
+line=`grep -n "WFN_RESTART_FILE_NAME" input.inp | awk -F ":" '{print $1}'`
 sed -ie ''$line's/.*/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn/' input.inp
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 fi
 
+rm converge_info
 ''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
       run_file = ''.join((cp2k_sys_dir, '/run.sh'))

@@ -226,8 +226,10 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
         log_info.log_error('choosed_frame_num is larger than max choosed_frame_num for trajectory in %s, please check!' %(proj_dir))
         exit()
       else:
+        total_index_array = np.array(total_index)
+        np.random.shuffle(total_index_array)
         #random.shuffle(total_index)
-        choosed_index = total_index[0:choosed_num]
+        choosed_index = list(total_index_array[0:choosed_num])
 
   #Dump box information
   box_file = open(''.join((save_dir, '/box.raw')),'w')
@@ -456,57 +458,61 @@ def read_raw_data(data_dir):
   box_raw = open(box_file, "rb").read()
 
   frames_num = len(ene_raw.split())
-  atoms_num = int(len(coord_raw.split())/frames_num/3)
-
-  ene_file_exist = os.path.exists(ene_file)
-  coord_file_exist = os.path.exists(coord_file)
-  frc_file_exist = os.path.exists(frc_file)
-  box_file_exist = os.path.exists(box_file)
-  #Organize raw data
-  if ( ene_file_exist and coord_file_exist and frc_file_exist and box_file_exist ):
-    ene_list = []
-    ene_split = ene_raw.split()
-    for i in range(len(ene_split)):
-      ene_list.append(float(ene_split[i].decode()))
-    energy_array = np.array(ene_list)
-
-    coord_list = []
-    coord_split = coord_raw.split()
-    for i in range(len(coord_split)):
-      coord_list.append(float(coord_split[i].decode()))
-    coord = np.array(coord_list)
-    coord_array = coord.reshape(frames_num, atoms_num*3)
-
-    frc_list = []
-    frc_split = frc_raw.split()
-    for i in range(len(frc_split)):
-      frc_list.append(float(frc_split[i].decode()))
-    frc = np.array(frc_list)
-    frc_array = frc.reshape(frames_num, atoms_num*3)
-
-    box_list = []
-    box_split = box_raw.split()
-    for i in range(len(box_split)):
-      box_list.append(float(box_split[i].decode()))
-    box = np.array(box_list)
-    box_array = box.reshape(frames_num, 9)
-
-    #virial is not necessary
-    if ( os.path.exists(virial_file) ):
-      virial_raw = open(virial_file, "rb").read()
-      virial_list = []
-      virial_split = box_raw.split()
-      for i in range(len(virial_split)):
-        virial_list.append(float(virial_split[i].decode()))
-      virial = np.array(virial_list)
-      virial_array = virial.reshape(frames_num, 9)
-    else:
-      virial_array = np.array([[]])
-  else:
-    print ('Need coord.raw, box.raw, force.raw, and energy.raw files, lack of essential file!')
+  if ( frames_num == 0 ):
+    log_info.log_error('Dump new cp2k data error: number of new data is zero, check the scf converge of cp2k force calculation!')
     exit()
+  else:
+    atoms_num = int(len(coord_raw.split())/frames_num/3)
 
-  return energy_array, coord_array, frc_array, box_array, virial_array
+    ene_file_exist = os.path.exists(ene_file)
+    coord_file_exist = os.path.exists(coord_file)
+    frc_file_exist = os.path.exists(frc_file)
+    box_file_exist = os.path.exists(box_file)
+    #Organize raw data
+    if ( ene_file_exist and coord_file_exist and frc_file_exist and box_file_exist ):
+      ene_list = []
+      ene_split = ene_raw.split()
+      for i in range(len(ene_split)):
+        ene_list.append(float(ene_split[i].decode()))
+      energy_array = np.array(ene_list)
+
+      coord_list = []
+      coord_split = coord_raw.split()
+      for i in range(len(coord_split)):
+        coord_list.append(float(coord_split[i].decode()))
+      coord = np.array(coord_list)
+      coord_array = coord.reshape(frames_num, atoms_num*3)
+
+      frc_list = []
+      frc_split = frc_raw.split()
+      for i in range(len(frc_split)):
+        frc_list.append(float(frc_split[i].decode()))
+      frc = np.array(frc_list)
+      frc_array = frc.reshape(frames_num, atoms_num*3)
+
+      box_list = []
+      box_split = box_raw.split()
+      for i in range(len(box_split)):
+        box_list.append(float(box_split[i].decode()))
+      box = np.array(box_list)
+      box_array = box.reshape(frames_num, 9)
+
+      #virial is not necessary
+      if ( os.path.exists(virial_file) ):
+        virial_raw = open(virial_file, "rb").read()
+        virial_list = []
+        virial_split = box_raw.split()
+        for i in range(len(virial_split)):
+          virial_list.append(float(virial_split[i].decode()))
+        virial = np.array(virial_list)
+        virial_array = virial.reshape(frames_num, 9)
+      else:
+        virial_array = np.array([[]])
+    else:
+      print ('Need coord.raw, box.raw, force.raw, and energy.raw files, lack of essential file!')
+      exit()
+
+    return energy_array, coord_array, frc_array, box_array, virial_array
 
 def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_array, virial_array):
 
@@ -529,19 +535,27 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
     virial_array: 2-d float array, dim = (num of frames)*9
       virial_array is the 2-d array of virials
   Returns :
-    none
+    train_data_num : int
+      train_data_num is the number of training data.
   '''
 
   frames_num = len(energy_array)
   index = list(range(frames_num))
-#  random.shuffle(index)
+  random.shuffle(index)
   part_num = math.ceil(frames_num/parts)
   index_parts = []
   index_temp = data_op.list_split(index, part_num)
   for i in index_temp:
     index_parts.append(i)
 
+  train_data_num = 0
+
+  if ( len(index_parts) == 1 ):
+    train_data_num = frames_num
+
   for i in range(len(index_parts)):
+    if ( len(index_parts) > 1 and i != len(index_parts)-1 ):
+      train_data_num = train_data_num+len(index_parts[i])
     if (i > 10 or i == 10):
       sub_dir_name = 'set.0'+str(i)
     elif (i < 10):
@@ -564,6 +578,8 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
     if ( virial_array.shape != (1,0) ):
       virial_array_i = virial_array[index_parts[i]]
       np.save(''.join((data_dir, '/', sub_dir_name, '/virial.npy')), virial_array_i)
+
+  return train_data_num
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import load_data

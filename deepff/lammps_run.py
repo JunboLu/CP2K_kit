@@ -46,7 +46,10 @@ def get_box_coord(box_file, coord_file):
   for i in range(whole_line_num):
     line_i = linecache.getline(box_file, i+1)
     line_i_split = data_op.str_split(line_i, ' ')
-    line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    if ( line_i_split[len(line_i_split)-1] == '\n' ):
+      line_i_split.remove(line_i_split[len(line_i_split)-1])
+    else:
+      line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
     if ( len(line_i_split) == 4 and all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
       if ( line_i_split[0] == 'a' ):
         cell_vec_a.append(float(line_i_split[1]))
@@ -91,7 +94,10 @@ def get_box_coord(box_file, coord_file):
   for i in range(whole_line_num):
     line_i = linecache.getline(coord_file, i+1)
     line_i_split = data_op.str_split(line_i, ' ')
-    line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    if ( line_i_split[len(line_i_split)-1] == '\n' ):
+      line_i_split.remove(line_i_split[len(line_i_split)-1])
+    else:
+      line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
     if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 and \
          all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
       atoms.append(line_i_split[0])
@@ -792,6 +798,12 @@ if __name__ == '__main__':
   from CP2K_kit.deepff import lammps_run
   from CP2K_kit.deepff import check_deepff
 
+  box_file = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md/lmp_init_data/box'
+  coord_file = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md/lmp_init_data/str.inc'
+  tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
+  print (atoms, x, y, z)
+
+  exit()
   work_dir = '/home/lujunbo/code/github/CP2K_kit/deepff/work_dir'
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
   deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic = \

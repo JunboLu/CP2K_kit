@@ -1,8 +1,10 @@
 #! /usr/env/bin python
 
 import os
+import linecache
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import file_tools
 
 def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num):
 
@@ -51,6 +53,15 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       log_info.log_error('Input error: no descriptor, please set deepff/deepmd/model/descriptor')
       exit()
     else:
+      valid_type = ['se_a', 'se_r', 'se_ar']
+      if ( 'type' in deepmd_dic['model']['descriptor'].keys() ):
+        descr_type = deepmd_dic['model']['descriptor']['type']
+        if ( descr_type in valid_type ):
+          pass
+        else:
+          log_info.log_error('Input error: %s is not supported for deepff/deepmd/model/descriptor/type')
+          exit()
+
       if ( 'sel' in deepmd_dic['model']['descriptor'].keys() ):
         sel = deepmd_dic['model']['descriptor']['sel']
         if ( all(data_op.eval_str(i) == 1 for i in sel) ):
@@ -141,16 +152,6 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
         eixt()
     else:
       deepmd_dic['learning_rate']['type'] = 'exp'
-
-    if ( 'decay_steps' in deepmd_dic['learning_rate'].keys() ):
-      decay_steps = deepmd_dic['learning_rate']['decay_steps']
-      if ( data_op.eval_str(decay_steps) == 1 ):
-        deepmd_dic['learning_rate']['decay_steps'] = int(decay_steps)
-      else:
-        log_info.log_error('Input error: decay_steps shoule be integer, please check deepff/deepmd/learning_rate/decay_steps')
-        eixt()
-    else:
-      deepmd_dic['learning_rate']['decay_steps'] = 5000
 
     if ( 'start_lr' in deepmd_dic['learning_rate'].keys() ):
       start_lr = deepmd_dic['learning_rate']['start_lr']
@@ -370,24 +371,22 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       log_info.log_error('Input error: no set_prefix, please set deepff/deepmd/training/set_prefix')
       exit()
 
-    if ( 'stop_batch' in deepmd_dic['training'].keys() ):
-      stop_batch = deepmd_dic['training']['stop_batch']
-      if ( data_op.eval_str(stop_batch) == 1 ):
-        deepmd_dic['training']['stop_batch'] = int(stop_batch)
+    if ( 'epoch_num' in deepmd_dic['training'].keys() ):
+      epoch_num = deepmd_dic['training']['epoch_num']
+      if ( data_op.eval_str(epoch_num) == 1 ):
+        deepmd_dic['training']['epoch_num'] = int(epoch_num)
       else:
-        log_info.log_error('Input error: stop_batch should be integer, please check or reset deepff/deepmd/training/stop_batch')
+        log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd/training/epoch_num')
         exit()
     else:
-      deepmd_dic['training']['stop_batch'] = 100000
+      deepmd_dic['training']['epoch_num'] = 100
 
     if ( 'batch_size' in deepmd_dic['training'].keys() ):
       batch_size = deepmd_dic['training']['batch_size']
       if ( data_op.eval_str(batch_size) == 1 ):
         deepmd_dic['training']['batch_size'] = int(batch_size)
-      elif ( batch_size == 'auto' ):
-        pass
       else:
-        log_info.log_error('Input error: batch_size shoule be integer or auto, please check or reset deepff/deepmd/training/batch_size')
+        log_info.log_error('Input error: batch_size shoule be integer, please check or reset deepff/deepmd/training/batch_size')
         exit()
     else:
       deepmd_dic['training']['batch_size'] = 1
@@ -689,6 +688,16 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     force_eval_dic['restart_iter'] = 0
 
+  if ( 'restart_data_num' in force_eval_dic.keys() ):
+    restart_iter = force_eval_dic['restart_data_num']
+    if ( data_op.eval_str(restart_data_num) == 1 ):
+      force_eval_dic['restart_data_num'] = int(restart_data_num)
+    else:
+      log_info.log_error('Input error: restart_data_num should be integer, please check or reset deepff/force_eval/restart_data_num')
+      exit()
+  else:
+    force_eval_dic['restart_data_num'] = 0
+
   #Check parameters for CP2K
   cp2k_inp_file_tot = []
   if ( 'cp2k_inp_file' in cp2k_dic.keys() ):
@@ -931,3 +940,58 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     environ_dic['lmp_openmp_num'] = 2
 
   return deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic
+
+def write_restart_inp(inp_file_name, restart_iter, tot_data_num, work_dir):
+
+  '''
+  check_inp: write restart input file for deepff
+
+  Args:
+    deepmd_dic: dictionary
+      deepmd_dic contains keywords used in deepmd.
+    lammps_dic: dictionary
+      lammpd_dic contains keywords used in lammps.
+    cp2k_dic: dictionary
+      cp2k_dic contains keywords used in cp2k.
+    force_eval_dic: dictionary
+      force_eval contains keywords used in force_eval.
+    environ_dic: dictionary
+      environ_dic contains keywords used in environment.
+    work_dir: string
+      work_dir is the workding directory of cp2k_kit.
+  '''
+
+  while True:
+    restart_inp_file_name = ''.join((work_dir, '/restart.inp'))
+    if ( os.path.exists(restart_inp_file_name) ):
+      cmd = 'rm %s' %(restart_inp_file_name)
+      call.call_simple_shell(work_dir, cmd)
+    else:
+      break
+
+  whole_line_num = len(open(inp_file_name).readlines())
+
+  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_file_name, work_dir)
+  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_file_name, work_dir)
+  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_file_name, work_dir)
+  line_4_num = file_tools.grep_line_num("'force_conv'", inp_file_name, work_dir)
+  line_5_num = file_tools.grep_line_num("'max_iter'", inp_file_name, work_dir)
+  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_file_name, work_dir)
+
+  restart_inp_file = open(restart_inp_file_name, 'w')
+  for i in range(line_1_num):
+    line_i = linecache.getline(inp_file_name, i+1)
+    restart_inp_file.write(line_i)
+
+  for i in [line_2_num, line_3_num, line_4_num, line_5_num]:
+    line_i = linecache.getline(inp_file_name, i)
+    restart_inp_file.write(line_i)
+
+  restart_inp_file.write('    restart_iter %d\n' %(restart_iter))
+  restart_inp_file.write('    restart_data_num %d\n' %(tot_data_num))
+
+  for i in range(line_6_num, whole_line_num+1, 1):
+    line_i = linecache.getline(inp_file_name, i)
+    restart_inp_file.write(line_i)
+
+  restart_inp_file.close()

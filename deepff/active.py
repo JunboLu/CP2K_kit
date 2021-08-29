@@ -69,6 +69,8 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
   Returns:
     init_train_data: 1-d string list
       init_train_data contains initial training data directories.
+    init_data_num : int
+      init_data_num is the number of data for initial training.
   '''
 
   if ( restart_iter == 0 ):
@@ -77,6 +79,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
 
   i = 0
   init_train_data = []
+  init_data_num = 0
   cmd = "mkdir %s" % ('init_train_data')
   if ( restart_iter == 0 ):
     call.call_simple_shell(work_dir, cmd)
@@ -86,6 +89,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
   for key in train_dic:
     if ( 'system' in key):
       save_dir = ''.join((work_dir, '/init_train_data/data_', str(i)))
+      init_train_data.append(save_dir)
       if ( restart_iter == 0 ):
         init_train_key_dir = train_dic[key]['directory']
         proj_name = train_dic[key]['proj_name']
@@ -93,13 +97,13 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
         end = train_dic[key]['end_frame']
         choosed_num = train_dic[key]['choosed_frame_num']
         parts = train_dic[key]['set_parts']
-        init_train_data.append(save_dir)
         load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
-        load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+        data_num = load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+        init_data_num = init_data_num+data_num
       else:
         if ( os.path.exists(save_dir) ):
-          pass
+          init_data_num = 0
         else:
           log_info.log_error('%s does not exist for training system %d' %(save_dir, i))
           exit()
@@ -108,7 +112,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
   if 'set_data_dir' in locals():
     init_train_data.append(os.path.abspath(set_data_dir))
 
-  return init_train_data
+  return init_train_data, init_data_num
 
 def write_active_data(work_dir, conv_iter):
 
@@ -296,8 +300,8 @@ def write_active_data(work_dir, conv_iter):
 #    dp_test.write_file(energy_cp2k, energy_lmp, frc_cp2k, force_lmp, frc_x_cp2k, force_x_lmp, \
 #                       frc_y_cp2k, force_y_lmp, frc_z_cp2k, force_z_lmp, sys_dir)
 
-def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-             init_train_data, work_dir, max_iter, restart_iter, host, device, usage):
+def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, \
+             restart_data_num, work_dir, max_iter, restart_iter, proc_num, host, device, usage):
 
   '''
   run_iter: run active learning iterations.
@@ -359,6 +363,9 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
   lmp_mpi_num = environ_dic['lmp_mpi_num']
   lmp_openmp_num = environ_dic['lmp_openmp_num']
 
+  data_num = []
+  data_num.append(restart_data_num)
+
   for i in range(restart_iter, max_iter, 1):
 
     print (''.join(('iter_', str(i))).center(80,'*'), flush=True)
@@ -396,7 +403,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
         tra_seed.append(np.random.randint(100000000))
 
     deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                               descr_seed, fit_seed, tra_seed, neuron, model_type)
+                               descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
     deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, device, usage, cuda_dir)
 
     print ('Step 2: lammps tasks', flush=True)
@@ -407,7 +414,7 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
     sys_num = len(atoms_type_dic_tot)
     lammps_run.run_lmpmd(work_dir, i, lmp_mpi_num, lmp_openmp_num, device[0])
     lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
-    lammps_run.run_lmpfrc(work_dir, i, parallel_exe, lmp_mpi_num)
+    lammps_run.run_lmpfrc(work_dir, i, parallel_exe, proc_num)
 
     ##Get force-force correlation and then choose new structures
     struct_index, success_ratio_sys, success_ratio = force_eval.choose_lmp_str(work_dir, i, atoms_type_dic_tot, atoms_num_tot, force_conv)
@@ -442,9 +449,12 @@ def run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
       cp2k_data_dir = ''.join((file_dir, '/data'))
       if ( os.path.exists(cp2k_data_dir) ):
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
-        load_data.raw_data_to_set(1, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+        train_data_num = load_data.raw_data_to_set(1, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+        data_num.append(train_data_num)
 
     print ('  Success: dump new raw data of cp2k', flush=True)
+    check_deepff.write_restart_inp(inp_file, i+1, sum(data_num), work_dir)
+
     if ( i == max_iter-1 ):
       log_info.log_error('Active learning does not converge')
       write_active_data(work_dir, i+1)
@@ -497,14 +507,19 @@ def kernel(work_dir, inp_file):
   restart_iter = force_eval_dic['restart_iter']
   train_stress = deepmd_dic['training']['train_stress']
 
-  init_train_data = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress)
+  init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress)
+
+  if ( restart_iter == 0 ):
+    restart_data_num = init_data_num
+  else:
+    restart_data_num = force_eval_dic['restart_data_num']
 
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):
     print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
-  run_iter(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, \
-           init_train_data, work_dir, max_iter, restart_iter, host, device, usage)
+  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, \
+           restart_data_num, work_dir, max_iter, restart_iter, proc_num, host, device, usage)
 
 if __name__ == '__main__':
 

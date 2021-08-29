@@ -1,6 +1,7 @@
 #! /usr/env/bin python
 
 import os
+from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 
 def upper_file(file_name, save_dir):
@@ -63,3 +64,33 @@ def space_file(file_name, space_char, save_dir):
   rev_file.close()
 
   return rev_file_name
+
+def grep_line_num(choosed_str, file_name, work_dir):
+
+  '''
+  grep_line_num : get the line number for a choosed string.
+
+  Args:
+    choosed_str: string
+      choosed_str is the choosed string.
+    file_name: string
+      file_name is the name of file.
+  Returns:
+    line_num : int
+      line_num is the line number for a choosed string.
+  '''
+
+  cmd = "grep -n %s %s" %(choosed_str, file_name)
+  line = call.call_returns_shell(work_dir, cmd)
+  line_num = int(line[0].split(':')[0])
+
+  return line_num
+
+if __name__ == '__main__':
+
+  choosed_line = "'&force_eval'"
+  file_name = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md/input.inp'
+  work_dir = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md'
+  line_num = grep_line_num(choosed_line, file_name, work_dir)
+  print (line_num)
+
