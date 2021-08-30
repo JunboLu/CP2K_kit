@@ -153,6 +153,9 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, us
     run = '''
 #! /bin/bash
 
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+
 direc=%s
 parallel_num=%d
 run_start=%d
@@ -165,8 +168,6 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num $direc/produce.sh {} $d
     produce = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
 export PATH=%s:$PATH
 
 x=$1
@@ -202,6 +203,9 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
     run = '''
 #! /bin/bash
 
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+
 direc=%s
 parallel_num=%d
 run_start=%d
@@ -214,8 +218,6 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {}
     produce = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
 export PATH=%s:$PATH
 
 x=$1
