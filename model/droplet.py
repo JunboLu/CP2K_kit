@@ -118,6 +118,7 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
         line = linecache.getline(file_name, index_first_atom[i]+pre_base+base+j)
         new_file.write(line)
 
+  linecache.clearcache()
   new_file.close()
 
 def droplet_run(droplet_param, work_dir):

@@ -130,6 +130,8 @@ def center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, center_ty
     for j in range(atoms_num):
       center_file.write('%3s%21.10f%20.10f%20.10f\n' \
                         %(atoms[j], new_coord[j,0], new_coord[j,1], new_coord[j,2]))
+
+  linecache.clearcache()
   center_file.close()
 
   return center_file_name

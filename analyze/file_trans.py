@@ -39,6 +39,7 @@ def xyz2pdb(transd_file, work_dir, file_name):
     pdb_file.write('%-6s%5d  %-3s %-3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' \
                    %('ATOM', i+1, atom_label, 'RES', 'A', 1, x, y, z, 1.00, 0.00, atom))
 
+  linecache.clearcache()
   pdb_file.close()
 
   return pdb_file_name
@@ -82,6 +83,7 @@ def pdb2xyz(transd_file, work_dir, file_name):
       total_atom_num = total_atom_num + 1
       xyz_file.write('%-3s%8s%8s%8s\n' %(line_split[11].strip('\n'), line_split[6], line_split[7], line_split[8]))
 
+  linecache.clearcache()
   xyz_file.close()
 
   xyz_file = open(xyz_file_name, 'r+')

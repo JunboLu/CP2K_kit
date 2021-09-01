@@ -23,6 +23,8 @@ def get_keyword(part_range, inp):
       keyword_index.append(i)
       keyword.append(line_i[index_1+1:index_2])
 
+  linecache.clearcache()
+
   return keyword, keyword_index
 
 def get_keyword_block(keyword, keyword_index):
@@ -181,6 +183,8 @@ def get_dump(keyword_block, keyword_block_index, inp):
               j_dic[line_k_split[0]] = line_k_split[1:len(line_k_split)]
           dump_dic[sub_key[j]] = j_dic
 
+  linecache.clearcache()
+
   return dump_dic
 
 def dump_info(work_dir, inp_file, f_key):
@@ -199,6 +203,8 @@ def dump_info(work_dir, inp_file, f_key):
       if ( keyword in line_i and '&' in line_i ):
         keyword_range.append(i+1)
     f_key_range.append(keyword_range)
+
+  linecache.clearcache()
 
   for i in range(len(f_key_range)):
     if ( len(f_key_range[i]) != 2):

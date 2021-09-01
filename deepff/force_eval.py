@@ -144,6 +144,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
           if ( min_dist > atom_cov_radii_plus*0.6 ):
             choosed_index.append(k)
 
+      linecache.clearcache()
       success_frames_i.append(success_frames_ij)
       struct_index_i[j] = choosed_index
       force_corr_dist_file.close()

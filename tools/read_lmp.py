@@ -54,6 +54,8 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   line_split = data_op.str_split(line, ' ')
   end_id = int(line_split[step_id])
 
+  linecache.clearcache()
+
   return atoms_num, frames_num, start_id, end_id, each
 
 def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene_return=False, \
@@ -228,5 +230,7 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
     if frc_return:
       frc_i_asc = data_op.order_list(frc_i, asc_index)
       frc.append(frc_i_asc)
+
+  linecache.clearcache()
 
   return atoms, energy, coord, vel, frc, cell

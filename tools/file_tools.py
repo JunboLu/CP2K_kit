@@ -80,9 +80,14 @@ def grep_line_num(choosed_str, file_name, work_dir):
       line_num is the line number for a choosed string.
   '''
 
+  line_num = []
   cmd = "grep -n %s %s" %(choosed_str, file_name)
   line = call.call_returns_shell(work_dir, cmd)
-  line_num = int(line[0].split(':')[0])
+  if ( len(line) != 0 ):
+    for i in range(len(line)):
+      line_num.append(int(line[i].split(':')[0]))
+  else:
+    line_num = 0
 
   return line_num
 

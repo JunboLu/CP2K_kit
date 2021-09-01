@@ -1,0 +1,220 @@
+&GLOBAL
+  PROJECT CONSTRAINT_MD
+  RUN_TYPE MD
+  PRINT_LEVEL low
+&END GLOBAL
+
+&MOTION
+  &MD  
+    ENSEMBLE NVT
+     STEPS 1
+    TIMESTEP 0.5
+    TEMPERATURE 300
+    &THERMOSTAT
+      TYPE  NOSE
+      REGION  GLOBAL
+      &NOSE
+        LENGTH  3
+        TIMECON  [fs]  50
+      &END NOSE
+    &END THERMOSTAT
+  &END MD
+  &PRINT
+     &TRAJECTORY
+       &EACH
+         MD               1
+       &END EACH
+     &END TRAJECTORY
+     &VELOCITIES 
+       &EACH
+         MD               1
+       &END EACH
+     &END VELOCITIES
+     &FORCES
+       &EACH
+         MD               1
+       &END EACH
+     &END FORCES
+     &STRUCTURE_DATA
+       &EACH
+         MD              1
+       &END EACH
+       DISTANCE 4 1
+       DISTANCE 6 1
+     &END STRUCTURE_DATA
+  &END PRINT
+&END MOTION
+
+&MULTIPLE_FORCE_EVALS
+  FORCE_EVAL_ORDER 1 2 3
+  MULTIPLE_SUBSYS T
+&END MULTIPLE_FORCE_EVALS
+
+&FORCE_EVAL
+  METHOD MIXED
+  &MIXED
+    GROUP_PARTITION 1 1
+    MIXING_TYPE GENMIX
+    &GENERIC
+      MIXING_FUNCTION (1-k)*X+k*Y
+      VARIABLES X Y
+      PARAMETERS k
+      VALUES 0.0
+    &END GENERIC
+  &END MIXED
+  &SUBSYS
+    &CELL
+       ABC [angstrom] 10.0000   10.0000   10.0000
+       PERIODIC none
+    &END CELL
+    &TOPOLOGY
+      COORD_FILE_NAME water.xyz
+      COORD_FILE_FORMAT xyz
+      &CENTER_COORDINATES
+      &END CENTER_COORDINATES
+    &END TOPOLOGY
+  &END SUBSYS
+&END FORCE_EVAL
+
+&FORCE_EVAL
+  METHOD Quickstep
+  &DFT
+     CHARGE 0
+     POTENTIAL_FILE_NAME  /home/lujunbo/bin/cp2k-8.2/data/GTH_POTENTIALS
+     BASIS_SET_FILE_NAME  /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     WFN_RESTART_FILE_NAME ./CONSTRAINT_MD-RESTART1.wfn
+    &POISSON
+      PERIODIC none
+      POISSON_SOLVER wavelet
+    &END POISSON
+    &MGRID
+      CUTOFF 300
+      NGRIDS 4
+      REL_CUTOFF 40
+    &END MGRID
+    &QS
+      EXTRAPOLATION ASPC
+      METHOD GPW
+    &END QS
+    &SCF
+      SCF_GUESS RESTART
+      EPS_SCF 1.0E-6
+      MAX_SCF 100
+      CHOLESKY INVERSE_DBCSR
+       &OT
+         PRECONDITIONER FULL_ALL
+         MINIMIZER  CG
+         LINESEARCH  2PNT
+       &END OT
+       &OUTER_SCF
+         EPS_SCF 1.0E-6
+         MAX_SCF 5
+       &END OUTER_SCF
+       &PRINT
+         &RESTART
+           FILENAME RESTART1
+         &END RESTART
+       &END PRINT
+    &END SCF
+
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+  &END DFT
+  &SUBSYS
+    &CELL
+      ABC [angstrom] 10.0000   10.0000   10.0000
+      PERIODIC none
+    &END CELL
+
+    &TOPOLOGY
+      COORD_FILE_NAME water.xyz
+      COORD_FILE_FORMAT xyz
+      &CENTER_COORDINATES
+      &END CENTER_COORDINATES
+    &END TOPOLOGY
+
+    &KIND O
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+    &KIND H
+     BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL
+
+&FORCE_EVAL
+  METHOD Quickstep
+  &DFT
+     CHARGE +1
+     POTENTIAL_FILE_NAME  /home/lujunbo/bin/cp2k-8.2/data/GTH_POTENTIALS
+     BASIS_SET_FILE_NAME  /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     WFN_RESTART_FILE_NAME ./CONSTRAINT_MD-RESTART2.wfn
+     MULTIPLICITY 2
+     UKS T
+    &POISSON
+      PERIODIC none
+      POISSON_SOLVER wavelet
+    &END POISSON
+    &MGRID
+      CUTOFF 300
+      NGRIDS 4
+      REL_CUTOFF 40
+    &END MGRID
+    &QS
+      EXTRAPOLATION ASPC
+      METHOD GPW
+    &END QS
+    &SCF
+      SCF_GUESS RESTART
+      EPS_SCF 1.0E-6
+      MAX_SCF 100
+      CHOLESKY INVERSE_DBCSR
+       &OT
+         PRECONDITIONER FULL_ALL
+         MINIMIZER  CG
+         LINESEARCH  2PNT
+       &END OT
+       &OUTER_SCF
+         EPS_SCF 1.0E-6
+         MAX_SCF 5
+       &END OUTER_SCF
+       &PRINT
+         &RESTART
+           FILENAME RESTART2
+         &END RESTART
+       &END PRINT
+    &END SCF
+
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+  &END DFT
+  &SUBSYS
+    &CELL
+      ABC [angstrom] 10.0000   10.0000   10.0000
+      PERIODIC none
+    &END CELL
+
+    &TOPOLOGY
+      COORD_FILE_NAME water.xyz
+      COORD_FILE_FORMAT xyz
+      &CENTER_COORDINATES
+      &END CENTER_COORDINATES
+    &END TOPOLOGY
+
+    &KIND O
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+    &KIND H
+     BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL
+

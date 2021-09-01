@@ -63,18 +63,27 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
   if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
     a = linecache.getline(file_name, pre_base+2)
     b = data_op.str_split(a, ' ')
-    start_frame_id = int(b[2].strip(','))
-    start_time = float(b[5].strip(','))
+    if ( len(b) > 5 ):
+      start_frame_id = int(b[2].strip(','))
+      start_time = float(b[5].strip(','))
+    else:
+      start_frame_id = 0
+      start_frame_time = 0.0
 
     if ( whole_line_num_1 > blocks_num+base+pre_base ):
       a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+2)
       b = data_op.str_split(a, ' ')
-      second_frame_id = int(b[2].strip(','))
-      second_time = float(b[5].strip(','))
+      if ( len(b) > 5 ):
+        second_frame_id = int(b[2].strip(','))
+        second_time = float(b[5].strip(','))
+      else:
+        second_frame_id = 0
+        second_time = 0.0
 
       a = linecache.getline(file_name, (frames_num_1-1)*(blocks_num+base)+pre_base+2)
       b = data_op.str_split(a, ' ')
-      end_frame_id = int(b[2].strip(','))
+      if ( len(b) > 5 ):
+        end_frame_id = int(b[2].strip(','))
     else:
       start_frame_id = 0
       end_frame_id = 0
@@ -139,6 +148,8 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
           if ( all( j+k+1 in atom_id_i and element[j+k] == group[i][k] for k in range(len(group[i]))) ):
             group_i_atom_1_id.append(j+1)
         group_atom_1_id.append(group_i_atom_1_id)
+
+  linecache.clearcache()
 
   if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
     if return_group:

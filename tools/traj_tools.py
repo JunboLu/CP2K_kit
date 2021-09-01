@@ -34,8 +34,11 @@ def get_block_base(file_name, file_type):
     base = 2
     line = linecache.getline(file_name, 2)
     line_split = data_op.str_split(line, ' ')
-    if ( data_op.eval_str(line_split[2].strip(',')) == 1 ):
-      file_start = int(line_split[2].strip(','))
+    if ( len(line_split) > 1 ):
+      if ( data_op.eval_str(line_split[2].strip(',')) == 1 ):
+        file_start = int(line_split[2].strip(','))
+      else:
+        file_start = 0
     else:
       file_start = 0
 
@@ -54,6 +57,8 @@ def get_block_base(file_name, file_type):
     line = linecache.getline(file_name, 2)
     line_split = data_op.str_split(line, ' ')
     file_start = int(line_split[0])
+
+  linecache.clearcache()
 
   if ( file_type == 'lagrange' ):
     b_num = 2
@@ -106,6 +111,8 @@ def find_breakpoint(file_name, file_type):
     if (frame_list != compare_list and frame_list != []):
       break
 
+  linecache.clearcache()
+
   return breakpoint
 
 def delete_duplicate(file_name, file_type):
@@ -134,6 +141,8 @@ def delete_duplicate(file_name, file_type):
     if ( file_type == 'mix_ener' or file_type == 'ener' ):
       line = linecache.getline(file_name, i*(blocks_num+base)+pre_base+1)
     total_line.append(line)
+
+  linecache.clearcache()
 
   duplicate = []
   for index, line in enumerate(total_line):
@@ -200,6 +209,8 @@ def choose_str(atoms_num, pre_base, base, each, init_step, end_step, start_frame
         line = linecache.getline(traj_coord_file, (init_step-start_frame_id+i)*(atoms_num+base)+k+pre_base+base)
         file_md.write(line)
 
+  linecache.clearcache()
+
   return choose_file
 
 def order_traj_file(atoms_num, frames_num, each, init_step, traj_file, file_type, order_list, work_dir, file_name):
@@ -244,6 +255,8 @@ def order_traj_file(atoms_num, frames_num, each, init_step, traj_file, file_type
       for k in order_list[j]:
         line_ijk = linecache.getline(traj_file, (base+atoms_num)*int((init_step-start_frame_id)/each+i)+base+k+pre_base)
         new_traj_file.write(line_ijk)
+
+  linecache.clearcache()
   new_traj_file.close()
 
   return new_traj_file_name

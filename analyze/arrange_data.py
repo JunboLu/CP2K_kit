@@ -50,6 +50,8 @@ def arrange_temp(frames_num, pre_base, time_step, traj_ener_file, work_dir, each
     line_i_split = data_op.str_split(line_i, ' ')
     temp.append(float(line_i_split[3])) #The temperature is in 4th row in energy file.
 
+  linecache.clearcache()
+
   temp_file = ''.join((work_dir, '/temperature.csv'))
   with open(temp_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
@@ -90,6 +92,8 @@ def arrange_pot(frames_num, pre_base, time_step, traj_ener_file, work_dir, each=
     line_i = linecache.getline(traj_ener_file, i+pre_base+1)
     line_i_split = data_op.str_split(line_i, ' ')
     pot.append(float(line_i_split[4])) #The potential energy is in 5th row in energy file. 
+
+  linecache.clearcache()
 
   pot_file = ''.join((work_dir, '/potential.csv')) #The energy unit is Hartree.
   with open(pot_file, 'w') as csvfile:
@@ -142,6 +146,8 @@ def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, traj_mul_file, w
         line_ij_split = data_op.str_split(line_ij, ' ')
         mulliken_i = mulliken_i + float(line_ij_split[6].strip('\n'))
       mulliken.append(mulliken_i)
+
+  linecache.clearcache()
 
   mulliken_file = ''.join((work_dir, '/mulliken.csv'))
   with open(mulliken_file, 'w') as csvfile:
@@ -223,6 +229,8 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
     vertical_ene.append(delta_ene)
     if ( slow_growth == 0 ):
       mix_ene.append(float(line_i_split[2]))
+
+  linecache.clearcache()
 
   vertical_ene_array = np.asfortranarray(vertical_ene, dtype='float32')
 
@@ -312,6 +320,8 @@ def arrange_ti_force(stat_num, lagrange_file):
     s_sum = s_sum+float(line_i_split[3].strip('\n'))
 
     sq_sum = sq_sum+(float(line_i_split[3].strip('\n')))**2
+
+  linecache.clearcache()
 
   s_avg = s_sum/stat_num
   sq_avg = np.sqrt(sq_sum/stat_num-s_sum**2/stat_num**2)/(np.sqrt(stat_num))

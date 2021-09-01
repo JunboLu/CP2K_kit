@@ -2,7 +2,6 @@
 
 import os
 import csv
-import linecache
 import numpy as np
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op

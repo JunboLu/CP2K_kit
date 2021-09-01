@@ -265,6 +265,8 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
       for j in range(atoms_num):
         frc_file.write('%3s%21.10f%20.10f%20.10f\n' %(atom_label[atom_type_asc[j]], frc_xyz_asc[j][0], frc_xyz_asc[j][1], frc_xyz_asc[j][2]))
 
+  linecache.clearcache()
+
   #Whether we should unwrap the lammps coordinate.
   if unwrap:
     if 'coord' in locals():

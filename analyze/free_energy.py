@@ -32,6 +32,8 @@ def ti_method(force_cmd_file):
     target_value.append(float(line_split[0]))
     force_value.append(float(line_split[1].strip('\n')))
 
+  linecache.clearcache()
+
   for i in range(total_num):
     sum_value = 0.0
     if (i == 0):

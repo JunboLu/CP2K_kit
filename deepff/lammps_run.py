@@ -64,6 +64,8 @@ def get_box_coord(box_file, coord_file):
         cell_vec_c.append(float(line_i_split[2]))
         cell_vec_c.append(float(line_i_split[3]))
 
+  linecache.clearcache()
+
   #Convert cell to triclinic cell. Triclinic cell just needs six parameter.
   #Triclinic cell: Lx, Ly, Lz, xy, xz, yz
 
@@ -110,6 +112,8 @@ def get_box_coord(box_file, coord_file):
       x.append(x_float_str)
       y.append(y_float_str)
       z.append(z_float_str)
+
+  linecache.clearcache()
 
   return tri_cell_vec, atoms, x, y, z
 
@@ -282,6 +286,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
         md_in_file.write('units           metal\n')
         md_in_file.write('boundary        p p p\n')
         md_in_file.write('atom_style      atomic\n')
+        md_in_file.write('timestep        ${TIME_STEP}\n')
         md_in_file.write('\n')
         md_in_file.write('neighbor        1.0 bin\n')
         md_in_file.write('neigh_modify every 1 delay 0 check yes\n')
@@ -316,7 +321,6 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
             md_in_file.write('fix             1 all %s temp ${TEMP} ${TEMP} ${TAU_T}\n' % (md_type))
           elif ( md_type == 'npt' ):
             md_in_file.write('fix             1 all %s temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n' % (md_type))
-        md_in_file.write('timestep        ${TIME_STEP}\n')
         md_in_file.write('run             ${NSTEPS}\n')
 
         md_in_file.close()
@@ -482,6 +486,8 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
             frc_in_file.write('run 0\n')
 
             frc_in_file.close()
+
+    linecache.clearcache()
 
 def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
 

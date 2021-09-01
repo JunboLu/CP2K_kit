@@ -74,6 +74,8 @@ def calc_v_hartree(cube_file, surface, work_dir):
         for l in range (len(line_split)):
           v_hartree[i,j,k*6+l] = float(line_split[l])
 
+  linecache.clearcache()
+
   v_hartree_array = np.asfortranarray(v_hartree,dtype='float32')
 
   if ( surface == [0,0,1] ):

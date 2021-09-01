@@ -42,6 +42,8 @@ def read_gpuinfo(work_dir, gpuinfo_file):
       mem_tot = float(line_2_split[10][0:line_2_split[10].index('M')])
       usage.append(mem_used/mem_tot)
 
+    linecache.clearcache()
+
   return device, usage
 
 def analyze_gpu(host, ssh, work_dir):

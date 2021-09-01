@@ -100,6 +100,8 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
         distance_i.append(list(dist))
     distance.append(distance_i)
 
+  linecache.clearcache()
+
   cmd = 'rm %s' %(center_file)
   call.call_simple_shell(work_dir, cmd)
 

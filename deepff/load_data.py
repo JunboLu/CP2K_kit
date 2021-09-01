@@ -57,6 +57,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
       line_i_split = data_op.str_split(line_i, ' ')
       atoms.append(line_i_split[0])
 
+    linecache.clearcache()
+
     atoms_type = data_op.list_replicate(atoms)
 
     atoms_dic = {}
@@ -105,6 +107,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
             else:
               frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
 
+          linecache.clearcache()
+
           vol = np.linalg.det(vec)
           frame_str = ''.join((frame_str, '\n'))
           box_file.write(frame_str)
@@ -125,6 +129,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
             else:
               frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
 
+          linecache.clearcache()
+
           frame_str = ''.join((frame_str, '\n'))
           coord_file.write(frame_str)
 
@@ -139,6 +145,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
               frame_str = ' '.join((str(f1), str(f2), str(f3)))
             else:
               frame_str = ' '.join((frame_str, str(f1), str(f2), str(f3)))
+
+          linecache.clearcache()
 
           frame_str = ''.join((frame_str, '\n'))
           force_file.write(frame_str)
@@ -159,6 +167,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
                 frame_str = ' '.join((stress_str_1, stress_str_2, stress_str_3))
               else:
                 frame_str = ' '.join((frame_str, stress_str_1, stress_str_2, stress_str_3))
+
+            linecache.clearcache()
 
             frame_str = ''.join((frame_str, '\n'))
             virial_file.write(frame_str)
@@ -249,6 +259,9 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
           frame_str = ' '.join((frame_str, line_i_split[j+2]))
       frame_str = ''.join((frame_str, '\n'))
       box_file.write(frame_str)
+
+    linecache.clearcache()
+
   else:
     if os.path.exists(restart_file):
       cmd = "grep -n %s %s" %("'&CELL'", os.path.abspath(restart_file))
@@ -261,6 +274,9 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
           frame_str = ' '.join((line_i_split[1], line_i_split[2], line_i_split[3].strip('\n')))
         else:
           frame_str = ' '.join((frame_str, line_i_split[1], line_i_split[2], line_i_split[3].strip('\n')))
+
+      linecache.clearcache()
+
       frame_str = ''.join((frame_str, '\n'))
       for i in range(len(choosed_index)):
         box_file.write(frame_str)
@@ -278,6 +294,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
     energy = float(line_i_split[len(line_i_split)-1].strip('\n'))*hartree_to_ev
     energy_file.write(''.join((str(energy),'\n')))
 
+  linecache.clearcache()
+
   #Dump element information
   type_file = open(''.join((save_dir, '/type.raw')), 'w')
   type_map_file = open(''.join((save_dir, '/type_map.raw')), 'w')
@@ -286,6 +304,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
     line_i = linecache.getline(md_pos_file, 2+i+1)
     line_i_split = data_op.str_split(line_i, ' ')
     atoms.append(line_i_split[0])
+
+  linecache.clearcache()
 
   atoms_type = data_op.list_replicate(atoms)
 
@@ -318,6 +338,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
     frame_str = ''.join((frame_str, '\n'))
     coord_file.write(frame_str)
 
+  linecache.clearcache()
   coord_file.close()
 
   #Dump force information
@@ -339,6 +360,9 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
 
       frame_str = ''.join((frame_str, '\n'))
       force_file.write(frame_str)
+
+    linecache.clearcache()
+
   else:
     log_info.log_error('There is no force trajectory file in %s' %(proj_dir))
     exit()
@@ -368,6 +392,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
             frame_str = ' '.join((frame_str, stress_j_str))
         frame_str = ''.join((frame_str, '\n'))
         virial_file.write(frame_str)
+
+      linecache.clearcache()
 
       virial_file.close()
     else:
@@ -423,6 +449,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
         no_train_frc_file.write(line_frc)
     no_train_pos_file.close()
     no_train_frc_file.close()
+
+  linecache.clearcache()
 
 def read_raw_data(data_dir):
 

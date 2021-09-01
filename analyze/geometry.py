@@ -119,6 +119,8 @@ def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp
     coord_atom[i,2] = float(line_i_split[3].strip('\n'))
     atom.append(line_i_split[0])
 
+  linecache.clearcache()
+
   coord_atom_exp = geometry_mod.geometry.expand_cell(np.asfortranarray(coord_atom, dtype='float32'), \
                                                      np.asfortranarray(a_vec, dtype='float32'), \
                                                      np.asfortranarray(b_vec, dtype='float32'), \
@@ -212,6 +214,8 @@ def bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each
     coord_atom_2[i,1] = float(line_i_2_split[2])
     coord_atom_2[i,2] = float(line_i_2_split[3].strip('\n'))
 
+  linecache.clearcache()
+
   distance = geometry_mod.geometry.calculate_distance(coord_atom_1, coord_atom_2, a_vec, b_vec, c_vec)
   distance_avg, sigma = statistic_mod.statistic.numerical_average(distance)
 
@@ -301,6 +305,8 @@ def bond_angle_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each,
     coord_atom_3[i,0] = float(c_atom_3[1])
     coord_atom_3[i,1] = float(c_atom_3[2])
     coord_atom_3[i,2] = float(c_atom_3[3].strip('\n'))
+
+  linecache.clearcache()
 
   angle = geometry_mod.geometry.calculate_angle(coord_atom_1, coord_atom_2, coord_atom_3)
   angle_avg, sigma = statistic_mod.statistic.numerical_average(angle)
@@ -419,6 +425,8 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, tra
       for k in order_list[j]:
         line_ijk = linecache.getline(traj_coord_file, (base+atoms_num)*i+base+k+pre_base)
         new_traj_file.write(line_ijk)
+
+  linecache.clearcache()
 
   return new_file_name, order_list
 
@@ -562,6 +570,8 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
     pattern_2.append(id_list_sort[0])
     pattern_3.append(id_list_sort[1])
 
+  linecache.clearcache()
+
   order = []
   order.append(pattern_1[0])
   order.append(pattern_2[0])
@@ -638,6 +648,8 @@ def geometry_run(geometry_param, work_dir):
       atoms_type_j, coord_num_j = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
       for j in range(len(atoms_type)):
         coord_num_tot[j] = coord_num_tot[j] + coord_num_j[j]
+
+    linecache.clearcache()
 
     for i in range(len(atoms_type)):
       print ('Atom type %s is: %d' %(atoms_type[i], int(coord_num_tot[i]/frames_num_stat)), flush=True)

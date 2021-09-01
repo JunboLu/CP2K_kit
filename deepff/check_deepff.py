@@ -2,6 +2,7 @@
 
 import os
 import linecache
+from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import file_tools
@@ -351,7 +352,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
             exit()
       elif ( deepmd_dic['training']['model_type'] == 'use_seed' ):
         if ( all(data_op.eval_str(j) == 1 for j in neuron_list) ):
-          neuron = [int(x) for x in neuron_str]
+          neuron = [int(x) for x in neuron]
         else:
           log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd/training/neuron')
           exit()
@@ -971,12 +972,12 @@ def write_restart_inp(inp_file_name, restart_iter, tot_data_num, work_dir):
 
   whole_line_num = len(open(inp_file_name).readlines())
 
-  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_file_name, work_dir)
-  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_file_name, work_dir)
-  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_file_name, work_dir)
-  line_4_num = file_tools.grep_line_num("'force_conv'", inp_file_name, work_dir)
-  line_5_num = file_tools.grep_line_num("'max_iter'", inp_file_name, work_dir)
-  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_file_name, work_dir)
+  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_file_name, work_dir)[0]
+  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_file_name, work_dir)[0]
+  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_file_name, work_dir)[0]
+  line_4_num = file_tools.grep_line_num("'force_conv'", inp_file_name, work_dir)[0]
+  line_5_num = file_tools.grep_line_num("'max_iter'", inp_file_name, work_dir)[0]
+  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_file_name, work_dir)[0]
 
   restart_inp_file = open(restart_inp_file_name, 'w')
   for i in range(line_1_num):
@@ -994,4 +995,5 @@ def write_restart_inp(inp_file_name, restart_iter, tot_data_num, work_dir):
     line_i = linecache.getline(inp_file_name, i)
     restart_inp_file.write(line_i)
 
+  linecache.clearcache()
   restart_inp_file.close()

@@ -173,6 +173,8 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     y_tot.append(y_i)
     z_tot.append(z_i)
 
+  linecache.clearcache()
+
   cmd = "cp %s %s" %(dpff_file, work_dir)
   call.call_simple_shell(work_dir, cmd)
 
@@ -282,6 +284,8 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_x_cp2k.append(frc_x_cp2k_i)
     frc_y_cp2k.append(frc_y_cp2k_i)
     frc_z_cp2k.append(frc_z_cp2k_i)
+
+  linecache.clearcache()
 
   write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp, \
              frc_y_cp2k, frc_y_lmp, frc_z_cp2k, frc_z_lmp, work_dir)
@@ -405,6 +409,8 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, c
     frc_x_lmp.append(frc_x_lmp_i)
     frc_y_lmp.append(frc_y_lmp_i)
     frc_z_lmp.append(frc_z_lmp_i)
+
+  linecache.clearcache()
 
   write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp, \
              frc_y_cp2k, frc_y_lmp, frc_z_cp2k, frc_z_lmp, work_dir)

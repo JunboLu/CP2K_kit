@@ -73,6 +73,8 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
     atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
     coord = dynamic_mod.dynamic.remove_coord_com(coord,atom_mass_array)
 
+  linecache.clearcache()
+
   einstein_sum = dynamic_mod.dynamic.diffusion_einstein_sum(coord, max_frame_corr)
 
   msd_file = ''.join((work_dir, '/', file_name))
@@ -130,6 +132,9 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
       vel[i,j,0] = float(line_ij_split[1])
       vel[i,j,1] = float(line_ij_split[2])
       vel[i,j,2] = float(line_ij_split[3].strip('\n'))
+
+  linecache.clearcache()
+
   #Here we use non-normalized velocity time correlation function.
   normalize = 0
 

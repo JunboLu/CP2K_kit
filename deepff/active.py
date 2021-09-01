@@ -343,7 +343,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
     cmd = "rm -rf %s" % (iter_restart)
     call.call_simple_shell(work_dir, cmd)
 
-  np.random.seed(12345678)
+  np.random.seed(1234567890)
 
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
@@ -388,9 +388,9 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
       fit_seed = []
       tra_seed = []
       for j in range(seed_num):
-        descr_seed.append(np.random.randint(100000000))
-        fit_seed.append(np.random.randint(100000000))
-        tra_seed.append(np.random.randint(100000000))
+        descr_seed.append(np.random.randint(10000000000))
+        fit_seed.append(np.random.randint(10000000000))
+        tra_seed.append(np.random.randint(10000000000))
 
     if ( model_type == 'use_node' ):
       descr_seed = []
@@ -398,9 +398,9 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
       tra_seed = []
 
       for j in range(len(neuron)):
-        descr_seed.append(np.random.randint(100000000))
-        fit_seed.append(np.random.randint(100000000))
-        tra_seed.append(np.random.randint(100000000))
+        descr_seed.append(np.random.randint(10000000000))
+        fit_seed.append(np.random.randint(10000000000))
+        tra_seed.append(np.random.randint(10000000000))
 
     deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
@@ -491,6 +491,8 @@ def kernel(work_dir, inp_file):
     proc_num = int(multiprocessing.cpu_count()/2)
     host = [platform.node()]
     ssh = False
+
+  linecache.clearcache()
 
   device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 

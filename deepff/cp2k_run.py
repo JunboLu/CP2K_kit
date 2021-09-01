@@ -208,6 +208,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_space))
 
+      linecache.clearcache()
+
     else:
       for i in atoms_type:
         std_inp_file.write(''.join(('    &KIND ', i, '\n')))
@@ -370,6 +372,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
             z_str = line_jk_split[4].strip('\n')
             coord_j.append([atom_name,x_str,y_str,z_str])
 
+          linecache.clearcache()
           coord.append(coord_j)
 
     gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, train_stress)

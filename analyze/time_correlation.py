@@ -68,6 +68,9 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
       data[i,j,0] = float(line_ij_split[1])
       data[i,j,1] = float(line_ij_split[2])
       data[i,j,2] = float(line_ij_split[3].strip('\n'))
+
+  linecache.clearcache()
+
   data_tcf = dynamic_mod.dynamic.time_correlation(data, max_frame_corr, normalize)
 
   tcf_file = ''.join((work_dir, '/', file_name))
@@ -181,6 +184,8 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
       Q3_data[i,j,0] = q3[0]
       Q3_data[i,j,1] = q3[1]
       Q3_data[i,j,2] = q3[2]
+
+  linecache.clearcache()
 
   data_q1_tcf = dynamic_mod.dynamic.time_correlation(Q1_data, max_frame_corr, normalize)
   data_q2_tcf = dynamic_mod.dynamic.time_correlation(Q2_data, max_frame_corr, normalize)

@@ -69,9 +69,12 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   batch_size = deepmd_param['training']['batch_size']
   epoch_num = deepmd_param['training']['epoch_num']
   stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
-  decay_step = math.ceil(int(tot_data_num/batch_size)/1000)*1000
+  decay_steps = math.ceil(int(tot_data_num/batch_size)/1000)*1000
 
-  deepmd_param['learning_rate']['decay_step'] = decay_step
+  if ( stop_batch < batch_size*200 ):
+    stop_batch = batch_size*200
+
+  deepmd_param['learning_rate']['decay_steps'] = decay_steps
   deepmd_param['training'].pop('epoch_num')
   deepmd_param['training']['stop_batch'] = stop_batch
 

@@ -90,6 +90,8 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
     rmsd_value = rmsd_mod.rmsd.get_rmsd(coord_comp,coord_ref,coord_comp_center,coord_ref_center,eigen_max)
     rmsd_value_list.append(rmsd_value)
 
+  linecache.clearcache()
+
   return rmsd_value_list
 
 def rmsd_run(rmsd_param, work_dir):
