@@ -48,21 +48,15 @@
       set_prefix set    
       stop_batch 40000
       batch_size auto
-      disp_file lcurve.out
       disp_freq 100
       numb_test 5
       save_freq 1000
-      save_ckpt model.ckpt
-      load_ckpt model.ckpt
-      disp_training true
-      time_training true
-      profiling false
-      profiling_file timeline.json
     &end training
   &end deepmd
 
   &lammps
     nsteps 100000
+    write_restart_freq 10
     thermo_freq 200
     dump_freq 200
     time_step 0.0005
@@ -109,7 +103,6 @@
     parallel_exe /home/lujunbo/bin/parallel/bin/parallel
     lmp_mpi_num 4
     lmp_openmp_num 2
-    cp2k_mpi_num 4
     cp2k_job_num 2
   &end environ
 &end deepff

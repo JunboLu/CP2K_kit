@@ -15,7 +15,7 @@ from CP2K_kit.tools import log_info
 hartree_to_ev = 27.211396641308
 ang_to_bohr = 1.8897259886
 
-def load_data_from_sepfile(file_dir, file_prefix, proj_name):
+def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic):
 
   '''
   load_data_from_sepfile: load training data from separate files.
@@ -39,7 +39,6 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
     call.call_simple_shell(file_dir, cmd)
     save_dir = ''.join((file_dir, '/data'))
     type_file = open(''.join((save_dir, '/type.raw')), 'w')
-    type_map_file = open(''.join((save_dir, '/type_map.raw')), 'w')
     box_file = open(''.join((save_dir, '/box.raw')), 'w')
     force_file = open(''.join((save_dir, '/force.raw')), 'w')
     coord_file = open(''.join((save_dir, '/coord.raw')), 'w')
@@ -59,21 +58,11 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
 
     linecache.clearcache()
 
-    atoms_type = data_op.list_replicate(atoms)
-
-    atoms_dic = {}
-    for i in range(len(atoms_type)):
-      atoms_dic[atoms_type[i]] = i
-
     for i in range(atoms_num):
-      atom_type_index = atoms_dic[atoms[i]]
+      atom_type_index = tot_atoms_type_dic[atoms[i]]
       type_file.write(''.join((str(atom_type_index), '\n')))
 
-    for i in range(len(atoms_type)):
-      type_map_file.write(''.join((atoms_type[i], '\n')))
-
     type_file.close()
-    type_map_file.close()
 
     for i in range(task_num):
 
@@ -183,7 +172,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name):
       cmd = "rm %s" % (''.join((save_dir, '/virial.raw')))
       call.call_simple_shell(save_dir, cmd)
 
-def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress):
+def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress, tot_atoms_type_dic):
 
   '''
   load_data_from_dir: load initial training data from cp2k calculation directory.
@@ -240,6 +229,14 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
         np.random.shuffle(total_index_array)
         #random.shuffle(total_index)
         choosed_index = list(total_index_array[0:choosed_num])
+
+  if ( start < start_id ):
+    log_info.log_error('Input error: start is less than the starting frame id in trajectory, please check or reset deepff/deepmd/training/system/start')
+    exit()
+
+  if ( end > end_id ):
+    log_info.log_error('Input error: end is larger than the endding frame id in trajectory, please check or reset deepff/deepmd/training/system/end')
+    exit()
 
   #Dump box information
   box_file = open(''.join((save_dir, '/box.raw')),'w')
@@ -298,7 +295,6 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
 
   #Dump element information
   type_file = open(''.join((save_dir, '/type.raw')), 'w')
-  type_map_file = open(''.join((save_dir, '/type_map.raw')), 'w')
   atoms = []
   for i in range(atoms_num):
     line_i = linecache.getline(md_pos_file, 2+i+1)
@@ -307,21 +303,9 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
 
   linecache.clearcache()
 
-  atoms_type = data_op.list_replicate(atoms)
-
-  atoms_type_dic = {}
-  for i in range(len(atoms_type)):
-    atoms_type_dic[atoms_type[i]] = i
-
   for i in range(atoms_num):
-    atom_type = atoms_type_dic[atoms[i]]
-    type_file.write(''.join((str(atom_type), '\n')))
-
-  for i in range(len(atoms_type)):
-    type_map_file.write(''.join((atoms_type[i], '\n')))
-
-  type_file.close()
-  type_map_file.close()
+    atom_type_index = tot_atoms_type_dic[atoms[i]]
+    type_file.write(''.join((str(atom_type_index), '\n')))
 
   #Dump coordination information
   coord_file = open(''.join((save_dir, '/coord.raw')), 'w')
@@ -344,7 +328,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   #Dump force information
   force_file = open(''.join((save_dir, '/force.raw')), 'w')
   md_frc_file = ''.join((proj_dir, '/', proj_name, '-frc-1.xyz'))
-  if os.path.exists(md_pos_file):
+  if os.path.exists(md_frc_file):
     for i in range(len(choosed_index)):
       frame_str = ''
       for j in range(atoms_num):
@@ -625,5 +609,3 @@ if __name__ == '__main__':
   save_dir = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2_metad/iter_1/03.cp2k_calc/sys_0/data'
 #  load_data.load_data_from_dir('/home/lujunbo/WORK/Deepmd/deepmd-kit/64_H2O', work_dir, save_dir, 'WATER')
   load_data.raw_to_set(save_dir, 1)
-
-

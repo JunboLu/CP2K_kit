@@ -47,9 +47,10 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   deepmd_param = copy.deepcopy(deepmd_dic)
 
   iter_dir = ''.join((work_dir, '/iter_', str(iter_id)))
-  cmd = "mkdir %s" % ('01.train')
-  call.call_simple_shell(iter_dir, cmd)
   train_dir = ''.join(iter_dir + '/01.train')
+  if ( not os.path.exists(train_dir) ):
+    cmd = "mkdir %s" % ('01.train')
+    call.call_simple_shell(iter_dir, cmd)
 
   data_dir = copy.deepcopy(init_train_data)
   if ( iter_id > 0 ):
@@ -71,8 +72,8 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
   decay_steps = math.ceil(int(tot_data_num/batch_size)/1000)*1000
 
-  if ( stop_batch < batch_size*200 ):
-    stop_batch = batch_size*200
+  if ( stop_batch < decay_steps*200 ):
+    stop_batch = decay_steps*200
 
   deepmd_param['learning_rate']['decay_steps'] = decay_steps
   deepmd_param['training'].pop('epoch_num')
@@ -107,8 +108,10 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
 
   elif ( model_type == 'use_node' ):
     for i in range(len(neuron)):
-      cmd = "mkdir %s" % (str(i))
-      call.call_simple_shell(train_dir, cmd)
+      model_dir = ''.join((train_dir, '/', str(i)))
+      if ( not os.path.exists(model_dir) ):
+        cmd = "mkdir %s" % (str(i))
+        call.call_simple_shell(train_dir, cmd)
       deepmd_param_i = copy.deepcopy(deepmd_param)
       deepmd_param_i['model']['descriptor']['seed'] = descr_seed[i]
       deepmd_param_i['model']['fitting_net']['seed'] = fit_seed[i]
@@ -116,7 +119,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       deepmd_param_i['model']['fitting_net']['neuron'] = neuron[i]
       json_str = json.dumps(deepmd_param_i, indent=4)
 
-      with open(''.join((train_dir, '/', str(i), '/', 'input.json')), 'w') as json_file:
+      with open(''.join((model_dir, '/input.json')), 'w') as json_file:
         json_file.write(json_str)
 
 def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, usage, cuda_dir):
@@ -149,8 +152,18 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, us
   #point calculation.
 
   model_num = end-start+1
-  dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')[0]
-  dp_path = dp_exe[:-3]
+  dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')
+  if ( len(dp_exe) == 0 ):
+    log_info.log_error('Envrionment error: can not find dp executable file, please set the environment for deepmd-kit')
+    exit()
+  else:
+    dp_path = dp_exe[0][:-7]
+
+  model_num = end-start+1
+  if ( all(os.path.exists(''.join((deepmd_train_dir, '/', str(i), '/model.ckpt.index'))) for i in range(model_num)) ):
+    dp_cmd = 'dp train --restart model.ckpt input.json 1>> log.out 2>> log.err'
+  else:
+    dp_cmd = 'dp train input.json 1> log.out 2> log.err'
 
   if ( len(host) == 1 and len(device[0]) == 0 ):
     run = '''
@@ -171,15 +184,17 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num $direc/produce.sh {} $d
     produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 x=$1
 direc=$2
 cd $direc/$x
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path)
+''' %(dp_path, dp_cmd)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
     with open(run_file, 'w') as f:
@@ -221,15 +236,17 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {}
     produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 x=$1
 direc=$2
 cd $direc/$x
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path)
+''' %(dp_path, dp_cmd)
 
     run_file = ''.join((deepmd_train_dir, '/run.sh'))
     with open(run_file, 'w') as f:
@@ -249,7 +266,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
     run = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
@@ -258,9 +278,9 @@ export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
 export KMP_BLOCKTIME=0
 export KMP_AFFINITY=granularity=fine,verbose,compact,1,0
 
-dp train input.json 1> out 2> err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, cuda_dir)
+''' %(dp_path, cuda_dir, dp_cmd)
     for i in range(model_num):
       deepmd_train_i_dir = ''.join((deepmd_train_dir, '/', str(i)))
       run_file = ''.join((deepmd_train_i_dir, '/run.sh'))
@@ -302,7 +322,9 @@ for i in "${model_device_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parall
       produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
@@ -319,10 +341,9 @@ x_arr=(${x///})
 export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path, cuda_dir)
+''' %(dp_path, cuda_dir, dp_cmd)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file, 'w') as f:
@@ -368,7 +389,9 @@ for i in "${model_device_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parall
         produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
@@ -385,10 +408,9 @@ x_arr=(${x///})
 export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path, cuda_dir)
+''' %(dp_path, cuda_dir, dp_cmd)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file, 'w') as f:
@@ -452,7 +474,9 @@ for i in "${model_device_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parall
       produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
@@ -467,10 +491,9 @@ direc=$2
 export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path, cuda_dir)
+''' %(dp_path, cuda_dir, dp_cmd)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file, 'w') as f:
@@ -521,7 +544,9 @@ for i in "${model_device_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parall
         produce = '''
 #! /bin/bash
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
@@ -538,10 +563,9 @@ x_arr=(${x///})
 export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 
 cd $direc/${x_arr[0]}
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(dp_path, cuda_dir)
+''' %(dp_path, cuda_dir, dp_cmd)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file, 'w') as f:
@@ -591,15 +615,16 @@ CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 x=$1
 direc=$2
 cd $direc/$x
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(cuda_dir, dp_path)
+''' %(cuda_dir, dp_path, dp_cmd)
 
       run_file = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file, 'w') as f:
@@ -640,15 +665,16 @@ CUDA_DIR=%s
 export PATH=$CUDA_DIR/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_DIR/lib64:$LD_LIBRARY_PATH
 
-export PATH=%s:$PATH
+dp_path=%s
+export PATH=$dp_path/bin:$PATH
+export LD_LIBRARY_PATH=$dp_path/lib:$LD_LIBRARY_PATH
 
 x=$1
 direc=$2
 cd $direc/$x
-dp train input.json 1> log.out 2> log.err
+%s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-
-''' %(cuda_dir, dp_path)
+''' %(cuda_dir, dp_path, dp_cmd)
 
         run_file = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file, 'w') as f:

@@ -65,7 +65,7 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
 
   m = 0
   while True:
-    inp_trans_file_name = ''.join(('input_mix_', str(m), '.inp'))
+    inp_trans_file_name = ''.join(('input_mix', str(m), '.inp'))
     inp_trans_file_name_abs = ''.join((work_dir, '/', inp_trans_file_name))
     if ( os.path.exists(inp_trans_file_name_abs) ):
       m = m+1
@@ -133,15 +133,13 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
         else:
           log_info.log_error('Input error: GROUP_PARTITION should be two integer in cp2k mixing force_eval file')
           exit()
-      cmd = "rm %s" %(upper_file_name_abs)
-      call.call_simple_shell(work_dir, cmd)
       cmd = "sed -ie '%ds/.*/%s %f/' %s" %(value_line_num, '     VALUES ', target_value, restart_file_name)
       call.call_simple_shell(work_dir, cmd)
       cmd = "cp %s %s" %(restart_file_name, inp_trans_file_name)
       call.call_simple_shell(work_dir, cmd)
       cmd = "cp %s %s" %(restart_file_name, 'RESTART_BAK_FILE')
       call.call_simple_shell(work_dir, cmd)
-      cmd = "rm %s*" %(restart_file_name)
+      cmd = "rm %s* %s" %(restart_file_name, upper_file_name_abs)
       call.call_simple_shell(work_dir, cmd)
     else:
       log_info.log_error('cp2k running error for step %d' %(i-1))

@@ -9,6 +9,7 @@ from CP2K_kit.tools import read_input
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
+from CP2K_kit.tools import traj_info
 from CP2K_kit.deepff import check_deepff
 from CP2K_kit.deepff import load_data
 from CP2K_kit.deepff import deepmd_run
@@ -52,7 +53,45 @@ def dump_input(work_dir, inp_file, f_key):
 
   return deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic
 
-def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
+def get_atoms_type(deepmd_dic):
+
+  '''
+  get_atoms_type: get atoms type for total systems
+
+  Args:
+    deepmd_dic: dictionary
+      deepmd_dic contains keywords used in deepmd.
+  Returns:
+    tot_atoms_type_dic: dictionary
+      Example: {'O':0, 'H':1}
+  '''
+
+  import linecache
+
+  atoms_type = []
+  train_dic = deepmd_dic['training']
+  for key in train_dic:
+    if ( 'system' in key ):
+      proj_dir =  train_dic[key]['directory']
+      proj_name = train_dic[key]['proj_name']
+      md_coord_file = ''.join((proj_dir, '/', proj_name, '-pos-1.xyz'))
+      if ( os.path.exists(md_coord_file) ):
+        atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+        traj_info.get_traj_info(md_coord_file, 'coord')
+        atoms = []
+        for i in range(atoms_num):
+          line_i = linecache.getline(md_coord_file, i+3)
+          line_i_split = data_op.str_split(line_i, ' ')
+          atoms.append(line_i_split[0])
+        linecache.clearcache()
+        atoms_type.append(data_op.list_replicate(atoms))
+
+  tot_atoms_type = data_op.list_reshape(atoms_type)
+  final_atoms_type = data_op.list_replicate(tot_atoms_type)
+
+  return final_atoms_type
+
+def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic):
 
   '''
   dump_init_data: load initial training data.
@@ -97,7 +136,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress):
         end = train_dic[key]['end_frame']
         choosed_num = train_dic[key]['choosed_frame_num']
         parts = train_dic[key]['set_parts']
-        load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress)
+        load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress, tot_atoms_type_dic)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         data_num = load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
         init_data_num = init_data_num+data_num
@@ -259,54 +298,15 @@ def write_active_data(work_dir, conv_iter):
     frc_traj_file.close()
     cell_traj_file.close()
 
-#    frc_lmp = []
-#    frc_x_lmp = []
-#    frc_y_lmp = []
-#    frc_z_lmp = []
-
-#    for j in range(conv_iter):
-#      iter_dir = ''.join((work_dir, '/iter_', str(j)))
-#      lmp_sys_dir = ''.join((iter_dir, '/02.lammps_calc/sys_', str(i)))
-#      struct_index_sys = struct_index_tot[j][i]
-#      for key in struct_index_sys:
-#        task_dir = ''.join((lmp_sys_dir, '/task_', str(key)))
-#        lmp_log_file = ''.join((task_dir, '/log.lammps'))
-#        lmp_traj_file = ''.join((task_dir, '/atom.dump'))
-#        atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(lmp_traj_file, lmp_log_file)
-#        frames = struct_index_sys[key]
-#        frames = [x*each for x in frames]
-
-#        atoms, energy_lmp, pos_lmp, vel_lmp, frc_lmp, cell = \
-#        read_lmp.read_lmp_log_traj(lmp_traj_file, lmp_log_file, {}, frames, True, False, False, True, False)
-
-#        for k in range(len(frames)):
-#          force_lmp_k = []
-#          force_x_lmp_k = []
-#          force_y_lmp_k = []
-#          force_z_lmp_k = []
-#          for l in range(len(frc_lmp[k])):
-#            force_lmp_k.append(frc_lmp[k][l][0])
-#            force_lmp_k.append(frc_lmp[k][l][1])
-#            force_lmp_k.append(frc_lmp[k][l][2])
-#            force_x_lmp_k.append(frc_lmp[k][l][0])
-#            force_y_lmp_k.append(frc_lmp[k][l][1])
-#            force_z_lmp_k.append(frc_lmp[k][l][2])
-
-#          force_lmp.append(force_lmp_k)
-#          force_x_lmp.append(force_x_lmp_k)
-#          force_y_lmp.append(force_y_lmp_k)
-#          force_z_lmp.append(force_z_lmp_k)
-
-#    dp_test.write_file(energy_cp2k, energy_lmp, frc_cp2k, force_lmp, frc_x_cp2k, force_x_lmp, \
-#                       frc_y_cp2k, force_y_lmp, frc_z_cp2k, force_z_lmp, sys_dir)
-
-def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, \
-             restart_data_num, work_dir, max_iter, restart_iter, proc_num, host, device, usage):
+def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, restart_data_num, \
+             restart_stage, work_dir, max_iter, restart_iter, tot_atoms_type_dic, proc_num, host, device, usage):
 
   '''
   run_iter: run active learning iterations.
 
   Args:
+    inp_file: string
+      inp_file is the input file of CP2K_kit.
     deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
     lammps_dic: dictionary
@@ -319,12 +319,18 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
       environ_dic contains keywords used in environment.
     init_train_data: 1-d string list
       init_train_data contains initial training data directories.
+    restart_data_num: int
+      restart_data_num is the data number in restart step.
+    restart_stage: int
+      restart_stage is the stage of restart.
     work_dir: string
       work_dir is working directory of CP2K_kit.
     max_iter: int
       max_iter is the maxium iterations for active learning.
     restart_iter: int
       restart_iter is the iteration number of restart.
+    proc_num: int
+      proc_num is the number of processors.
     host: 1-d string list
       host is the name of host of computational nodes.
     device: 2-d string list
@@ -334,14 +340,6 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
   Returns:
     none
   '''
-
-  import os
-
-  iter_restart = ''.join(('iter_', str(restart_iter)))
-  iter_restart_dir = ''.join((work_dir, '/iter_', str(restart_iter)))
-  if ( os.path.exists(iter_restart_dir) ):
-    cmd = "rm -rf %s" % (iter_restart)
-    call.call_simple_shell(work_dir, cmd)
 
   np.random.seed(1234567890)
 
@@ -358,7 +356,6 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
   cp2k_env_file = environ_dic['cp2k_env_file']
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
-  cp2k_mpi_num = environ_dic['cp2k_mpi_num']
   cp2k_job_num = environ_dic['cp2k_job_num']
   lmp_mpi_num = environ_dic['lmp_mpi_num']
   lmp_openmp_num = environ_dic['lmp_openmp_num']
@@ -371,89 +368,104 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
     print (''.join(('iter_', str(i))).center(80,'*'), flush=True)
 
     #Generate iteration directory
-    cmd = "mkdir %s" % (''.join(('iter_', str(i))))
-    call.call_simple_shell(work_dir, cmd)
+    iter_restart = ''.join(('iter_', str(i)))
+    iter_restart_dir = ''.join((work_dir, '/', iter_restart))
 
-    print ('Step 1: deepmd-kit tasks', flush=True)
+    if ( not os.path.exists(iter_restart_dir) ):
+      cmd = "mkdir %s" % (iter_restart)
+      call.call_simple_shell(work_dir, cmd)
 
-    ##Perform deepmd calculation
+    if ( restart_stage == 0 ):
+      #Perform deepmd calculation
+      print ('Step 1: deepmd-kit tasks', flush=True)
 
-    #For different model_type, seed and neuron are different.
-    if ( model_type == 'use_seed' ):
-      if ( 'seed_num' in deepmd_dic['training'].keys() ):
-        seed_num = int(deepmd_dic['training']['seed_num'])
-      else:
-        seed_num = 4
-      descr_seed = []
-      fit_seed = []
-      tra_seed = []
-      for j in range(seed_num):
-        descr_seed.append(np.random.randint(10000000000))
-        fit_seed.append(np.random.randint(10000000000))
-        tra_seed.append(np.random.randint(10000000000))
+      #For different model_type, seed and neuron are different.
+      if ( model_type == 'use_seed' ):
+        if ( 'seed_num' in deepmd_dic['training'].keys() ):
+          seed_num = int(deepmd_dic['training']['seed_num'])
+        else:
+          seed_num = 4
+        descr_seed = []
+        fit_seed = []
+        tra_seed = []
+        for j in range(seed_num):
+          descr_seed.append(np.random.randint(10000000000))
+          fit_seed.append(np.random.randint(10000000000))
+          tra_seed.append(np.random.randint(10000000000))
 
-    if ( model_type == 'use_node' ):
-      descr_seed = []
-      fit_seed = []
-      tra_seed = []
+      if ( model_type == 'use_node' ):
+        descr_seed = []
+        fit_seed = []
+        tra_seed = []
 
-      for j in range(len(neuron)):
-        descr_seed.append(np.random.randint(10000000000))
-        fit_seed.append(np.random.randint(10000000000))
-        tra_seed.append(np.random.randint(10000000000))
+        for j in range(len(neuron)):
+          descr_seed.append(np.random.randint(10000000000))
+          fit_seed.append(np.random.randint(10000000000))
+          tra_seed.append(np.random.randint(10000000000))
 
-    deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                               descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
-    deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, device, usage, cuda_dir)
+      deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
+                                 descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
+      deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, device, usage, cuda_dir)
+      check_deepff.write_restart_inp(inp_file, i, 1, sum(data_num), work_dir)
 
-    print ('Step 2: lammps tasks', flush=True)
+    if ( restart_stage == 0 or restart_stage == 1 ):
+      #Perform lammps calculations
+      print ('Step 2: lammps tasks', flush=True)
 
-    ##Perform lammps calculation
-    atoms_type_dic_tot, atoms_num_tot = \
-    lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i)
-    sys_num = len(atoms_type_dic_tot)
-    lammps_run.run_lmpmd(work_dir, i, lmp_mpi_num, lmp_openmp_num, device[0])
-    lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
-    lammps_run.run_lmpfrc(work_dir, i, parallel_exe, proc_num)
+      lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, tot_atoms_type_dic)
+      lammps_run.run_lmpmd(work_dir, i, lmp_mpi_num, lmp_openmp_num, device[0])
+      check_deepff.write_restart_inp(inp_file, i, 2, sum(data_num), work_dir)
 
-    ##Get force-force correlation and then choose new structures
-    struct_index, success_ratio_sys, success_ratio = force_eval.choose_lmp_str(work_dir, i, atoms_type_dic_tot, atoms_num_tot, force_conv)
+    if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
+      #Perform lammps force calculations
+      if ( restart_stage == 2 ):
+        print ('Step 2: lammps tasks', flush=True)
+      sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
+      lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
+      lammps_run.run_lmpfrc(work_dir, i, parallel_exe, proc_num, atoms_num_tot)
+      check_deepff.write_restart_inp(inp_file, i, 3, sum(data_num), work_dir)
 
-    for j in range(len(success_ratio_sys)):
-      print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
+    if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
+      #Get force-force correlation and then choose new structures
+      sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
+      struct_index, success_ratio_sys, success_ratio = force_eval.choose_lmp_str(work_dir, i, atoms_type_dic_tot, atoms_num_tot, force_conv)
 
-    print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%%' %(sys_num, i, success_ratio*100), flush=True)
-    choose_data_num = []
-    for key1 in struct_index:
-      for key2 in struct_index[key1]:
-        choose_data_num.append(len(struct_index[key1][key2]))
+      for j in range(len(success_ratio_sys)):
+        print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
 
-    max_choose_data_num = max(choose_data_num)
-    if ( max_choose_data_num <= conv_new_data_num ):
-      print (''.center(80,'*'), flush=True)
-      print ('Cheers! deepff is converged!', flush=True)
-      if ( i != 0 ):
-        write_active_data(work_dir, i)
-      exit()
+      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%%' %(sys_num, i, success_ratio*100), flush=True)
+      choose_data_num = []
+      for key1 in struct_index:
+        for key2 in struct_index[key1]:
+          choose_data_num.append(len(struct_index[key1][key2]))
 
-    print ('Step 3: cp2k tasks', flush=True)
-    ##Perform cp2k calculation
-    cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
+      max_choose_data_num = max(choose_data_num)
+      if ( max_choose_data_num <= conv_new_data_num ):
+        print (''.center(80,'*'), flush=True)
+        print ('Cheers! deepff is converged!', flush=True)
+        if ( i != 0 ):
+          write_active_data(work_dir, i)
+        exit()
+
+      print ('Step 3: cp2k tasks', flush=True)
+      #Perform cp2k calculation
+      cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
                            struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
-    cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, cp2k_mpi_num)
+      cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num, atoms_num_tot)
 
-    ##Get new data of cp2k
-    for j in range(sys_num):
-      file_dir = ''.join((work_dir, '/iter_', str(i), '/03.cp2k_calc/sys_', str(j)))
-      load_data.load_data_from_sepfile(file_dir, 'task_', 'cp2k')
-      cp2k_data_dir = ''.join((file_dir, '/data'))
-      if ( os.path.exists(cp2k_data_dir) ):
-        energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
-        train_data_num = load_data.raw_data_to_set(1, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
-        data_num.append(train_data_num)
+      #Get new data of cp2k
+      for j in range(sys_num):
+        file_dir = ''.join((work_dir, '/iter_', str(i), '/03.cp2k_calc/sys_', str(j)))
+        load_data.load_data_from_sepfile(file_dir, 'task_', 'cp2k', tot_atoms_type_dic)
+        cp2k_data_dir = ''.join((file_dir, '/data'))
+        if ( os.path.exists(cp2k_data_dir) ):
+          energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
+          train_data_num = load_data.raw_data_to_set(1, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+          data_num.append(train_data_num)
 
-    print ('  Success: dump new raw data of cp2k', flush=True)
-    check_deepff.write_restart_inp(inp_file, i+1, sum(data_num), work_dir)
+      print ('  Success: dump new raw data of cp2k', flush=True)
+      check_deepff.write_restart_inp(inp_file, i+1, 0, sum(data_num), work_dir)
+      restart_stage = 0
 
     if ( i == max_iter-1 ):
       log_info.log_error('Active learning does not converge')
@@ -509,19 +521,30 @@ def kernel(work_dir, inp_file):
   restart_iter = force_eval_dic['restart_iter']
   train_stress = deepmd_dic['training']['train_stress']
 
-  init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress)
+  tot_atoms_type = get_atoms_type(deepmd_dic)
+  tot_atoms_type_dic = OrderedDict()
+  for i in range(len(tot_atoms_type)):
+    tot_atoms_type_dic[tot_atoms_type[i]] = i
+
+  if ( deepmd_dic['model']['type_map'] != tot_atoms_type ):
+    type_map_str = data_op.comb_list_2_str(tot_atoms_type, ' ')
+    log_info.log_error('Input error: type_map should be %s, please reset deepff/deepmd/model/type_map' %(type_map_str))
+    exit()
+
+  init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic)
 
   if ( restart_iter == 0 ):
     restart_data_num = init_data_num
   else:
     restart_data_num = force_eval_dic['restart_data_num']
+  restart_stage = force_eval_dic['restart_stage']
 
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):
     print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
-  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, \
-           restart_data_num, work_dir, max_iter, restart_iter, proc_num, host, device, usage)
+  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, restart_data_num, \
+           restart_stage, work_dir, max_iter, restart_iter, tot_atoms_type_dic, proc_num, host, device, usage)
 
 if __name__ == '__main__':
 

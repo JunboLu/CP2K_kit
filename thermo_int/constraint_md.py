@@ -26,6 +26,8 @@ def revise_inp_file(cp2k_inp_file, init_value, micro_steps, colvar_id, work_dir)
     work_dir: string
       work_dir is the working directory of CP2K_kit
   Returns:
+    proj_name: string
+      proj_name is the name of project in cp2k input file.
     target_str: string
       target_str is the target line exclude the target value.
   '''
@@ -284,13 +286,13 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
         log_info.log_error('cp2k running error at %d step' %(i))
         exit()
       else:
-        print ('Success: constraint molecular dynamics for task %d' %(i), shell=True)
+        print ('Success: constraint molecular dynamics for task %d' %(i), flush=True)
     else:
       if ( not os.path.exists(task_dir) ):
         cmd = "mkdir %s" %(task_dir)
         call.call_simple_shell(work_dir, cmd)
       else:
-        cmd = "rm %s" %(task_dir)
+        cmd = "rm -rf %s" %(task_dir)
         call.call_simple_shell(work_dir, cmd)
         cmd = "mkdir %s" %(task_dir)
         call.call_simple_shell(work_dir, cmd)
@@ -307,7 +309,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
           log_info.log_error('cp2k running error at %d step' %(i))
           exit()
         else:
-          print ('Success: constraint molecular dynamics for task %d' %(i), shell=True)
+          print ('Success: constraint molecular dynamics for task %d' %(i), flush=True)
       else:
         prev_dir = ''.join((work_dir, '/task_', str(i-1)))
         cmd = "cp %s %s %s" %(restart_file_name, ''.join((proj_name, '-RESTART.wfn')), task_dir)

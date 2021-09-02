@@ -117,6 +117,47 @@ def get_box_coord(box_file, coord_file):
 
   return tri_cell_vec, atoms, x, y, z
 
+def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
+
+  '''
+  get_md_sys_info: get the system information for lammps md.
+
+  Args:
+    lmp_dic: dict
+      lmp_dic contains parameters for lammps.
+  Returns:
+    atom_type_dic_tot : dictionary
+      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
+    atoms_num_tot: dictionary
+      atoms_num_tot contains number of atoms for different systems.
+      Example: {0:3, 1:3}
+  '''
+
+  atoms_type_dic_tot = OrderedDict()
+  atoms_num_tot = OrderedDict()
+  sys_num = 0
+  for key in lmp_dic:
+    if 'system' in key:
+      sys_num = sys_num + 1
+
+  for i in range(sys_num):
+    sys = 'system' + str(i)
+    box_file = lmp_dic[sys]['box']
+    coord_file = lmp_dic[sys]['coord']
+    tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
+    atoms_type = data_op.list_replicate(atoms)
+    atoms_type_dic = OrderedDict()
+    for j in atoms_type:
+      if j in tot_atoms_type_dic.keys():
+        atoms_type_dic[j] = tot_atoms_type_dic[j]+1
+      else:
+        log_info.log_error('Input error: %s atom type is not trained, please check the system' %(j))
+        exit()
+    atoms_type_dic_tot[i] = atoms_type_dic
+    atoms_num_tot[i] = len(atoms)
+
+  return sys_num, atoms_type_dic_tot, atoms_num_tot
+
 def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
   '''
@@ -180,7 +221,7 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
   data_file.close()
 
-def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
+def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
   '''
   gen_lmpmd_in_file: generate lammps md paramter file (.in file)
@@ -193,68 +234,49 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
     iter_id: int
       iter_id is current iteration number.
   Returns:
-    atom_type_dic_tot : dictionary
-      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
-    atoms_num_tot: dictionary
-      atoms_num_tot contains number of atoms for different systems.
-      Example: {0:3, 1:3}
+    none
   '''
 
-  #copy should be done at first, because the following operators will change it!
-  lmp_param = copy.deepcopy(lmp_dic)
-
   iter_dir = ''.join((work_dir, '/iter_', str(iter_id)))
-  cmd = "mkdir %s" %('02.lammps_calc')
-  call.call_simple_shell(iter_dir, cmd)
-
   lmp_dir = ''.join((iter_dir, '/02.lammps_calc'))
+  if ( not os.path.exists(lmp_dir) ):
+    cmd = "mkdir %s" %('02.lammps_calc')
+    call.call_simple_shell(iter_dir, cmd)
 
   #For md simulation, lammps will use the first model.
   #The other deep potential models will run force calculation.
   train_dir_first = ''.join((work_dir, '/iter_', str(iter_id), '/01.train/0'))
 
-  atoms_type_dic_tot = {}
-  atoms_num_tot = {}
-
-  sys_num = 0
-  for key in lmp_param:
-    if 'system' in key:
-      sys_num = sys_num + 1
+  sys_num, atoms_type_dic_tot, atoms_num_tot = get_md_sys_info(lmp_dic, tot_atoms_type_dic)
 
   for i in range(sys_num):
-    cmd = "mkdir %s" % (''.join(('sys_', str(i))))
-    call.call_simple_shell(lmp_dir, cmd)
-
     lmp_sys_dir = ''.join((lmp_dir, '/', 'sys_', str(i)))
+    if ( not os.path.exists(lmp_sys_dir) ):
+      cmd = "mkdir %s" % (''.join(('sys_', str(i))))
+      call.call_simple_shell(lmp_dir, cmd)
 
     sys = 'system' + str(i)
-    box_file = lmp_param[sys]['box']
-    coord_file = lmp_param[sys]['coord']
-    use_metad = lmp_param[sys]['use_metad']
-    md_type = lmp_param[sys]['md_type']
+    box_file = lmp_dic[sys]['box']
+    coord_file = lmp_dic[sys]['coord']
+    use_metad = lmp_dic[sys]['use_metad']
+    md_type = lmp_dic[sys]['md_type']
 
     if use_metad:
-      plumed_file = lmp_param[sys]['plumed_file']
+      plumed_file = lmp_dic[sys]['plumed_file']
 
     tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
-
     atoms_type = data_op.list_replicate(atoms)
-    atoms_type_dic = {}
-    for j in range(len(atoms_type)):
-      atoms_type_dic[atoms_type[j]] = j+1
-
-    atoms_type_dic_tot[i] = atoms_type_dic
-    atoms_num_tot[i] = len(atoms)
-
     atoms_type_index = []
     for j in range(len(atoms)):
-      atoms_type_index.append(atoms_type_dic[atoms[j]])
+      atoms_type_index.append(atoms_type_dic_tot[i][atoms[j]])
 
     gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, lmp_sys_dir, 'data.lmp')
 
     #If temp and pres have different values, we will set different tasks.
-    temp = lmp_param['temp']
-    pres = lmp_param['pres']
+    temp = lmp_dic['temp']
+    pres = lmp_dic['pres']
+    nsteps = int(lmp_dic['nsteps'])
+    write_restart_freq = int(lmp_dic['write_restart_freq'])
 
     if ( isinstance(temp, float) ):
       temp = [temp]
@@ -263,26 +285,40 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
 
     for j in range(len(temp)):
       for k in range(len(pres)):
-        lmp_param_new = copy.deepcopy(lmp_param)
-        lmp_param_new['temp'] = temp[j]
-        lmp_param_new['pres'] = pres[k]
+        lmp_dic['temp'] = temp[j]
+        lmp_dic['pres'] = pres[k]
 
-        cmd = "mkdir %s" % (''.join(('task_', str(j*len(pres)+k))))
-        call.call_simple_shell(lmp_sys_dir, cmd)
+        task_dir_name = ''.join(('task_', str(j*len(pres)+k)))
+        lmp_sys_task_dir = ''.join((lmp_sys_dir, '/', task_dir_name))
+        if ( not os.path.exists(lmp_sys_task_dir) ):
+          cmd = "mkdir %s" % (task_dir_name)
+          call.call_simple_shell(lmp_sys_dir, cmd)
 
-        lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j*len(pres)+k)))
         md_in_file = open(''.join((lmp_sys_task_dir, '/md_in.lammps')), 'w')
 
-        for key in lmp_param:
-          if ( 'system' not in key ):
+        cmd = "ls | grep %s" %("'tmp.restart.'")
+        restart_file_name = call.call_returns_shell(lmp_sys_task_dir, cmd)
+        restart_steps = []
+        if ( len(restart_file_name) != 0 ):
+          for i in restart_file_name:
+            i_split = data_op.str_split(i, '.')
+            restart_steps.append(int(i_split[len(i_split)-1]))
+          restart_step = max(restart_steps)
+
+        if ( 'restart_step' in locals() ):
+          lmp_dic['nsteps'] = nsteps-restart_step
+        for key in lmp_dic:
+          if ( 'system' not in key and key != 'write_restart_freq' ):
             s_1 = 'variable        '
             s_2 = key.upper() + '          '
-            s_3 = 'equal ' + str(lmp_param_new[key]) + '\n'
+            s_3 = 'equal ' + str(lmp_dic[key]) + '\n'
             line_i = ''.join((s_1, s_2, s_3))
             md_in_file.write(line_i)
 
         md_in_file.write('\n')
 
+        if ( 'restart_step' in locals() ):
+          md_in_file.write('read_restart  %s' %(''.join(('tmp.restart.', str(restart_step)))))
         md_in_file.write('units           metal\n')
         md_in_file.write('boundary        p p p\n')
         md_in_file.write('atom_style      atomic\n')
@@ -321,11 +357,10 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id):
             md_in_file.write('fix             1 all %s temp ${TEMP} ${TEMP} ${TAU_T}\n' % (md_type))
           elif ( md_type == 'npt' ):
             md_in_file.write('fix             1 all %s temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n' % (md_type))
+        md_in_file.write('restart  %d  tmp.restart\n' %(write_restart_freq))
         md_in_file.write('run             ${NSTEPS}\n')
 
         md_in_file.close()
-
-  return atoms_type_dic_tot, atoms_num_tot
 
 def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
@@ -374,9 +409,10 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
       else:
         use_metad = False
 
-      cmd = "mkdir %s" % ('data')
-      call.call_simple_shell(lmp_sys_task_dir, cmd)
       model_data_dir = ''.join((lmp_sys_task_dir, '/data'))
+      if ( not os.path.exists(model_data_dir) ):
+        cmd = "mkdir %s" % ('data')
+        call.call_simple_shell(lmp_sys_task_dir, cmd)
 
       #Get the number of frames.
       cmd_a = "grep -n %s %s" % ("'Lx Ly Lz Xy Xz Yz'", log_file)
@@ -440,13 +476,15 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
       #We run md for the first model, so force calculations are for other models.
       for k in range(model_num):
-        cmd = "mkdir %s" % (''.join(('model_', str(k))))
-        call.call_simple_shell(lmp_sys_task_dir, cmd)
         model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
+        if ( not os.path.exists(model_dir) ):
+          cmd = "mkdir %s" % (''.join(('model_', str(k))))
+          call.call_simple_shell(lmp_sys_task_dir, cmd)
         for l in range(tot_frame):
-          cmd = "mkdir %s" % (''.join(('traj_', str(l))))
-          call.call_simple_shell(model_dir, cmd)
           model_traj_dir = ''.join((model_dir, '/traj_', str(l)))
+          if ( not os.path.exists(model_traj_dir) ):
+            cmd = "mkdir %s" % (''.join(('traj_', str(l))))
+            call.call_simple_shell(model_dir, cmd)
 
           if ( not use_metad and k == 0 ):
             atom_file = open(''.join((model_traj_dir, '/atom.dump')), 'w')
@@ -653,7 +691,7 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
 
-def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
+def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
   '''
   rum_lmpfrc: kernel function to run lammps force calculation.
@@ -734,8 +772,8 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
 
       cmd = "grep %s %s" % ('plumed', 'md_in.lammps')
-      temp = call.call_returns_shell(lmp_sys_task_dir, cmd)
-      if ( temp != [] and 'plumed' in temp[0] ):
+      plumed_info = call.call_returns_shell(lmp_sys_task_dir, cmd)
+      if ( plumed_info != [] and 'plumed' in plumed_info[0] ):
         use_metad = True
       else:
         use_metad = False
@@ -749,21 +787,35 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
         cmd = "ls | grep %s" % ('traj_')
         traj_num = len(call.call_returns_shell(model_dir, cmd))
 
-        start = 0
-        end = start+lmp_mpi_num-1
-        cycle = math.ceil(traj_num/lmp_mpi_num)
+        calculated_id = 0
+        for l in range(traj_num):
+          dump_file_name = ''.join((model_dir, '/traj_', str(l), '/atom.dump'))
+          if ( os.path.exists(dump_file_name) and len(open(dump_file_name, 'r').readlines()) == atoms_num_tot[i]+9 ):
+            calculated_id = l
+          else:
+            break
 
-        parallel_num = lmp_mpi_num
-        for l in range(cycle):
-          if ( use_metad and k == 0 ):
-            lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe)
-          if ( k != 0 ):
-            lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe)
-          start = start+lmp_mpi_num
-          end = end+lmp_mpi_num
+        if ( calculated_id != traj_num-1 ):
+          if ( calculated_id != 0 ):
+            start = calculated_id-1
+          else:
+            start = 0
+          end = start+lmp_mpi_num-1
           if ( end > traj_num-1 ):
             end = traj_num-1
-            parallel_num = end-start+1
+          else:
+            cycle = math.ceil((traj_num-start)/lmp_mpi_num)
+
+          for l in range(cycle):
+            if ( use_metad or k != 0 ):
+              lmpfrc_parallel(model_dir, end-start+1, start, end, parallel_exe)
+            start = start+lmp_mpi_num
+            end = end+lmp_mpi_num
+            if ( end > traj_num-1 ):
+              end = traj_num-1
+        else:
+          if ( use_metad or k != 0 ):
+            lmpfrc_parallel(model_dir, 1, traj_num-1, traj_num-1, parallel_exe)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []
@@ -788,7 +840,7 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num):
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
           dump_file = ''.join((traj_dir, '/atom.dump'))
-          if ( os.path.exists(dump_file) and os.path.getsize(dump_file) != 0 ):
+          if ( os.path.exists(dump_file) and len(open(dump_file, 'r').readlines()) == atoms_num_tot[i]+9 ):
             check_lmp_frc_run.append(0)
           else:
             check_lmp_frc_run.append(1)

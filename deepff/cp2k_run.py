@@ -36,9 +36,10 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
   iter_dir = ''.join((work_dir + '/', 'iter_', str(iter_id)))
   cp2k_calc_dir = ''.join((iter_dir, '/03.cp2k_calc'))
 
-  cmd = "mkdir %s" % (''.join(('sys_', str(sys_id))))
-  call.call_simple_shell(cp2k_calc_dir, cmd)
   cp2k_sys_dir = ''.join((cp2k_calc_dir, '/sys_' + str(sys_id)))
+  if ( not os.path.exists(cp2k_sys_dir) ):
+    cmd = "mkdir %s" % (''.join(('sys_', str(sys_id))))
+    call.call_simple_shell(cp2k_calc_dir, cmd)
 
   atoms = []
   if ( len(coord) != 0 ):
@@ -208,8 +209,6 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_space))
 
-      linecache.clearcache()
-
     else:
       for i in atoms_type:
         std_inp_file.write(''.join(('    &KIND ', i, '\n')))
@@ -222,13 +221,14 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
     std_inp_file.write('  &END SUBSYS\n')
     std_inp_file.write('&END FORCE_EVAL')
 
+    linecache.clearcache()
     std_inp_file.close()
 
     for i in range(len(coord)):
-      cmd = "mkdir %s" %(''.join(('task_', str(i))))
-      call.call_simple_shell(cp2k_sys_dir, cmd)
-
       cp2k_task_dir = ''.join((cp2k_sys_dir, '/task_', str(i)))
+      if ( not os.path.exists(cp2k_task_dir) ):
+        cmd = "mkdir %s" %(''.join(('task_', str(i))))
+        call.call_simple_shell(cp2k_sys_dir, cmd)
 
       box_file_name = ''.join((cp2k_task_dir, '/box'))
       box_file = open(box_file_name, 'w')
@@ -289,8 +289,10 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
   cp2k_param = copy.deepcopy(cp2k_dic)
 
   iter_dir = ''.join((work_dir + '/', 'iter_', str(iter_id)))
-  cmd = "mkdir %s" % ('03.cp2k_calc')
-  call.call_simple_shell(iter_dir, cmd)
+  cp2k_calc_dir = ''.join((iter_dir, '/03.cp2k_calc'))
+  if ( not os.path.exists(cp2k_calc_dir) ):
+    cmd = "mkdir %s" % ('03.cp2k_calc')
+    call.call_simple_shell(iter_dir, cmd)
 
   lammps_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
   for key in struct_index:
@@ -330,7 +332,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
         str_print = 'Choosed index for system %d lammps task %d: %s' %(key, choosed_task[i], sys_task_index)
         str_print = data_op.str_wrap(str_print, 80, '  ')
         print (str_print, flush=True)
-        for j in new_choosed_index:
+        for j in sorted(new_choosed_index):
           box_j = []
           coord_j = []
           data_file = ''.join((lammps_sys_task_dir, '/data/data_', str(j), '.lmp'))
@@ -377,7 +379,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
 
     gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, train_stress)
 
-def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, cp2k_mpi_num):
+def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num, atoms_num_tot):
 
   '''
   run_force: perform cp2k force calculation
@@ -395,8 +397,8 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
       cp2k_env_file is the environment setting file of cp2k.
     cp2k_job_num: int
       cp2k_job_num the the job number of cp2k.
-    cp2k_mpi_num: int
-      cp2k_mpi_num is the number of processors for cp2k.
+    proc_num: int
+      proc_num is the number of processors for cp2k.
   Returns:
     none
   '''
@@ -434,17 +436,31 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
     cmd = "ls | grep %s" %('task_')
     task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
 
-    run_start = 0
-    run_end = run_start+cp2k_job_num-1
-    cycle = math.ceil(task_num/cp2k_job_num)
+    calculated_id = 0
+    for j in range(task_num):
+      frc_file=''.join((cp2k_sys_dir, '/task_', str(j), '/cp2k-1_0.xyz'))
+      if ( os.path.exists(frc_file) and len(open(frc_file, 'r').readlines()) == atoms_num_tot[i]+5 ):
+        calculated_id = j
+      else:
+        break
 
-    for j in range(cycle):
-      mpi_num_list = data_op.int_split(cp2k_mpi_num, run_end-run_start+1)
-      mpi_num_str = data_op.comb_list_2_str(mpi_num_list, ' ')
-      task_job_list = data_op.gen_list(run_start, run_end, 1)
-      task_job_str = data_op.comb_list_2_str(task_job_list, ' ')
+    if ( calculated_id != task_num-1 ):
+      if ( calculated_id != 0 ):
+        run_start = calculated_id-1
+      else:
+        run_start = 0
+      run_end = run_start+cp2k_job_num-1
+      if ( run_end > task_num-1 ):
+        run_end=task_num-1
+      cycle = math.ceil((task_num-run_start)/cp2k_job_num)
 
-      run = '''
+      for j in range(cycle):
+        mpi_num_list = data_op.int_split(proc_num, run_end-run_start+1)
+        mpi_num_str = data_op.comb_list_2_str(mpi_num_list, ' ')
+        task_job_list = data_op.gen_list(run_start, run_end, 1)
+        task_job_str = data_op.comb_list_2_str(task_job_list, ' ')
+
+        run = '''
 #! /bin/bash
 
 task_job="%s"
@@ -466,7 +482,7 @@ done
 for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parallel_num $direc/produce.sh {} $direc
 ''' %(task_job_str, mpi_num_str, cp2k_sys_dir, run_end-run_start+1, parallel_exe)
 
-      produce = '''
+        produce = '''
 #! /bin/bash
 
 source %s
@@ -478,34 +494,40 @@ x_arr=(${x///})
 
 cd $direc/task_${x_arr[0]}
 
+rm cp2k-1_0.xyz
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 
 grep "SCF run NOT converged" cp2k.out > converge_info
 if [ $? -eq 0 ]; then
 line=`grep -n "WFN_RESTART_FILE_NAME" input.inp | awk -F ":" '{print $1}'`
 sed -ie ''$line's/.*/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn/' input.inp
+rm cp2k-1_0.xyz
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 fi
 
 rm converge_info
 ''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
-      run_file = ''.join((cp2k_sys_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
-        f.write(run)
+        run_file = ''.join((cp2k_sys_dir, '/run.sh'))
+        with open(run_file, 'w') as f:
+          f.write(run)
 
-      produce_file = ''.join((cp2k_sys_dir, '/produce.sh'))
-      with open(produce_file, 'w') as f:
-        f.write(produce)
+        produce_file = ''.join((cp2k_sys_dir, '/produce.sh'))
+        with open(produce_file, 'w') as f:
+          f.write(produce)
 
-      subprocess.run('chmod +x run.sh', cwd=cp2k_sys_dir, shell=True)
-      subprocess.run('chmod +x produce.sh', cwd=cp2k_sys_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=cp2k_sys_dir, shell=True)
+        subprocess.run('chmod +x run.sh', cwd=cp2k_sys_dir, shell=True)
+        subprocess.run('chmod +x produce.sh', cwd=cp2k_sys_dir, shell=True)
+        subprocess.run("bash -c './run.sh'", cwd=cp2k_sys_dir, shell=True)
 
-      run_start = run_start + cp2k_job_num
-      run_end = run_end + cp2k_job_num
-      if ( run_end > task_num-1):
-        run_end = task_num-1
+        run_start = run_start + cp2k_job_num
+        run_end = run_end + cp2k_job_num
+        if ( run_end > task_num-1):
+          run_end = task_num-1
+    else:
+      cmd = "mpirun -np %d cp2k.popt input.inp 1> cp2k.out 2> cp2k.err" %(proc_num)
+      task_dir = ''.join((cp2k_sys_dir, '/task_', str(task_num-1)))
+      subprocess.run(cmd, cwd=task_dir, shell=True)
 
   #check running cp2k tasks
   check_cp2k_run = []
@@ -516,10 +538,11 @@ rm converge_info
    for j in range(task_num):
      cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
      frc_file=''.join((cp2k_sys_task_dir, '/cp2k-1_0.xyz'))
-     if ( os.path.exists(frc_file) and os.path.getsize(frc_file) != 0 ):
+     if ( os.path.exists(frc_file) and len(open(frc_file, 'r').readlines()) == atoms_num_tot[i]+5 ):
        check_cp2k_run.append(0)
      else:
        check_cp2k_run.append(1)
+       print (j)
   if ( all(i == 0 for i in check_cp2k_run) ):
     print ('  Success: ab initio force calculations for %d systems by cp2k' %(sys_num), flush=True)
   else:

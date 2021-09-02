@@ -433,68 +433,34 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       deepmd_dic['training']['disp_training'] = True
 
-    if ( 'disp_file' in deepmd_dic['training'].keys() ):
-      disp_file = deepmd_dic['training']['disp_file']
-      if ( data_op.eval_str(disp_file) == 0 ):
-        pass
-      else:
-        log_info.log_error('Input error: disp_file should be string, please check or reset deepff/deepmd/training/disp_file')
-        exit()
-    else:
-      deepmd_dic['training']['disp_file'] = 'lcurve.out'
-
-    if ( 'save_ckpt' in deepmd_dic['training'].keys() ):
-      save_ckpt = deepmd_dic['training']['save_ckpt']
-      if ( data_op.eval_str(save_ckpt) == 0 ):
-        pass
-      else:
-        log_info.log_error('Input error: save_ckpt should be string, please check deepff/deepmd/training/save_ckpt')
-        exit()
-    else:
-      deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
-
-    if ( 'load_ckpt' in deepmd_dic['training'].keys() ):
-      load_ckpt = deepmd_dic['training']['load_ckpt']
-      if ( data_op.eval_str(load_ckpt) == 0 ):
-        pass
-      else:
-        log_info.log_error('Input error: load_ckpt error, please check deepff/deepmd/training/load_ckpt')
-        exit()
-    else:
-      deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
-
-    if ( 'time_training' in deepmd_dic['training'].keys() ):
-      time_training = deepmd_dic['training']['time_training']
-      time_training_bool = data_op.str_to_bool(time_training)
-      if ( isinstance(time_training_bool, bool) ):
-        deepmd_dic['training']['time_training'] = time_training_bool
-      else:
-        log_info.log_error('Input error: time_training should be bool, please check or reset deepff/deepmd/training/time_training')
-        exit()
-    else:
-      deepmd_dic['training']['time_training'] = True
-
-    if ( 'profiling' in deepmd_dic['training'].keys() ):
-      profiling = deepmd_dic['training']['profiling']
-      profiling_bool = data_op.str_to_bool(profiling)
-      if ( isinstance(profiling_bool, bool) ):
-        deepmd_dic['training']['profiling'] = profiling_bool
-      else:
-        log_info.log_error('Input error: profiling should be bool, please check or reset deepff/deepmd/training/profiling')
-        exit()
-    else:
-      deepmd_dic['training']['profiling'] = False
+    deepmd_dic['training']['disp_file'] = 'lcurve.out'
+    deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
+    deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
+    deepmd_dic['training']['time_training'] = True
+    deepmd_dic['training']['profiling'] = False
+    deepmd_dic['training']['profiling_file'] = 'timeline.json'
 
   #Check parameters for lammps
   if ( 'nsteps' in lmp_dic.keys() ):
     nsteps = lmp_dic['nsteps']
     if ( data_op.eval_str(nsteps) == 1 ):
-      pass
+      if ( int(nsteps) < 1000 ):
+        lmp_dic['nsteps'] = '1000'
     else:
       log_info.log_error('Input error: nsteps should be integer, please check or reset deepff/lammps/nsteps')
       exit()
   else:
     lmp_dic['nsteps'] = '100000'
+
+  if ( 'write_restart_freq' in lmp_dic.keys() ):
+    write_restart_freq = lmp_dic['write_restart_freq']
+    if ( data_op.eval_str(write_restart_freq) == 1 ):
+      pass
+    else:
+      log_info.log_error('Input error: write_restart_freq should be integer, please check or reset deepff/lammps/write_restart_freq')
+      exit()
+  else:
+    lmp_dic['write_restart_freq'] = '1000'
 
   if ( 'thermo_freq' in lmp_dic.keys() ):
     thermo_freq = lmp_dic['thermo_freq']
@@ -690,7 +656,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     force_eval_dic['restart_iter'] = 0
 
   if ( 'restart_data_num' in force_eval_dic.keys() ):
-    restart_iter = force_eval_dic['restart_data_num']
+    restart_data_num = force_eval_dic['restart_data_num']
     if ( data_op.eval_str(restart_data_num) == 1 ):
       force_eval_dic['restart_data_num'] = int(restart_data_num)
     else:
@@ -698,6 +664,16 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       exit()
   else:
     force_eval_dic['restart_data_num'] = 0
+
+  if ( 'restart_stage' in force_eval_dic.keys() ):
+    restart_stage = force_eval_dic['restart_stage']
+    if ( data_op.eval_str(restart_stage) == 1 ):
+      force_eval_dic['restart_stage'] = int(restart_stage)
+    else:
+      log_info.log_error('Input error: restart_stage should be integer, please check or reset deepff/force_eval/restart_stage')
+      exit()
+  else:
+    force_eval_dic['restart_stage'] = 0
 
   #Check parameters for CP2K
   cp2k_inp_file_tot = []
@@ -942,58 +918,57 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   return deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic
 
-def write_restart_inp(inp_file_name, restart_iter, tot_data_num, work_dir):
+def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, work_dir):
 
   '''
   check_inp: write restart input file for deepff
 
   Args:
-    deepmd_dic: dictionary
-      deepmd_dic contains keywords used in deepmd.
-    lammps_dic: dictionary
-      lammpd_dic contains keywords used in lammps.
-    cp2k_dic: dictionary
-      cp2k_dic contains keywords used in cp2k.
-    force_eval_dic: dictionary
-      force_eval contains keywords used in force_eval.
-    environ_dic: dictionary
-      environ_dic contains keywords used in environment.
-    work_dir: string
-      work_dir is the workding directory of cp2k_kit.
+
+  Returns:
+    none
   '''
 
+  i=0
   while True:
-    restart_inp_file_name = ''.join((work_dir, '/restart.inp'))
-    if ( os.path.exists(restart_inp_file_name) ):
-      cmd = 'rm %s' %(restart_inp_file_name)
-      call.call_simple_shell(work_dir, cmd)
+    inp_tmp_file_name = ''.join((work_dir, '/input_tmp', str(i), '.inp'))
+    if ( os.path.exists(inp_tmp_file_name) ):
+      i=i+1
     else:
       break
 
-  whole_line_num = len(open(inp_file_name).readlines())
+  cmd = "cp %s %s" %(inp_file_name, inp_tmp_file_name)
+  call.call_simple_shell(work_dir, cmd)
 
-  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_file_name, work_dir)[0]
-  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_file_name, work_dir)[0]
-  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_file_name, work_dir)[0]
-  line_4_num = file_tools.grep_line_num("'force_conv'", inp_file_name, work_dir)[0]
-  line_5_num = file_tools.grep_line_num("'max_iter'", inp_file_name, work_dir)[0]
-  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_file_name, work_dir)[0]
+  restart_inp_file_name = ''.join((work_dir, '/CP2K_KIT.restart'))
+  whole_line_num = len(open(inp_tmp_file_name).readlines())
+
+  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_tmp_file_name, work_dir)[0]
+  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_tmp_file_name, work_dir)[0]
+  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_tmp_file_name, work_dir)[0]
+  line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)[0]
+  line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)[0]
+  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_tmp_file_name, work_dir)[0]
 
   restart_inp_file = open(restart_inp_file_name, 'w')
   for i in range(line_1_num):
-    line_i = linecache.getline(inp_file_name, i+1)
+    line_i = linecache.getline(inp_tmp_file_name, i+1)
     restart_inp_file.write(line_i)
 
   for i in [line_2_num, line_3_num, line_4_num, line_5_num]:
-    line_i = linecache.getline(inp_file_name, i)
+    line_i = linecache.getline(inp_tmp_file_name, i)
     restart_inp_file.write(line_i)
 
   restart_inp_file.write('    restart_iter %d\n' %(restart_iter))
   restart_inp_file.write('    restart_data_num %d\n' %(tot_data_num))
+  restart_inp_file.write('    restart_stage %d\n' %(restart_stage))
 
   for i in range(line_6_num, whole_line_num+1, 1):
-    line_i = linecache.getline(inp_file_name, i)
+    line_i = linecache.getline(inp_tmp_file_name, i)
     restart_inp_file.write(line_i)
 
   linecache.clearcache()
   restart_inp_file.close()
+
+  cmd = "rm %s" %(inp_tmp_file_name)
+  call.call_simple_shell(work_dir, cmd)
