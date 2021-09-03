@@ -83,6 +83,7 @@
   &cp2k
     basis_set_file_name /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
     basis_level dzvp
+    use_sr_basis False
     potential_file_name /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
     cell_periodic xyz
     poisson_periodic xyz

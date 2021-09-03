@@ -1,7 +1,6 @@
 #! /usr/env/bin python
 
 import os
-import copy
 import math
 import linecache
 import numpy as np
@@ -151,7 +150,7 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
       if j in tot_atoms_type_dic.keys():
         atoms_type_dic[j] = tot_atoms_type_dic[j]+1
       else:
-        log_info.log_error('Input error: %s atom type is not trained, please check the system' %(j))
+        log_info.log_error('Input error: %s atom type in system %d is not trained, please check deepff/lammps/system' %(j, i+1))
         exit()
     atoms_type_dic_tot[i] = atoms_type_dic
     atoms_num_tot[i] = len(atoms)

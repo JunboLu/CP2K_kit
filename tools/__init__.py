@@ -9,3 +9,4 @@ from CP2K_kit.tools import traj_tools
 from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import file_tools
+from CP2K_kit.tools import revise_cp2k_inp

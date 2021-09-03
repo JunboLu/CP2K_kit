@@ -133,13 +133,13 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
         else:
           log_info.log_error('Input error: GROUP_PARTITION should be two integer in cp2k mixing force_eval file')
           exit()
-      cmd = "sed -ie '%ds/.*/%s %f/' %s" %(value_line_num, '     VALUES ', target_value, restart_file_name)
+      cmd = "sed -i '%ds/.*/%s %f/' %s" %(value_line_num, '     VALUES ', target_value, restart_file_name)
       call.call_simple_shell(work_dir, cmd)
       cmd = "cp %s %s" %(restart_file_name, inp_trans_file_name)
       call.call_simple_shell(work_dir, cmd)
       cmd = "cp %s %s" %(restart_file_name, 'RESTART_BAK_FILE')
       call.call_simple_shell(work_dir, cmd)
-      cmd = "rm %s* %s" %(restart_file_name, upper_file_name_abs)
+      cmd = "rm %s %s" %(restart_file_name, upper_file_name_abs)
       call.call_simple_shell(work_dir, cmd)
     else:
       log_info.log_error('cp2k running error for step %d' %(i-1))

@@ -56,7 +56,7 @@ def space_file(file_name, space_char, save_dir):
   while True:
     line = origin_file.readline()
     line_split = data_op.str_split(line, ' ')
-    line_comb = data_op.comb_list_2_str(line_split, ' ')
+    line_comb = data_op.comb_list_2_str(line_split, space_char)
     rev_file.write(line_comb)
     if not line:
       break

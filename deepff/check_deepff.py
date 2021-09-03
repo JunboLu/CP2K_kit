@@ -2,6 +2,7 @@
 
 import os
 import linecache
+from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
@@ -104,16 +105,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       else:
         deepmd_dic['model']['descriptor']['neuron'] = [25, 50, 100]
 
-      if ( 'resnet_dt' in deepmd_dic['model']['descriptor'].keys() ):
-        resnet_dt = deepmd_dic['model']['descriptor']['resnet_dt']
-        resnet_dt_bool = data_op.str_to_bool(resnet_dt)
-        if ( isinstance(resnet_dt_bool, bool) ):
-          deepmd_dic['model']['descriptor']['resnet_dt'] = resnet_dt_bool
-        else:
-          log_info.log_error('Input error: resnet_dt should be bool, please check or reset deepff/deepmd/model/descriptor/resnet_dt')
-          exit()
-      else:
-        deepmd_dic['model']['descriptor']['resnet_dt'] = False
+      deepmd_dic['model']['descriptor']['resnet_dt'] = False
 
       if ( 'axis_neuron' in deepmd_dic['model']['descriptor'].keys() ):
         axis_neuron = deepmd_dic['model']['descriptor']['axis_neuron']
@@ -125,20 +117,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       else:
         deepmd_dic['model']['descriptor']['axis_neuron'] = 16
 
-    if ( 'fitting_net' not in deepmd_dic['model'].keys() ):
-      log_info.log_error('Input error: no fitting_net, please set deepff/deepmd/model/fitting_net')
-      exit()
-    else:
-      if ( 'resnet_dt' in deepmd_dic['model']['fitting_net'].keys() ):
-        resnet_dt = deepmd_dic['model']['fitting_net']['resnet_dt']
-        resnet_dt_bool = data_op.str_to_bool(resnet_dt)
-        if ( isinstance(resnet_dt_bool, bool) ):
-          deepmd_dic['model']['fitting_net']['resnet_dt'] = resnet_dt_bool
-        else:
-          log_info.log_error('Input error: resnet_dt should be bool, please check or reset deepff/deepmd/model/fitting_net/resnet_dt')
-          exit()
-      else:
-        deepmd_dic['model']['fitting_net']['resnet_dt'] = True
+    deepmd_dic['model']['fitting_net'] = OrderedDict()
+    deepmd_dic['model']['fitting_net']['resnet_dt'] = True
 
   if ( 'learning_rate' not in deepmd_dic.keys() ):
     log_info.log_error('Input error: no learning_rate, please set deepff/deepmd/learning_rate')
@@ -435,7 +415,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
     deepmd_dic['training']['disp_file'] = 'lcurve.out'
     deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
-    deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
+    deepmd_dic['training']['save_ckpt'] = 'model.ckpt'
     deepmd_dic['training']['time_training'] = True
     deepmd_dic['training']['profiling'] = False
     deepmd_dic['training']['profiling_file'] = 'timeline.json'
@@ -676,10 +656,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     force_eval_dic['restart_stage'] = 0
 
   #Check parameters for CP2K
+  #For multi-system, we need multi cp2k input files.
+  print (cp2k_dic, flush=True)
   cp2k_inp_file_tot = []
   if ( 'cp2k_inp_file' in cp2k_dic.keys() ):
-    if ( len(cp2k_dic.keys()) > 1):
-      log_info.log_error('Warning: as cp2k_inp_file is set, other keywords are ignored!', 'Warning')
     cp2k_inp_file = cp2k_dic['cp2k_inp_file']
     if ( isinstance(cp2k_inp_file, list) ):
       if ( len(cp2k_inp_file) != sys_num ):
@@ -724,6 +704,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       log_info.log_error('Input error: no potential_file_name, please set deepff/cp2k/potential_file_name')
       exit()
+
+    if ( 'use_sr_basis' in cp2k_dic.keys() ):
+      use_sr_basis = cp2k_dic['use_sr_basis']
+      use_sr_basis__bool = data_op.str_to_bool(use_sr_basis)
+      if ( isinstance(use_sr_basis_bool, bool) ):
+        cp2k_dic['use_sr_basis'] = use_sr_basis_bool
+      else:
+        log_info.log_error('Input error: use_sr_basis should be bool, please check or reset deepff/cp2k/use_sr_basis')
+        exit()
+    else:
+      cp2k_dic['use_sr_basis'] = False
 
     if ( 'basis_level' in cp2k_dic.keys() ):
       basis_level = cp2k_dic['basis_level']
@@ -797,17 +788,6 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       cp2k_dic['xc_functional'] = 'PBE'
 
-    if ( 'use_prev_wfn' in cp2k_dic.keys() ):
-      use_prev_wfn = cp2k_dic['use_prev_wfn']
-      use_prev_wfn_bool = data_op.str_to_bool(use_prev_wfn)
-      if ( isinstance(use_prev_wfn_bool, bool) ):
-        cp2k_dic['use_prev_wfn'] = use_prev_wfn_bool
-      else:
-        log_info.log_error('Input error: use_prev_wfn should be bool, please check or reset deepff/cp2k/use_prev_wfn')
-        exit()
-    else:
-      cp2k_dic['use_prev_wfn'] = False
-
     if ( 'dftd3' in cp2k_dic.keys() ):
       dftd3 = cp2k_dic['dftd3']
       dftd3_bool = data_op.str_to_bool(dftd3)
@@ -829,6 +809,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
           exit()
       else:
         log_info.log_error('Input error: no dftd3 file, please set deepff/cp2k/dftd3_file')
+
+  if ( 'use_prev_wfn' in cp2k_dic.keys() ):
+    use_prev_wfn = cp2k_dic['use_prev_wfn']
+    use_prev_wfn_bool = data_op.str_to_bool(use_prev_wfn)
+    if ( isinstance(use_prev_wfn_bool, bool) ):
+      cp2k_dic['use_prev_wfn'] = use_prev_wfn_bool
+    else:
+      log_info.log_error('Input error: use_prev_wfn should be bool, please check or reset deepff/cp2k/use_prev_wfn')
+      exit()
+  else:
+    cp2k_dic['use_prev_wfn'] = False
 
   #Check parameters for environ
   if ( 'cp2k_exe' in environ_dic.keys() ):
@@ -924,7 +915,16 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
   check_inp: write restart input file for deepff
 
   Args:
-
+    inp_file_name: string
+      inp_file_name is the name of cp2k_kit deepff file.
+    restart_iter: int
+      restart_iter is the iteration number of restart.
+    restart_stage: int
+      restart_stage is the stage of restart.
+    tot_data_num: int
+      tot_data_num is the total data number.
+    work_dir: string
+      work_dir is working directory of CP2K_kit.
   Returns:
     none
   '''
