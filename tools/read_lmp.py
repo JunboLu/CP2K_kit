@@ -31,7 +31,7 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
 
   line = linecache.getline(lmp_traj_file, 4)
   atoms_num = int(line.strip('\n'))
-  frames_num = int(len(open(lmp_traj_file).readlines())/(atoms_num+9))
+  traj_frames_num = int(len(open(lmp_traj_file).readlines())/(atoms_num+9))
 
   cmd_a = "grep -n %s %s" % ("'Step'", os.path.abspath(lmp_log_file))
   a = call.call_returns_shell(os.getcwd(), cmd_a)
@@ -40,6 +40,7 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   line = linecache.getline(lmp_log_file, a_int)
   line_split = data_op.str_split(line, ' ')
   line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  log_id_num = len(line_split)
   step_id = line_split.index('Step')
 
   line = linecache.getline(lmp_log_file, a_int+1)
@@ -48,11 +49,27 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
 
   line = linecache.getline(lmp_log_file, a_int+2)
   line_split = data_op.str_split(line, ' ')
-  each = int(line_split[step_id])-start_id
+  if ( len(line_split) == log_id_num ):
+    each = int(line_split[step_id])-start_id
+  else:
+    each = 0
 
-  line = linecache.getline(lmp_log_file, a_int+frames_num)
+  line_num = a_int+traj_frames_num
+  while True:
+    line = linecache.getline(lmp_log_file, line_num)
+    line_split = data_op.str_split(line, ' ')
+    if ( len(line_split) != log_id_num ):
+      line_num = line_num-1
+    else:
+      break
+
+  line = linecache.getline(lmp_log_file, line_num)
   line_split = data_op.str_split(line, ' ')
   end_id = int(line_split[step_id])
+  if ( each != 0 ):
+    frames_num = int((end_id-start_id)/each)+1
+  else:
+    frames_num = 1
 
   linecache.clearcache()
 

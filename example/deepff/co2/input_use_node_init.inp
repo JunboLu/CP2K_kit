@@ -1,5 +1,5 @@
 &global
-  run_type deepff
+  run_type        deepff
 &end global
 
 &deepff
@@ -12,12 +12,8 @@
         rcut_smth 5.80
         rcut 6.00
         neuron 10 20 40
-        resnet_dt false
         axis_neuron 12
       &end descriptor
-      &fitting_net
-        resnet_dt true
-      &end fitting_net
     &end model
     &learning_rate
       type exp
@@ -35,7 +31,7 @@
     &end loss
     &training
 　    &system
-        directory ./co2
+        directory ./cp2k_md
         proj_name cp2k
         start_frame 0
         end_frame 200
@@ -44,7 +40,7 @@
       &end system
       train_stress false
       model_type use_node
-      neuron 120 120 120 ... 150 150 150 ... 180 180 180
+      neuron 120 120 120 ... 180 180 180
       set_prefix set    
       stop_batch 40000
       batch_size auto
@@ -55,28 +51,25 @@
   &end deepmd
 
   &lammps
-    nsteps 100000
+    nsteps 1000
     write_restart_freq 10
-    thermo_freq 200
-    dump_freq 200
+    model_devi_freq 10
     time_step 0.0005
-    temp 50
-    pres  1.0
+    temp 50.0
+    pres 1.0
     tau_t 0.1
     tau_p 0.5
     &system
       box ./lmp_init_data/box
       coord ./lmp_init_data/str.inc
       md_type nvt
-      use_metad true
-      plumed_file ./plumed.dat
     &end system
   &end lammps
 
   &force_eval
     choose_new_data_num_limit 100
     conv_new_data_num 5
-    force_conv 0.02
+    force_conv 0.01
     max_iter 100
     restart_iter 0
   &end force_eval
@@ -88,13 +81,13 @@
     potential_file_name /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
     cell_periodic xyz
     poisson_periodic xyz
+    use_prev_wfn false
     charge 0
     multiplicity 1
     cutoff 300
     xc_functional PBE
     dftd3 True
     dftd3_file /home/lujunbo/bin/cp2k-8.2/data/dftd3.dat
-    use_prev_wfn True
   &end cp2k
 
   &environ

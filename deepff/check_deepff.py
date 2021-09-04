@@ -430,7 +430,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       log_info.log_error('Input error: nsteps should be integer, please check or reset deepff/lammps/nsteps')
       exit()
   else:
-    lmp_dic['nsteps'] = '100000'
+    lmp_dic['nsteps'] = '10000'
 
   if ( 'write_restart_freq' in lmp_dic.keys() ):
     write_restart_freq = lmp_dic['write_restart_freq']
@@ -442,25 +442,21 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     lmp_dic['write_restart_freq'] = '1000'
 
-  if ( 'thermo_freq' in lmp_dic.keys() ):
-    thermo_freq = lmp_dic['thermo_freq']
-    if ( data_op.eval_str(thermo_freq) == 1 ):
+  if ( 'model_devi_freq' in lmp_dic.keys() ):
+    model_devi_freq = lmp_dic['model_devi_freq']
+    if ( data_op.eval_str(model_devi_freq) == 1 ):
       pass
     else:
-      log_info.log_error('Input error: thermo_freq should be integer, please check or reset deepff/lammps/thermo_freq')
+      log_info.log_error('Input error: model_devi_freq should be integer, please check or reset deepff/lammps/model_devi_freq')
       exit()
   else:
-    lmp_dic['thermo_freq'] = '10'
+    lmp_dic['write_traj_freq'] = '10'
 
-  if ( 'dump_freq' in lmp_dic.keys() ):
-    dump_freq = lmp_dic['dump_freq']
-    if ( data_op.eval_str(dump_freq) == 1 ):
-      pass
-    else:
-      log_info.log_error('Input error: dump_freq should be integer, please check or reset deepff/lammps/dump_freq')
-      exit()
-  else:
-    lmp_dic['dump_freq'] = '10'
+  model_devi_freq = lmp_dic['model_devi_freq']
+  lmp_dic.pop('model_devi_freq')
+
+  lmp_dic['thermo_freq'] = model_devi_freq
+  lmp_dic['dump_freq'] = model_devi_freq
 
   if ( 'time_step' in lmp_dic.keys() ):
     time_step = lmp_dic['time_step']
@@ -657,7 +653,6 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
 
   #Check parameters for CP2K
   #For multi-system, we need multi cp2k input files.
-  print (cp2k_dic, flush=True)
   cp2k_inp_file_tot = []
   if ( 'cp2k_inp_file' in cp2k_dic.keys() ):
     cp2k_inp_file = cp2k_dic['cp2k_inp_file']

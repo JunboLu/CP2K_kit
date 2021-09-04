@@ -12,12 +12,8 @@
         rcut_smth 5.80
         rcut 6.00
         neuron 10 20 40
-        resnet_dt false
         axis_neuron 12
       &end descriptor
-      &fitting_net
-        resnet_dt true
-      &end fitting_net
     &end model
     &learning_rate
       type exp
@@ -35,7 +31,7 @@
     &end loss
     &training
 　    &system
-        directory ./co2 
+        directory ./cp2k_md
         proj_name cp2k
         start_frame 0
         end_frame 200
@@ -43,8 +39,9 @@
         set_parts 1
       &end system
       train_stress false
-      model_type use_node
-      neuron 120 120 120 ... 180 180 180
+      model_type use_seed
+      seed_num 2
+      neuron 120 120 120
       set_prefix set    
       stop_batch 40000
       batch_size auto
@@ -55,13 +52,12 @@
   &end deepmd
 
   &lammps
-    nsteps 100
+    nsteps 1000
     write_restart_freq 10
-    thermo_freq 1
-    dump_freq 1
+    model_devi_freq 10
     time_step 0.0005
-    temp 50.0 100.0
-    pres 1.0 2.0
+    temp 50.0
+    pres 1.0
     tau_t 0.1
     tau_p 0.5
     &system

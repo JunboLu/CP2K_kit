@@ -7,19 +7,19 @@ import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import *
 
-def get_box_coord(box_file, coord_file):
+def get_box_coord(box_file_name, coord_file_name):
 
   '''
   get_box_coord: get box and coord from box and coord file.
 
   Args:
-    box_file: file including cell vectors
-      general box_file is like this:
+    box_file_name: file including cell vectors
+      general box_file_name is like this:
       a  xx  xx  xx
       b  xx  xx  xx
       c  xx  xx  xx
-    coord_file: file including atoms and coordinates
-      general coord_file is like this:
+    coord_file_name: file including atoms and coordinates
+      general coord_file_name is like this:
       atom_a  xx  xx  xx
       atom_b  xx  xx  xx
       atom_c  xx  xx  xx
@@ -38,12 +38,12 @@ def get_box_coord(box_file, coord_file):
   '''
 
   #Get box information from box file.
-  whole_line_num = len(open(box_file).readlines())
+  whole_line_num = len(open(box_file_name).readlines())
   cell_vec_a = []
   cell_vec_b = []
   cell_vec_c = []
   for i in range(whole_line_num):
-    line_i = linecache.getline(box_file, i+1)
+    line_i = linecache.getline(box_file_name, i+1)
     line_i_split = data_op.str_split(line_i, ' ')
     if ( line_i_split[len(line_i_split)-1] == '\n' ):
       line_i_split.remove(line_i_split[len(line_i_split)-1])
@@ -85,7 +85,7 @@ def get_box_coord(box_file, coord_file):
     tri_cell_vec.append(c_0_str)
     tri_cell_vec.append(c_1_str)
 
-  whole_line_num = len(open(coord_file).readlines())
+  whole_line_num = len(open(coord_file_name).readlines())
 
   #Get atom and coord from coord file.
   atoms = []
@@ -93,7 +93,7 @@ def get_box_coord(box_file, coord_file):
   y = []
   z = []
   for i in range(whole_line_num):
-    line_i = linecache.getline(coord_file, i+1)
+    line_i = linecache.getline(coord_file_name, i+1)
     line_i_split = data_op.str_split(line_i, ' ')
     if ( line_i_split[len(line_i_split)-1] == '\n' ):
       line_i_split.remove(line_i_split[len(line_i_split)-1])
@@ -141,9 +141,9 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
 
   for i in range(sys_num):
     sys = 'system' + str(i)
-    box_file = lmp_dic[sys]['box']
-    coord_file = lmp_dic[sys]['coord']
-    tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
+    box_file_name = lmp_dic[sys]['box']
+    coord_file_name = lmp_dic[sys]['coord']
+    tri_cell_vec, atoms, x, y, z = get_box_coord(box_file_name, coord_file_name)
     atoms_type = data_op.list_replicate(atoms)
     atoms_type_dic = OrderedDict()
     for j in atoms_type:
@@ -223,7 +223,7 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
   '''
-  gen_lmpmd_in_file: generate lammps md paramter file (.in file)
+  gen_lmpmd_task: generate lammps md paramter file (.in file)
 
   Args:
     lmp_dic: dict
@@ -255,15 +255,15 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
       call.call_simple_shell(lmp_dir, cmd)
 
     sys = 'system' + str(i)
-    box_file = lmp_dic[sys]['box']
-    coord_file = lmp_dic[sys]['coord']
+    box_file_name = lmp_dic[sys]['box']
+    coord_file_name = lmp_dic[sys]['coord']
     use_metad = lmp_dic[sys]['use_metad']
     md_type = lmp_dic[sys]['md_type']
 
     if use_metad:
-      plumed_file = lmp_dic[sys]['plumed_file']
+      plumed_file_name = lmp_dic[sys]['plumed_file']
 
-    tri_cell_vec, atoms, x, y, z = get_box_coord(box_file, coord_file)
+    tri_cell_vec, atoms, x, y, z = get_box_coord(box_file_name, coord_file_name)
     atoms_type = data_op.list_replicate(atoms)
     atoms_type_index = []
     for j in range(len(atoms)):
@@ -316,8 +316,15 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
         md_in_file.write('\n')
 
-        if ( 'restart_step' in locals() ):
-          md_in_file.write('read_restart  %s' %(''.join(('tmp.restart.', str(restart_step)))))
+        file_label = 0
+        while True:
+          dump_file_name = ''.join(('atom', str(file_label), '.dump'))
+          dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
+          if ( os.path.exists(dump_file_name_abs) ):
+            file_label = file_label+1
+          else:
+            break
+
         md_in_file.write('units           metal\n')
         md_in_file.write('boundary        p p p\n')
         md_in_file.write('atom_style      atomic\n')
@@ -327,7 +334,10 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         md_in_file.write('neigh_modify every 1 delay 0 check yes\n')
         md_in_file.write('\n')
         md_in_file.write('box          tilt large\n')
-        md_in_file.write(''.join(('read_data       ', lmp_sys_dir, '/data.lmp\n')))
+        if ( 'restart_step' in locals() ):
+          md_in_file.write('read_restart  %s\n' %(''.join(('tmp.restart.', str(restart_step)))))
+        else:
+          md_in_file.write(''.join(('read_data       ', lmp_sys_dir, '/data.lmp\n')))
         md_in_file.write('change_box   all triclinic\n')
 
         for l in range(len(atoms_type)):
@@ -342,11 +352,12 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
         md_in_file.write('thermo_style    custom step temp pe ke etotal press vol lx ly lz xy xz yz\n')
         md_in_file.write('thermo          ${THERMO_FREQ}\n')
-        md_in_file.write('dump            1 all custom ${DUMP_FREQ} atom.dump id type x y z fx fy fz\n')
-        md_in_file.write('velocity        all create ${TEMP} 835843 dist gaussian\n')
+        md_in_file.write('dump            1 all custom ${DUMP_FREQ} %s id type x y z fx fy fz\n' %(dump_file_name))
+        if ( 'restart_step' not in locals() ):
+          md_in_file.write('velocity        all create ${TEMP} 835843 dist gaussian\n')
 
         if use_metad:
-          md_in_file.write('fix             1 all plumed plumedfile %s outfile plumed.log\n' % (plumed_file))
+          md_in_file.write('fix             1 all plumed plumedfile %s outfile plumed.log\n' % (plumed_file_name))
           if ( md_type == 'nvt' ):
             md_in_file.write('fix             2 all %s temp ${TEMP} ${TEMP} ${TAU_T}\n' % (md_type))
           elif ( md_type == 'npt' ):
@@ -398,12 +409,12 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
       #log.lammps is output file of lammps.
       #atom.dump is trajectory file.
-      log_file = ''.join((lmp_sys_task_dir, '/log.lammps'))
-      dump_file = ''.join((lmp_sys_task_dir, '/atom.dump'))
+      log_file_name_abs = ''.join((lmp_sys_task_dir, '/lammps.out'))
+      dump_file_name_abs = ''.join((lmp_sys_task_dir, '/atom.dump'))
 
       cmd = "grep %s %s" % ('plumed', 'md_in.lammps')
-      temp = call.call_returns_shell(lmp_sys_task_dir, cmd)
-      if ( temp != [] and 'plumed' in temp[0] ):
+      plumed_info = call.call_returns_shell(lmp_sys_task_dir, cmd)
+      if ( len(plumed_info) != 0 and 'plumed' in plumed_info [0] ):
         use_metad = True
       else:
         use_metad = False
@@ -414,18 +425,14 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         call.call_simple_shell(lmp_sys_task_dir, cmd)
 
       #Get the number of frames.
-      cmd_a = "grep -n %s %s" % ("'Lx Ly Lz Xy Xz Yz'", log_file)
-      a = call.call_returns_shell(lmp_sys_task_dir, cmd_a)
-      cmd_b = "grep -n %s %s" % ("'Loop time'", log_file)
-      b = call.call_returns_shell(lmp_sys_task_dir, cmd_b)
-      a_int = int(a[0].split(':')[0])
-      b_int = int(b[0].split(':')[0])
+      a_int = file_tools.grep_line_num("'Step '", log_file_name_abs, lmp_sys_task_dir)[0]
+      b_int = file_tools.grep_line_num("'Loop time'", log_file_name_abs, lmp_sys_task_dir)[0]
       tot_frame = b_int-a_int-1
 
       box_tot = []
       for k in range(tot_frame):
         box_vec = []
-        line_k = linecache.getline(log_file, a_int+k+1)
+        line_k = linecache.getline(log_file_name_abs, a_int+k+1)
         line_k_split = data_op.str_split(line_k, ' ')
         for l in range(6):
           box_param_float = float(line_k_split[l+7])
@@ -447,7 +454,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         type_k = []
         id_k = []
         for l in range(atoms_num):
-          line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
+          line_kl = linecache.getline(dump_file_name_abs, (atoms_num+9)*k+l+9+1)
           line_kl_split = data_op.str_split(line_kl, ' ')
           id_k.append(int(line_kl_split[0]))
           type_k.append(line_kl_split[1])
@@ -470,8 +477,8 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         z_tot.append(data_op.order_list(z_k, asc_index))
 
       for k in range(tot_frame):
-        data_file = 'data_' + str(k) + '.lmp'
-        gen_data_file(box_tot[k], type_index_tot[k], x_tot[k], y_tot[k], z_tot[k], model_data_dir, data_file)
+        data_file_name = 'data_' + str(k) + '.lmp'
+        gen_data_file(box_tot[k], type_index_tot[k], x_tot[k], y_tot[k], z_tot[k], model_data_dir, data_file_name)
 
       #We run md for the first model, so force calculations are for other models.
       for k in range(model_num):
@@ -500,8 +507,8 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
             frc_in_file.write('\n')
             frc_in_file.write('neighbor        1.0 bin\n')
             frc_in_file.write('\n')
-            data_l_file = ''.join((model_data_dir, '/data_', str(l), '.lmp'))
-            frc_in_file.write(''.join(('read_data       ', data_l_file,'\n')))
+            data_l_file_name_abs = ''.join((model_data_dir, '/data_', str(l), '.lmp'))
+            frc_in_file.write(''.join(('read_data       ', data_l_file_name_abs,'\n')))
 
             atoms_type_i = atoms_type_dic_tot[i]
             for key in atoms_type_i:
@@ -510,8 +517,8 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
               frc_in_file.write(line_key)
 
             frc_in_file.write('\n')
-            model_file = ''.join((train_dir, '/', str(k), '/frozen_model.pb'))
-            frc_in_file.write(''.join(('pair_style      deepmd ', model_file, '\n')))
+            model_file_name_abs = ''.join((train_dir, '/', str(k), '/frozen_model.pb'))
+            frc_in_file.write(''.join(('pair_style      deepmd ', model_file_name_abs, '\n')))
             frc_in_file.write('pair_coeff\n')
             frc_in_file.write('\n')
 
@@ -525,6 +532,66 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
             frc_in_file.close()
 
     linecache.clearcache()
+
+def combine_frag_traj_file(lmp_task_dir):
+
+  '''
+  combine_frag_traj_file: combine fragement lammps trajectory files.
+
+  Args:
+    lmp_task_dir: string
+      lmp_task_dir is the lammps task directory.
+  Returns:
+    none
+  '''
+
+  cmd = "ls | grep %s" %("'atom[0-9]'")
+  atom_file_name = call.call_returns_shell(lmp_task_dir, cmd)
+
+  if ( len(atom_file_name) == 0 ):
+    log_info.log_error('lammps running error: no lammps trajectory and output file found')
+    exit()
+  else:
+    frag_traj_num = len(atom_file_name)
+
+  if ( frag_traj_num == 1 ):
+    call.call_simple_shell(lmp_task_dir, "mv atom0.dump atom.dump")
+    call.call_simple_shell(lmp_task_dir, "mv lammps0.out lammps.out")
+  else:
+    tot_dump_file_name_abs = ''.join((lmp_task_dir, '/atom.dump'))
+    tot_log_file_name_abs = ''.join((lmp_task_dir, '/lammps.out'))
+    tot_dump_file = open(tot_dump_file_name_abs, 'w')
+    tot_log_file = open(tot_log_file_name_abs, 'w')
+    log_file_0_name_abs = ''.join((lmp_task_dir, '/lammps0.out'))
+    step_line_num = file_tools.grep_line_num("'Step '", log_file_0_name_abs, lmp_task_dir)[0]
+
+    for i in range(step_line_num):
+      line = linecache.getline(log_file_0_name_abs, i+1)
+      tot_log_file.write(line)
+    linecache.clearcache()
+    for i in range(frag_traj_num):
+      dump_file_name_abs = ''.join((lmp_task_dir, '/atom', str(i), '.dump'))
+      log_file_name_abs = ''.join((lmp_task_dir, '/lammps', str(i), '.out'))
+      atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file_name_abs, log_file_name_abs)
+      step_line_num = file_tools.grep_line_num("'Step '", log_file_name_abs, lmp_task_dir)[0]
+      for j in range(frames_num):
+        line = linecache.getline(log_file_name_abs, step_line_num+j+1)
+        tot_log_file.write(line)
+        for k in range(atoms_num+9):
+          line = linecache.getline(dump_file_name_abs, (atoms_num+9)*j+k+1)
+          tot_dump_file.write(line)
+      if ( i == frag_traj_num-1 ):
+        loop_line_num = file_tools.grep_line_num("'Loop time'", log_file_name_abs, lmp_task_dir)[0]
+        whole_line_num = len(open(log_file_name_abs, 'r').readlines())
+        for j in range(loop_line_num, whole_line_num+1, 1):
+          line = linecache.getline(log_file_name_abs, j)
+          tot_log_file.write(line)
+      call.call_simple_shell(lmp_task_dir, 'rm %s' %(dump_file_name_abs))
+      call.call_simple_shell(lmp_task_dir, 'rm %s' %(log_file_name_abs))
+      linecache.clearcache()
+
+    tot_dump_file.close()
+    tot_log_file.close()
 
 def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
 
@@ -562,8 +629,8 @@ def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
 
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-      lmp_in_file = ''.join((lmp_sys_task_dir, '/md_in.lammps'))
-      if ( os.path.exists(lmp_in_file) and os.path.getsize(lmp_in_file) != 0 ):
+      lmp_in_file_name_abs = ''.join((lmp_sys_task_dir, '/md_in.lammps'))
+      if ( os.path.exists(lmp_in_file_name_abs) and os.path.getsize(lmp_in_file_name_abs) != 0 ):
         check_lmp_md_gen.append(0)
       else:
         check_lmp_md_gen.append(1)
@@ -586,14 +653,23 @@ def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
 
+      file_label = 0
+      while True:
+        log_file_name = ''.join(('lammps', str(file_label), '.out'))
+        log_file_name_abs = ''.join((lmp_sys_task_dir, '/', log_file_name))
+        if ( os.path.exists(log_file_name_abs) ):
+          file_label = file_label+1
+        else:
+          break
+
       if ( len(device) == 0 ):
         run = '''
 #! /bin/bash
 
 export OMP_NUM_THREADS=%d
 
-mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
-''' %(lmp_openmp_num, lmp_mpi_num)
+mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
+''' %(lmp_openmp_num, lmp_mpi_num, log_file_name)
 
       else:
         device_str=data_op.comb_list_2_str(device, ',')
@@ -603,15 +679,17 @@ mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
 export CUDA_VISIBLE_DEVICES=%s
 export OMP_NUM_THREADS=%d
 
-mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
-''' %(device_str, lmp_openmp_num, lmp_mpi_num)
+mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
+''' %(device_str, lmp_openmp_num, lmp_mpi_num, log_file_name)
 
-      run_file = ''.join((lmp_sys_task_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
+      run_file_name_abs = ''.join((lmp_sys_task_dir, '/run.sh'))
+      with open(run_file_name_abs, 'w') as f:
         f.write(run)
 
       subprocess.run('chmod +x run.sh', cwd=lmp_sys_task_dir, shell=True)
       subprocess.run("bash -c './run.sh'", cwd=lmp_sys_task_dir, shell=True)
+
+      combine_frag_traj_file(lmp_sys_task_dir)
 
   #check lammps md
   check_lmp_md_run = []
@@ -623,8 +701,8 @@ mpirun -np %d lmp < ./md_in.lammps 1> lammps.out 2> lammps.err
 
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-      dump_file = ''.join((lmp_sys_task_dir, '/atom.dump'))
-      if ( os.path.exists(dump_file) and os.path.getsize(dump_file) != 0 ):
+      dump_file_name_abs = ''.join((lmp_sys_task_dir, '/atom.dump'))
+      if ( os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
         check_lmp_md_run.append(0)
       else:
         check_lmp_md_run.append(1)
@@ -683,8 +761,8 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
 
 ''' %(model_dir, parallel_num, start, end, parallel_exe)
 
-  run_file = ''.join((model_dir, '/run.sh'))
-  with open(run_file, 'w') as f:
+  run_file_name_abs = ''.join((model_dir, '/run.sh'))
+  with open(run_file_name_abs, 'w') as f:
     f.write(run)
 
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
@@ -726,8 +804,8 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
 
       cmd = "grep %s %s" % ('plumed', 'md_in.lammps')
-      temp = call.call_returns_shell(lmp_sys_task_dir, cmd)
-      if ( temp != [] and 'plumed' in temp[0] ):
+      plumed_info = call.call_returns_shell(lmp_sys_task_dir, cmd)
+      if ( len(plumed_info) != 0 and 'plumed' in plumed_info[0] ):
         use_metad = True
       else:
         use_metad = False
@@ -744,10 +822,10 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
           if ( not use_metad and k == 0 ) :
-            check_file = ''.join((traj_dir, '/atom.dump'))
+            check_file_name_abs = ''.join((traj_dir, '/atom.dump'))
           else:
-            check_file = ''.join((traj_dir, '/frc_in.lammps'))
-          if ( os.path.exists(check_file) and os.path.getsize(check_file) != 0 ):
+            check_file_name_abs = ''.join((traj_dir, '/frc_in.lammps'))
+          if ( os.path.exists(check_file_name_abs) and os.path.getsize(check_file_name_abs) != 0 ):
             check_lmp_frc_gen.append(0)
           else:
             check_lmp_frc_gen.append(1)
@@ -788,8 +866,8 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
         calculated_id = 0
         for l in range(traj_num):
-          dump_file_name = ''.join((model_dir, '/traj_', str(l), '/atom.dump'))
-          if ( os.path.exists(dump_file_name) and len(open(dump_file_name, 'r').readlines()) == atoms_num_tot[i]+9 ):
+          dump_file_name_abs = ''.join((model_dir, '/traj_', str(l), '/atom.dump'))
+          if ( os.path.exists(dump_file_name_abs) and len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
             calculated_id = l
           else:
             break
@@ -838,8 +916,8 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
-          dump_file = ''.join((traj_dir, '/atom.dump'))
-          if ( os.path.exists(dump_file) and len(open(dump_file, 'r').readlines()) == atoms_num_tot[i]+9 ):
+          dump_file_name_abs = ''.join((traj_dir, '/atom.dump'))
+          if ( os.path.exists(dump_file_name_abs) and len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
             check_lmp_frc_run.append(0)
           else:
             check_lmp_frc_run.append(1)

@@ -96,6 +96,7 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
     restart_inp_file.write('&thermo_int\n')
     restart_inp_file.write('  &mix_force_eval\n')
     restart_inp_file.write('    mix_inp_file %s\n' %(mix_inp_file))
+    restart_inp_file.write('    macro_steps %d\n' %(macro_steps))
     if ( os.path.exists(restart_file_name_abs) ):
       restart_inp_file.write('    restart_step %d\n' %(i))
     else:

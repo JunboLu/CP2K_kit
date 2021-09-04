@@ -40,12 +40,6 @@
        MD 1
       &END EACH
     &END CELL
-!If you need stress for training, you could delete the comments
-!    &STRESS
-!      &EACH
-!       MD 1
-!      &END EACH
-!    &END STRESS
     &RESTART_HISTORY
       &EACH
         MD 50
@@ -58,8 +52,8 @@
   METHOD Quickstep
   STRESS_TENSOR ANALYTICAL
   &DFT
-    BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
-    POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
+     BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
     WFN_RESTART_FILE_NAME ./cp2k-RESTART.wfn
     CHARGE 0
     MULTIPLICITY 1
@@ -112,17 +106,17 @@
       PERIODIC NONE
     &END CELL
     &COORD
-  O         3.8585873763       -4.7533175213        5.5091974759
-  H         4.2109950951       -5.5568705259        5.9994585948
-  H         3.0947084560       -4.3172663108        5.9135950646
+  C         3.8585873763       -4.7533175213        5.5091974759
+  O         4.2109950951       -5.5568705259        5.9994585948
+  O         3.0947084560       -4.3172663108        5.9135950646
     &END COORD
     &KIND O
       BASIS_SET DZVP-MOLOPT-GTH-q6
       POTENTIAL GTH-PBE-q6
     &END KIND
-    &KIND H
-      BASIS_SET DZVP-MOLOPT-GTH-q1
-      POTENTIAL GTH-PBE-q1
+    &KIND C
+      BASIS_SET DZVP-MOLOPT-GTH-q4
+      POTENTIAL GTH-PBE-q4
     &END KIND
     &TOPOLOGY
       &CENTER_COORDINATES ON

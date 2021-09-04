@@ -42,7 +42,7 @@ def get_proj_name(cp2k_inp_file, work_dir):
     proj_line_split[len(proj_line_split)-1] = proj_line_split[len(proj_line_split)-1].strip('\n')
   proj_name = proj_line_split[len(proj_line_split)-1]
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
   return proj_name
@@ -84,7 +84,7 @@ def revise_target_value(cp2k_inp_file, target_value, colvar_id, work_dir):
   cmd = "sed -i '%ds/.*/      %s %f/' %s" %(target_line_num, target_str, target_value, cp2k_inp_file)
   call.call_simple_shell(work_dir, cmd)
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
   return target_str
@@ -116,7 +116,7 @@ def revise_md_steps(cp2k_inp_file, md_steps, work_dir):
   cmd = "sed -i '%ds/.*/     STEPS %d/' %s" %(step_line_num, md_steps, cp2k_inp_file)
   call.call_simple_shell(work_dir, cmd)
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_basis_file_name(cp2k_inp_file, work_dir):
@@ -157,7 +157,7 @@ def revise_basis_file_name(cp2k_inp_file, work_dir):
     log_info.log_error('Input error: no basis_set_file_name keyword in %s file' %(cp2k_inp_file))
     exit()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_pot_file_name(cp2k_inp_file, work_dir):
@@ -198,7 +198,7 @@ def revise_pot_file_name(cp2k_inp_file, work_dir):
     log_info.log_error('Input error: no potential_file_name keyword in %s file' %(cp2k_inp_file))
     exit()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_coord_file_name(cp2k_inp_file, work_dir):
@@ -239,7 +239,7 @@ def revise_coord_file_name(cp2k_inp_file, work_dir):
       log_info.log_error('%s in cp2k input file does not exist' %(coord_line_split[len(coord_line_split)-1]))
       exit()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_dftd3_file_name(cp2k_inp_file, work_dir):
@@ -280,7 +280,7 @@ def revise_dftd3_file_name(cp2k_inp_file, work_dir):
       log_info.log_error('%s in cp2k input file does not exist' %(dftd3_line_split[len(dftd3_line_split)-1]))
       exit()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_rvv10_file_name(cp2k_inp_file, work_dir):
@@ -321,7 +321,7 @@ def revise_rvv10_file_name(cp2k_inp_file, work_dir):
       log_info.log_error('%s in cp2k input file does not exist' %(rvv10_line_split[len(rvv10_line_split)-1]))
       exit()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def revise_include_file_name(cp2k_inp_file, work_dir):
@@ -364,7 +364,7 @@ def revise_include_file_name(cp2k_inp_file, work_dir):
 
     linecache.clearcache()
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 
 def delete_line(keyword, cp2k_inp_file, work_dir):
@@ -393,6 +393,6 @@ def delete_line(keyword, cp2k_inp_file, work_dir):
     cmd = "sed -i '%dd' %s" %(keyword_line_num, cp2k_inp_file)
     call.call_simple_shell(work_dir, cmd)
 
-  cmd = "rm %s" %(upper_file_name_abs)
+  cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
 

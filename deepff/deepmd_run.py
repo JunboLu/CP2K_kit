@@ -196,12 +196,12 @@ cd $direc/$x
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, dp_cmd)
 
-    run_file = ''.join((deepmd_train_dir, '/run.sh'))
-    with open(run_file, 'w') as f:
+    run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+    with open(run_file_name_abs, 'w') as f:
       f.write(run)
 
-    produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-    with open(produce_file, 'w') as f:
+    produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+    with open(produce_file_name_abs, 'w') as f:
       f.write(produce)
 
     subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -248,12 +248,12 @@ cd $direc/$x
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, dp_cmd)
 
-    run_file = ''.join((deepmd_train_dir, '/run.sh'))
-    with open(run_file, 'w') as f:
+    run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+    with open(run_file_name_abs, 'w') as f:
       f.write(run)
 
-    produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-    with open(produce_file, 'w') as f:
+    produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+    with open(produce_file_name_abs, 'w') as f:
       f.write(produce)
 
     subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -283,8 +283,8 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir, dp_cmd)
     for i in range(model_num):
       deepmd_train_i_dir = ''.join((deepmd_train_dir, '/', str(i)))
-      run_file = ''.join((deepmd_train_i_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
+      run_file_name_abs = ''.join((deepmd_train_i_dir, '/run.sh'))
+      with open(run_file_name_abs, 'w') as f:
         f.write(run)
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_i_dir, shell=True)
       subprocess.run("bash -c './run.sh'", cwd=deepmd_train_i_dir, shell=True)
@@ -345,12 +345,12 @@ cd $direc/${x_arr[0]}
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir, dp_cmd)
 
-      run_file = ''.join((deepmd_train_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
+      run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+      with open(run_file_name_abs, 'w') as f:
         f.write(run)
 
-      produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-      with open(produce_file, 'w') as f:
+      produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+      with open(produce_file_name_abs, 'w') as f:
         f.write(produce)
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -412,12 +412,12 @@ cd $direc/${x_arr[0]}
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir, dp_cmd)
 
-        run_file = ''.join((deepmd_train_dir, '/run.sh'))
-        with open(run_file, 'w') as f:
+        run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+        with open(run_file_name_abs, 'w') as f:
           f.write(run)
 
-        produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-        with open(produce_file, 'w') as f:
+        produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+        with open(produce_file_name_abs, 'w') as f:
           f.write(produce)
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -495,12 +495,12 @@ cd $direc/${x_arr[0]}
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir, dp_cmd)
 
-      run_file = ''.join((deepmd_train_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
+      run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+      with open(run_file_name_abs, 'w') as f:
         f.write(run)
 
-      produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-      with open(produce_file, 'w') as f:
+      produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+      with open(produce_file_name_abs, 'w') as f:
         f.write(produce)
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -567,12 +567,12 @@ cd $direc/${x_arr[0]}
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(dp_path, cuda_dir, dp_cmd)
 
-        run_file = ''.join((deepmd_train_dir, '/run.sh'))
-        with open(run_file, 'w') as f:
+        run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+        with open(run_file_name_abs, 'w') as f:
           f.write(run)
 
-        produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-        with open(produce_file, 'w') as f:
+        produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+        with open(produce_file_name_abs, 'w') as f:
           f.write(produce)
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -626,12 +626,12 @@ cd $direc/$x
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(cuda_dir, dp_path, dp_cmd)
 
-      run_file = ''.join((deepmd_train_dir, '/run.sh'))
-      with open(run_file, 'w') as f:
+      run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+      with open(run_file_name_abs, 'w') as f:
         f.write(run)
 
-      produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-      with open(produce_file, 'w') as f:
+      produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+      with open(produce_file_name_abs, 'w') as f:
         f.write(produce)
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -676,12 +676,12 @@ cd $direc/$x
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 ''' %(cuda_dir, dp_path, dp_cmd)
 
-        run_file = ''.join((deepmd_train_dir, '/run.sh'))
-        with open(run_file, 'w') as f:
+        run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
+        with open(run_file_name_abs, 'w') as f:
           f.write(run)
 
-        produce_file = ''.join((deepmd_train_dir, '/produce.sh'))
-        with open(produce_file, 'w') as f:
+        produce_file_name_abs = ''.join((deepmd_train_dir, '/produce.sh'))
+        with open(produce_file_name_abs, 'w') as f:
           f.write(produce)
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
@@ -725,8 +725,8 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
   #Check generating deepmd tasks
   check_deepmd_gen = []
   for i in range(model_num):
-    inp_file = ''.join((train_dir, '/', str(i), '/input.json'))
-    if ( os.path.exists(inp_file) and os.path.getsize(inp_file) != 0 ):
+    inp_file_name_abs = ''.join((train_dir, '/', str(i), '/input.json'))
+    if ( os.path.exists(inp_file_name_abs) and os.path.getsize(inp_file_name_abs) != 0 ):
       check_deepmd_gen.append(0)
     else:
       check_deepmd_gen.append(1)
@@ -745,8 +745,8 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
   #Check the deepmd tasks.
   check_deepmd_run = []
   for i in range(model_num):
-    ff_file = ''.join((train_dir, '/', str(i), '/frozen_model.pb'))
-    if ( os.path.exists(ff_file) and os.path.getsize(ff_file) ):
+    ff_file_name_abs = ''.join((train_dir, '/', str(i), '/frozen_model.pb'))
+    if ( os.path.exists(ff_file_name_abs) and os.path.getsize(ff_file_name_abs) ):
       check_deepmd_run.append(0)
     else:
       check_deepmd_run.append(1)

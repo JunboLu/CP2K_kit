@@ -1,9 +1,60 @@
 #! /usr/env/bin python
 
+import os
+import platform
 import subprocess
 import linecache
+import multiprocessing
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
+
+def get_host(work_dir):
+
+  '''
+  get_host: get hosts of nodes
+
+  Args:
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+   proc_num: int
+     proc_num is the number of processors
+   host: 1-d string list
+     host is the name of node host
+   ssh: bool
+     ssh is whether we need to ssh nodes.
+  '''
+
+  env_dist = os.environ
+
+  if 'PBS_NODEFILE' in env_dist:
+    node_info_file = env_dist['PBS_NODEFILE']
+  elif 'LSB_DJOB_HOSTFILE' in env_dist:
+    node_info_file = env_dist['LSB_DJOB_HOSTFILE']
+  elif 'SLURM_NODEFILE' in env_dist:
+    node_info_file = env_dist['SLURM_NODEFILE']
+  else:
+    node_info_file = 'none'
+
+  if ( node_info_file != 'none' ):
+    #Get proc_num
+    cmd = "cat %s | wc -l" %(node_info_file)
+    proc_num = int(call.call_returns_shell(work_dir, cmd)[0])
+    #Get host name
+    host = []
+    cmd = "cat %s | sort | uniq -c" %(node_info_file)
+    node_info = call.call_returns_shell(work_dir, cmd)
+    for node in node_info:
+      node_split = data_op.str_split(node, ' ')
+      host.append(node_split[1])
+    #Get ssh
+    ssh = True
+  else:
+    proc_num = int(multiprocessing.cpu_count()/2)
+    host = [platform.node()]
+    ssh = False
+
+  return proc_num, host, ssh
 
 def read_gpuinfo(work_dir, gpuinfo_file):
 

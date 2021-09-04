@@ -42,13 +42,14 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
 
   proj_name = revise_cp2k_inp.get_proj_name(cp2k_inp_file, work_dir)
   target_str = revise_cp2k_inp.revise_target_value(cp2k_inp_file, init_value, colvar_id, work_dir)
-  revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
-  revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
+  if ( restart_step == 1 ):
+    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
+    revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
 
   incre_value = float((end_value-init_value)/macro_steps)
 
@@ -124,7 +125,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
       print ('Success: generate input files for task %d' %(i), flush=True)
       cmd = "mpirun -np %d %s %s 1>> cp2k.out 2>> cp2k.err" %(cp2k_mpi_num, cp2k_exe, restart_file_name)
       subprocess.run(cmd, cwd=task_dir, shell=True)
-      label_line_num = file_tools.grep_line_num("'PROGRAM ENDED AT'", 'cp2k.out', task_dir)[0]
+      label_line_num = file_tools.grep_line_num("'PROGRAM ENDED AT'", 'cp2k.out', task_dir)
       if ( label_line_num == 0 ):
         log_info.log_error('cp2k running error at %d step' %(i))
         exit()
@@ -208,13 +209,14 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
 
   proj_name = revise_cp2k_inp.get_proj_name(cp2k_inp_file, work_dir)
   target_str = revise_cp2k_inp.revise_target_value(cp2k_inp_file, init_value, colvar_id, work_dir)
-  revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
-  revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
-  revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
+  if ( restart_step == 1 ):
+    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
+    revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
+    revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
 
   incre_value = float((end_value-init_value)/macro_steps)
 

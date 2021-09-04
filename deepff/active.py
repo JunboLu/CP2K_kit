@@ -206,6 +206,9 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     for j in range(conv_iter):
       iter_dir = ''.join((work_dir, '/iter_', str(j)))
       data_dir = ''.join((iter_dir, '/03.cp2k_calc/sys_', str(i), '/data'))
+      if ( j == 0 ):
+        cmd = "cp type.raw %s" %(sys_dir)
+        call.call_simple_shell(data_dir, cmd)
       energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(data_dir)
       frames_num = len(energy_array)
       atoms_num = int(len(coord_array[0])/3)
@@ -476,29 +479,7 @@ def kernel(work_dir, inp_file):
       inp_file is the deepff input file
   '''
 
-  import os
-  import linecache
-  import platform
-  import multiprocessing
-
-  host_file = ''.join((work_dir, '/hostname'))
-  if ( os.path.exists(host_file) ):
-    line_num = len(open(host_file).readlines())
-    line_1 = linecache.getline(host_file, 1)
-    proc_num = int(line_1.strip('\n'))
-    host = []
-    for i in range(line_num-1):
-      line_i = linecache.getline(host_file, i+2)
-      line_i_split = data_op.str_split(line_i, ' ')
-      host.append(line_i_split[1].strip('\n'))
-    ssh = True
-  else:
-    proc_num = int(multiprocessing.cpu_count()/2)
-    host = [platform.node()]
-    ssh = False
-
-  linecache.clearcache()
-
+  proc_num, host, ssh = sysinfo.get_host(work_dir)
   device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']

@@ -55,7 +55,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       frames = len(call.call_returns_shell(data_dir, cmd))
       tot_frames_i.append(frames)
 
-      log_file = ''.join((lammps_sys_task_dir, '/log.lammps'))
+      log_file = ''.join((lammps_sys_task_dir, '/lammps.out'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
       atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file)
 
@@ -72,9 +72,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       success_frames_ij = 0
       for k in range(frames):
         box = []
-        cmd_a = "grep -n %s %s" % ("'Lx Ly Lz Xy Xz Yz'", log_file)
-        a = call.call_returns_shell(lammps_sys_task_dir, cmd_a)
-        a_int = int(a[0].split(':')[0])
+        a_int = file_tools.grep_line_num("'Lx Ly Lz Xy Xz Yz'", log_file, lammps_sys_task_dir)[0]
         line_k = linecache.getline(log_file, a_int+k+1)
         line_k_split = data_op.str_split(line_k, ' ')
         for l in range(6):

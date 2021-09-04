@@ -43,8 +43,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
 
   atoms = []
   if ( len(coord) != 0 ):
-    std_inp_file_name = ''.join((cp2k_sys_dir, '/cp2k_std.inp'))
-    std_inp_file = open(std_inp_file_name, 'w')
+    std_inp_file_name_abs = ''.join((cp2k_sys_dir, '/cp2k_std.inp'))
+    std_inp_file = open(std_inp_file_name_abs, 'w')
 
     std_inp_file.write('&Global\n')
     std_inp_file.write('  PRINT_LEVEL LOW\n')
@@ -59,39 +59,41 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
 
     cp2k_inp_file = cp2k_param['cp2k_inp_file'][sys_id]
     if ( cp2k_inp_file != 'none' ):
-      revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
-      revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
-      revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_file, work_dir)
-      revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
+      cp2k_inp_bak_file_name_abs = ''.join((cp2k_sys_dir, '/cp2k_bak.inp'))
+      call.call_simple_shell(work_dir, "cp %s %s" %(cp2k_inp_file, cp2k_inp_bak_file_name_abs))
+      revise_cp2k_inp.revise_basis_file_name(cp2k_inp_bak_file_name_abs, cp2k_sys_dir)
+      revise_cp2k_inp.revise_pot_file_name(cp2k_inp_bak_file_name_abs, cp2k_sys_dir)
+      revise_cp2k_inp.revise_dftd3_file_name(cp2k_inp_bak_file_name_abs, cp2k_sys_dir)
+      revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_bak_file_name_abs, cp2k_sys_dir)
 
-      cp2k_inp_file_upper = file_tools.upper_file(cp2k_inp_file, work_dir)
-      cp2k_inp_file_space = file_tools.space_file(cp2k_inp_file_upper, ' ', work_dir)
+      cp2k_inp_file_upper = file_tools.upper_file(cp2k_inp_bak_file_name_abs, cp2k_sys_dir)
+      cp2k_inp_file_space = file_tools.space_file(cp2k_inp_bak_file_name_abs, ' ', cp2k_sys_dir)
 
-      line_num = file_tools.grep_line_num("'&DFT'", cp2k_inp_file_space, work_dir)
+      line_num = file_tools.grep_line_num("'&DFT'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( line_num == 0 ):
         log_info.log_error('Input error: no &DFT keywords in %s file' %(cp2k_inp_file))
         exit()
       else:
         dft_line_num = line_num[0]
-      line_num = file_tools.grep_line_num("'&END DFT'", cp2k_inp_file_space, work_dir)
+      line_num = file_tools.grep_line_num("'&END DFT'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( line_num == 0 ):
         log_info.log_error('Input error: no &END DFT keywords in %s file' %(cp2k_inp_file))
         exit()
       else:
         end_dft_line_num = line_num[0]
       for i in range(end_dft_line_num-dft_line_num+1):
-        line = linecache.getline(cp2k_inp_file, dft_line_num+i)
+        line = linecache.getline(cp2k_inp_bak_file_name_abs, dft_line_num+i)
         std_inp_file.write(line)
     else:
       std_inp_file.write('  &DFT\n')
 
-      basis_file = cp2k_param['basis_set_file_name']
-      psp_file = cp2k_param['potential_file_name']
+      basis_file_name = cp2k_param['basis_set_file_name']
+      psp_file_name = cp2k_param['potential_file_name']
       charge = cp2k_param['charge']
       spin = cp2k_param['multiplicity']
       cutoff = cp2k_param['cutoff']
-      std_inp_file.write(''.join(('    BASIS_SET_FILE_NAME ', basis_file, '\n')))
-      std_inp_file.write(''.join(('    POTENTIAL_FILE_NAME ', psp_file, '\n')))
+      std_inp_file.write(''.join(('    BASIS_SET_FILE_NAME ', basis_file_name, '\n')))
+      std_inp_file.write(''.join(('    POTENTIAL_FILE_NAME ', psp_file_name, '\n')))
       std_inp_file.write(''.join(('    CHARGE ', charge, '\n')))
       std_inp_file.write(''.join(('    MULTIPLICITY ', spin, '\n')))
       std_inp_file.write('    &MGRID\n')
@@ -134,13 +136,13 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
         c_vec = np.array([float(x) for x in box[i][2]])
         a, b, c, alpha, beta, gamma = get_cell.get_cell_const(a_vec, b_vec, c_vec)
         l = max(a,b,c)
-        d3_file = cp2k_param['dftd3_file']
+        d3_file_name = cp2k_param['dftd3_file']
         std_inp_file.write('      &VDW_POTENTIAL\n')
         std_inp_file.write('        POTENTIAL_TYPE PAIR_POTENTIAL\n')
         std_inp_file.write('        &PAIR_POTENTIAL\n')
         std_inp_file.write(''.join(('          R_CUTOFF ', str(l/2.0), '\n')))
         std_inp_file.write('          TYPE DFTD3\n')
-        std_inp_file.write(''.join(('          PARAMETER_FILE_NAME ', d3_file, '\n')))
+        std_inp_file.write(''.join(('          PARAMETER_FILE_NAME ', d3_file_name, '\n')))
         std_inp_file.write(''.join(('          REFERENCE_FUNCTIONAL ', xc_func, '\n')))
         std_inp_file.write('        &END PAIR_POTENTIAL\n')
         std_inp_file.write('      &END VDW_POTENTIAL\n')
@@ -162,19 +164,19 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
     std_inp_file.write('      @include box\n')
 
     if ( cp2k_inp_file != 'none' ):
-      line_num = file_tools.grep_line_num("'&CELL'", cp2k_inp_file_space, work_dir)
+      line_num = file_tools.grep_line_num("'&CELL'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( line_num == 0 ):
         log_info.log_error('Input error: no &CELL keyword in cp2k input file')
         exit()
       else:
         cell_line_num = line_num[0]
-      line_num = file_tools.grep_line_num("'&END CELL'", cp2k_inp_file_space, work_dir)
+      line_num = file_tools.grep_line_num("'&END CELL'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( line_num == 0 ):
         log_info.log_error('Input error: no &END CELL keyword in cp2k input file')
         exit()
       else:
         end_cell_line_num = line_num[0]
-      line_num = file_tools.grep_line_num("'PERIODIC'", cp2k_inp_file_space, work_dir)
+      line_num = file_tools.grep_line_num("'PERIODIC'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( line_num == 0 ):
         std_inp_file.write('      PERIODIC XYZ\n')
       else:
@@ -182,7 +184,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
           if ( i > cell_line_num and i < end_cell_line_num ):
             cell_periodic_line_num = i
         if 'cell_periodic_line_num' in locals():
-          line = linecache.getline(cp2k_inp_file, cell_periodic_line_num)
+          line = linecache.getline(cp2k_inp_bak_file_name_abs, cell_periodic_line_num)
           std_inp_file.write(line)
         else:
           std_inp_file.write('      PERIODIC XYZ\n')
@@ -196,18 +198,19 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
     std_inp_file.write('    &END COORD\n')
 
     if ( cp2k_inp_file != 'none' ):
-      kind_line_num = file_tools.grep_line_num("'&KIND'", cp2k_inp_file_space, work_dir)
-      end_kind_line_num = file_tools.grep_line_num("'&END KIND'", cp2k_inp_file_space, work_dir)
+      kind_line_num = file_tools.grep_line_num("'&KIND'", cp2k_inp_file_space, cp2k_sys_dir)
+      end_kind_line_num = file_tools.grep_line_num("'&END KIND'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( len(kind_line_num) != len(end_kind_line_num) ):
         log_info.log_error('Please use &KIND and &END KIND keywords define each atom kind in cp2k input file')
         eixt()
       else:
         for i in range(len(kind_line_num)):
           for j in range(end_kind_line_num[i]-kind_line_num[i]+1):
-            line = linecache.getline(cp2k_inp_file, kind_line_num[i]+j)
+            line = linecache.getline(cp2k_inp_bak_file_name_abs, kind_line_num[i]+j)
             std_inp_file.write(line)
 
       linecache.clearcache()
+      call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_bak_file_name_abs))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_space))
 
@@ -231,10 +234,10 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
 
     std_inp_file.close()
 
-    cp2k_inp_file_upper = file_tools.upper_file(std_inp_file_name, cp2k_sys_dir)
+    cp2k_inp_file_upper = file_tools.upper_file(std_inp_file_name_abs, cp2k_sys_dir)
     pot_line_num = file_tools.grep_line_num("'POTENTIAL_FILE_NAME'", cp2k_inp_file_upper, cp2k_sys_dir)[0]
     call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
-    revise_cp2k_inp.delete_line("'WFN_RESTART_FILE_NAME'", std_inp_file_name, cp2k_sys_dir)
+    revise_cp2k_inp.delete_line("'WFN_RESTART_FILE_NAME'", std_inp_file_name_abs, cp2k_sys_dir)
     use_prev_wfn = cp2k_param['use_prev_wfn']
 
     for i in range(len(coord)):
@@ -243,8 +246,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
         cmd = "mkdir %s" %(''.join(('task_', str(i))))
         call.call_simple_shell(cp2k_sys_dir, cmd)
 
-      box_file_name = ''.join((cp2k_task_dir, '/box'))
-      box_file = open(box_file_name, 'w')
+      box_file_name_abs = ''.join((cp2k_task_dir, '/box'))
+      box_file = open(box_file_name_abs, 'w')
       a_str = '  '.join((box[i][0][0], box[i][0][1], box[i][0][2]))
       b_str = '  '.join((box[i][1][0], box[i][1][1], box[i][1][2]))
       c_str = '  '.join((box[i][2][0], box[i][2][1], box[i][2][2]))
@@ -253,14 +256,14 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
       box_file.write(''.join(('      C ', c_str, '\n')))
       box_file.close()
 
-      coord_file_name = ''.join((cp2k_task_dir, '/coord'))
-      coord_file = open(coord_file_name, 'w')
+      coord_file_name_abs = ''.join((cp2k_task_dir, '/coord'))
+      coord_file = open(coord_file_name_abs, 'w')
       for j in range(len(coord[i])):
         coord_str = '  '.join((coord[i][j][0], coord[i][j][1], coord[i][j][2], coord[i][j][3]))
         coord_file.write(''.join(('    ', coord_str, '\n')))
       coord_file.close()
 
-      call.call_simple_shell(cp2k_task_dir, 'cp %s %s' %(std_inp_file_name, 'input.inp'))
+      call.call_simple_shell(cp2k_task_dir, 'cp %s %s' %(std_inp_file_name_abs, 'input.inp'))
       if use_prev_wfn:
         if ( i != 0 ):
           cmd = "sed -i '%d s/^/    WFN_RESTART_FILE_NAME ..\/task_%d\/cp2k-RESTART.wfn\\n/' input.inp" %(pot_line_num+1, i-1)
@@ -352,15 +355,15 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
         for j in sorted(new_choosed_index):
           box_j = []
           coord_j = []
-          data_file = ''.join((lammps_sys_task_dir, '/data/data_', str(j), '.lmp'))
+          data_file_name_abs = ''.join((lammps_sys_task_dir, '/data/data_', str(j), '.lmp'))
 
-          line_4 = linecache.getline(data_file, 4)
+          line_4 = linecache.getline(data_file_name_abs, 4)
           line_4_split = data_op.str_split(line_4, ' ')
-          line_5 = linecache.getline(data_file, 5)
+          line_5 = linecache.getline(data_file_name_abs, 5)
           line_5_split = data_op.str_split(line_5, ' ')
-          line_6 = linecache.getline(data_file, 6)
+          line_6 = linecache.getline(data_file_name_abs, 6)
           line_6_split = data_op.str_split(line_6, ' ')
-          line_7 = linecache.getline(data_file, 7)
+          line_7 = linecache.getline(data_file_name_abs, 7)
           line_7_split = data_op.str_split(line_7, ' ')
           Lx = float(line_4_split[1])
           Ly = float(line_5_split[1])
@@ -383,7 +386,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           atoms_num = atoms_num_tot[key]
           atoms_type_dic = atoms_type_dic_tot[key]
           for k in range(atoms_num):
-            line_jk = linecache.getline(data_file, k+10+1)
+            line_jk = linecache.getline(data_file_name_abs, k+10+1)
             line_jk_split = data_op.str_split(line_jk, ' ')
             atom_name = data_op.get_dic_keys(atoms_type_dic, int(line_jk_split[1]))[0]
             x_str = line_jk_split[2]
@@ -434,8 +437,8 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
    task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
    for j in range(task_num):
      cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
-     inp_file=''.join((cp2k_sys_task_dir, '/input.inp'))
-     if ( os.path.exists(inp_file) and os.path.getsize(inp_file) != 0 ):
+     inp_file_name_abs = ''.join((cp2k_sys_task_dir, '/input.inp'))
+     if ( os.path.exists(inp_file_name_abs) and os.path.getsize(inp_file_name_abs) != 0 ):
        check_cp2k_gen.append(0)
      else:
        check_cp2k_gen.append(1)
@@ -529,12 +532,12 @@ fi
 rm converge_info
 ''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
-        run_file = ''.join((cp2k_sys_dir, '/run.sh'))
-        with open(run_file, 'w') as f:
+        run_file_name_abs = ''.join((cp2k_sys_dir, '/run.sh'))
+        with open(run_file_name_abs, 'w') as f:
           f.write(run)
 
-        produce_file = ''.join((cp2k_sys_dir, '/produce.sh'))
-        with open(produce_file, 'w') as f:
+        produce_file_name_abs = ''.join((cp2k_sys_dir, '/produce.sh'))
+        with open(produce_file_name_abs, 'w') as f:
           f.write(produce)
 
         subprocess.run('chmod +x run.sh', cwd=cp2k_sys_dir, shell=True)
@@ -548,9 +551,9 @@ rm converge_info
     else:
       cmd = "mpirun -np %d cp2k.popt input.inp 1> cp2k.out 2> cp2k.err" %(proc_num)
       task_dir = ''.join((cp2k_sys_dir, '/task_', str(task_num-1)))
-      frc_file = ''.join((task_dir, '/cp2k-1_0.xyz'))
-      if ( os.path.exists(frc_file) ):
-        cmd = "rm %s" %(frc_file)
+      frc_file_name_abs = ''.join((task_dir, '/cp2k-1_0.xyz'))
+      if ( os.path.exists(frc_file_name_abs) ):
+        cmd = "rm %s" %(frc_file_name_abs)
         call.call_simple_shell(task_dir, cmd)
       subprocess.run(cmd, cwd=task_dir, shell=True)
 
@@ -562,8 +565,8 @@ rm converge_info
    task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
    for j in range(task_num):
      cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
-     frc_file=''.join((cp2k_sys_task_dir, '/cp2k-1_0.xyz'))
-     if ( os.path.exists(frc_file) and len(open(frc_file, 'r').readlines()) == atoms_num_tot[i]+5 ):
+     frc_file_name_abs = ''.join((cp2k_sys_task_dir, '/cp2k-1_0.xyz'))
+     if ( os.path.exists(frc_file_name_abs) and len(open(frc_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+5 ):
        check_cp2k_run.append(0)
      else:
        check_cp2k_run.append(1)
