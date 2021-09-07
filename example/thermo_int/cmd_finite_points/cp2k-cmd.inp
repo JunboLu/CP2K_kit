@@ -59,8 +59,8 @@
   METHOD Quickstep
   &DFT
      CHARGE -1
-     BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/GTH_POTENTIALS
-     POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/GTH_POTENTIALS
     &POISSON
       PERIODIC none
       POISSON_SOLVER wavelet
@@ -102,7 +102,7 @@
     &END CELL
 
     &TOPOLOGY
-     COORD_FILE_NAME /home/lujunbo/WORK/test/TEST_CP2K_KIT/TEST_THERMO_INT/ch3cl2.xyz
+     COORD_FILE_NAME ./ch3cl2.xyz
       COORD_FILE_FORMAT xyz
       &CENTER_COORDINATES
       &END CENTER_COORDINATES

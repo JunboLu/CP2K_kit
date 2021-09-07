@@ -7,6 +7,8 @@ from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import read_lmp
+from CP2K_kit.tools import file_tools
 from CP2K_kit.analyze import check_analyze
 from CP2K_kit.lib.geometry_mod import geometry
 
@@ -58,17 +60,12 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
     vel_lmp2cp2k = 1.8897259886/(100/2.4188843265857)
     frc_lmp2cp2k = 1.0/627.5094/1.8897259886
 
-  line = linecache.getline(lmp_traj_file, 4)
-  atoms_num = int(line.strip('\n'))
-  frames_num = int(len(open(lmp_traj_file).readlines())/(atoms_num+9))
+  atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(lmp_traj_file, lmp_log_file)
 
-  cmd_a = "grep -n %s %s" % ("'Step '", lmp_log_file)
-  a = call.call_returns_shell(work_dir, cmd_a)
-  a_int = int(a[0].split(':')[0])
+  log_item_line_num = file_tools.grep_line_num("'Step '", lmp_log_file, work_dir)[0]
 
-  line = linecache.getline(lmp_log_file, a_int)
-  line_split = data_op.str_split(line, ' ')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  line = linecache.getline(lmp_log_file, log_item_line_num)
+  line_split = data_op.split_str(line, ' ', '\n')
   log_item_num = len(line_split)
   log_item_id = OrderedDict()
 
@@ -85,36 +82,18 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
     log_item_id['KinEng'] = line_split.index('KinEng')
     kin_e = []
 
-  frames_num_true = 0
   for i in range(frames_num):
-    line = linecache.getline(lmp_log_file, i+a_int+1)
-    if ( line != '' ):
-      frames_num_true = frames_num_true+1
-      line_split = data_op.str_split(line, ' ')
-      if ( 'Step' in log_item_id.keys() ):
-        if ( log_item_id['Step'] != log_item_num-1 ):
-          step.append(int(line_split[log_item_id['Step']]))
-        else:
-          step.append(int(line_split[log_item_id['Step']].strip('\n')))
-      if ( 'Temp' in log_item_id.keys() ):
-        if ( log_item_id['Temp'] != log_item_num-1 ):
-          temp.append(line_split[log_item_id['Temp']])
-        else:
-          temp.append(line_split[log_item_id['Temp']].strip('\n'))
-      if ( 'PotEng' in log_item_id.keys() ):
-        if ( log_item_id['PotEng'] != log_item_num-1 ):
-          pot_e.append(float(line_split[log_item_id['PotEng']])*ene_lmp2cp2k)
-        else:
-          pot_e.append(float(line_split[log_item_id['PotEng']].strip('\n'))*ene_lmp2cp2k)
-      if ( 'KinEng' in log_item_id.keys() ):
-        if ( log_item_id['KinEng'] != log_item_num-1 ):
-          kin_e.append(float(line_split[log_item_id['KinEng']])*ene_lmp2cp2k)
-        else:
-          kin_e.append(float(line_split[log_item_id['KinEng']].strip('\n'))*ene_lmp2cp2k)
-    else:
-      break
+    line = linecache.getline(lmp_log_file, i+log_item_line_num+1)
+    line_split = data_op.split_str(line, ' ', '\n')
+    if ( 'Step' in log_item_id.keys() ):
+      step.append(int(line_split[log_item_id['Step']]))
+    if ( 'Temp' in log_item_id.keys() ):
+      temp.append(line_split[log_item_id['Temp']])
+    if ( 'PotEng' in log_item_id.keys() ):
+      pot_e.append(float(line_split[log_item_id['PotEng']])*ene_lmp2cp2k)
+    if ( 'KinEng' in log_item_id.keys() ):
+      kin_e.append(float(line_split[log_item_id['KinEng']])*ene_lmp2cp2k)
 
-  frames_num = frames_num_true
   if ( 'Step' in log_item_id.keys() and 'Temp' in log_item_id.keys()  and \
        'PotEng' in log_item_id.keys() and 'KinEng' in log_item_id.keys() ):
     ene_file_name = ''.join((work_dir, '/cp2k-1.ener'))
@@ -124,8 +103,7 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
       ene_file.write('%10d%20.6f%20.9f%20s%20.9f\n' %(step[i], step[i]*time_step, kin_e[i], temp[i], pot_e[i]))
 
   line = linecache.getline(lmp_traj_file, 9)
-  line_split = data_op.str_split(line, ' ')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  line_split = data_op.split_str(line, ' ', '\n')
   traj_item_num = len(line_split)
   traj_item_id = OrderedDict()
 
@@ -178,74 +156,42 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
       frc_xyz = []
     for j in range(atoms_num):
       line = linecache.getline(lmp_traj_file, (atoms_num+9)*i+9+j+1)
-      line_split = data_op.str_split(line, ' ')
-      if ( traj_item_id['type'] != traj_item_num-1 ):
-        atom_type.append(int(line_split[traj_item_id['type']]))
-      else:
-        atom_type.append(int(line_split[traj_item_id['type']].strip('\n')))
-      if ( traj_item_id['id'] != traj_item_num-1 ):
-        atom_id.append(int(line_split[traj_item_id['id']]))
-      else:
-        atom_type.append(int(line_split[traj_item_id['id']].strip('\n')))
+      line_split = data_op.split_str(line, ' ', '\n')
+      atom_type.append(int(line_split[traj_item_id['type']]))
+      atom_id.append(int(line_split[traj_item_id['id']]))
 
       if 'pos_xyz' in locals():
         pos_xyz_j = []
-        if ( traj_item_id['x'] != traj_item_num-1 ):
-          pos_xyz_j.append(float(line_split[traj_item_id['x']]))
-        else:
-          pos_xyz_j.append(float(line_split[traj_item_id['x']].strip('\n')))
-        if ( traj_item_id['y'] != traj_item_num-1 ):
-          pos_xyz_j.append(float(line_split[traj_item_id['y']]))
-        else:
-          pos_xyz_j.append(float(line_split[traj_item_id['y']].strip('\n')))
-        if ( traj_item_id['z'] != traj_item_num-1 ):
-          pos_xyz_j.append(float(line_split[traj_item_id['z']]))
-        else:
-          pos_xyz_j.append(float(line_split[traj_item_id['z']].strip('\n')))
+        pos_xyz_j.append(float(line_split[traj_item_id['x']]))
+        pos_xyz_j.append(float(line_split[traj_item_id['y']]))
+        pos_xyz_j.append(float(line_split[traj_item_id['z']]))
 
         pos_xyz.append(pos_xyz_j)
 
       if 'vel_xyz' in locals():
         vel_xyz_j = []
-        if ( traj_item_id['vx'] != traj_item_num-1 ):
-          vel_xyz_j.append(float(line_split[traj_item_id['vx']])*vel_lmp2cp2k)
-        else:
-          vel_xyz_j.append(float(line_split[traj_item_id['vx']].strip('\n'))*vel_lmp2cp2k)
-        if ( traj_item_id['vy'] != traj_item_num-1 ):
-          vel_xyz_j.append(float(line_split[traj_item_id['vy']])*vel_lmp2cp2k)
-        else:
-          vel_xyz_j.append(float(line_split[traj_item_id['vy']].strip('\n'))*vel_lmp2cp2k)
-        if ( traj_item_id['vz'] != traj_item_num-1 ):
-          vel_xyz_j.append(float(line_split[traj_item_id['vz']])*vel_lmp2cp2k)
-        else:
-          vel_xyz_j.append(float(line_split[traj_item_id['vz']].strip('\n'))*vel_lmp2cp2k)
+        vel_xyz_j.append(float(line_split[traj_item_id['vx']])*vel_lmp2cp2k)
+        vel_xyz_j.append(float(line_split[traj_item_id['vy']])*vel_lmp2cp2k)
+        vel_xyz_j.append(float(line_split[traj_item_id['vz']])*vel_lmp2cp2k)
 
         vel_xyz.append(vel_xyz_j)
 
       if 'frc_xyz' in locals():
         frc_xyz_j = []
-        if ( traj_item_id['fx'] != traj_item_num-1 ):
-          frc_xyz_j.append(float(line_split[traj_item_id['fx']])*frc_lmp2cp2k)
-        else:
-          frc_xyz_j.append(float(line_split[traj_item_id['fx']].strip('\n'))*frc_lmp2cp2k)
-        if ( traj_item_id['fy'] != traj_item_num-1 ):
-          frc_xyz_j.append(float(line_split[traj_item_id['fy']])*frc_lmp2cp2k)
-        else:
-          frc_xyz_j.append(float(line_split[traj_item_id['fy']].strip('\n'))*frc_lmp2cp2k)
-        if ( traj_item_id['fz'] != traj_item_num-1 ):
-          frc_xyz_j.append(float(line_split[traj_item_id['fz']])*frc_lmp2cp2k)
-        else:
-          frc_xyz_j.append(float(line_split[traj_item_id['fz']].strip('\n'))*frc_lmp2cp2k)
+        frc_xyz_j.append(float(line_split[traj_item_id['fx']])*frc_lmp2cp2k)
+        frc_xyz_j.append(float(line_split[traj_item_id['fy']])*frc_lmp2cp2k)
+        frc_xyz_j.append(float(line_split[traj_item_id['fz']])*frc_lmp2cp2k)
+
         frc_xyz.append(frc_xyz_j)
 
-    atom_id_asc, asc_index = data_op.list_order(atom_id, 'ascend', True)
-    atom_type_asc = data_op.order_list(atom_type, asc_index)
+    atom_id_asc, asc_index = data_op.get_list_order(atom_id, 'ascend', True)
+    atom_type_asc = data_op.reorder_list(atom_type, asc_index)
     if 'pos_xyz' in locals():
-      pos_xyz_asc = data_op.order_list(pos_xyz, asc_index)
+      pos_xyz_asc = data_op.reorder_list(pos_xyz, asc_index)
     if 'vel_xyz' in locals():
-      vel_xyz_asc = data_op.order_list(vel_xyz, asc_index)
+      vel_xyz_asc = data_op.reorder_list(vel_xyz, asc_index)
     if 'frc_xyz' in locals():
-      frc_xyz_asc = data_op.order_list(frc_xyz, asc_index)
+      frc_xyz_asc = data_op.reorder_list(frc_xyz, asc_index)
 
     coord.append(pos_xyz_asc)
     atoms_i = []

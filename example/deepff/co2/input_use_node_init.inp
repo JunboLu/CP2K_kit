@@ -41,7 +41,6 @@
       train_stress false
       model_type use_node
       neuron 120 120 120 ... 180 180 180
-      set_prefix set    
       stop_batch 40000
       batch_size auto
       disp_freq 100
@@ -66,13 +65,13 @@
     &end system
   &end lammps
 
-  &force_eval
+  &model_devi
     choose_new_data_num_limit 100
     conv_new_data_num 5
     force_conv 0.01
     max_iter 100
     restart_iter 0
-  &end force_eval
+  &end model_devi
 
   &cp2k
     basis_set_file_name /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT

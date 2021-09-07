@@ -58,17 +58,17 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
   for i in range(frames_num_stat):
     for j in range(len(atom_id)):
       line_ij = linecache.getline(traj_coord_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+pre_base+base+atom_id[j])
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       coord[i,j,0] = float(line_ij_split[1])
       coord[i,j,1] = float(line_ij_split[2])
-      coord[i,j,2] = float(line_ij_split[3].strip('\n'))
+      coord[i,j,2] = float(line_ij_split[3])
 
   if remove_com:
     #Dump atom mass
     atom_mass = []
     for i in range(len(atom_id)):
       line_i = linecache.getline(traj_coord_file, atom_id[i]+pre_base+base)
-      line_i_split = data_op.str_split(line_i, ' ')
+      line_i_split = data_op.split_str(line_i, ' ')
       atom_mass.append(atom.get_atom_mass(line_i_split[0])[1])
     atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
     coord = dynamic_mod.dynamic.remove_coord_com(coord,atom_mass_array)
@@ -128,10 +128,10 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
   for i in range(frames_num_stat):
     for j in range(len(atom_id)):
       line_ij = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+base+atom_id[j])
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       vel[i,j,0] = float(line_ij_split[1])
       vel[i,j,1] = float(line_ij_split[2])
-      vel[i,j,2] = float(line_ij_split[3].strip('\n'))
+      vel[i,j,2] = float(line_ij_split[3])
 
   linecache.clearcache()
 

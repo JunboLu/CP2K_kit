@@ -27,23 +27,23 @@ def calc_v_hartree(cube_file, surface, work_dir):
   '''
 
   line = linecache.getline(cube_file, 3)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ')
   atoms_num = int(line_split[0])
 
   line = linecache.getline(cube_file, 4)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ', '\n')
   a_grids = int(line_split[0])
-  a = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
+  a = [float(line_split[1]), float(line_split[2]), float(line_split[3])]
 
   line = linecache.getline(cube_file, 5)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ', '\n')
   b_grids = int(line_split[0])
-  b = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
+  b = [float(line_split[1]), float(line_split[2]), float(line_split[3])]
 
   line = linecache.getline(cube_file, 6)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ', '\n')
   c_grids = int(line_split[0])
-  c = [float(line_split[1]), float(line_split[2]), float(line_split[3].strip('\n'))]
+  c = [float(line_split[1]), float(line_split[2]), float(line_split[3])]
 
   pre_file = 2+4+atoms_num
 
@@ -69,8 +69,7 @@ def calc_v_hartree(cube_file, surface, work_dir):
       for k in range(block_line_num):
         temp_list = []
         line = linecache.getline(cube_file, i*second_index*block_line_num+j*block_line_num+k+pre_file+1)
-        line_split = data_op.str_split(line, ' ')
-        line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+        line_split = data_op.split_str(line, ' ', '\n')
         for l in range (len(line_split)):
           v_hartree[i,j,k*6+l] = float(line_split[l])
 

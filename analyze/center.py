@@ -84,12 +84,12 @@ def center(atoms_num, base, pre_base, frames_num, a_vec, b_vec, c_vec, center_ty
     atoms_mass = []
     for j in range(atoms_num):
       line_ij = linecache.getline(traj_coord_file, i*(atoms_num+base)+j+1+base+pre_base)
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       atoms.append(line_ij_split[0])
       atoms_mass.append(atom.get_atom_mass(line_ij_split[0])[1])
       coord[j,0] = float(line_ij_split[1])
       coord[j,1] = float(line_ij_split[2])
-      coord[j,2] = float(line_ij_split[3].strip('\n'))
+      coord[j,2] = float(line_ij_split[3])
 
     if ( center_type == "center_box" ):
       new_coord = geometry_mod.geometry.periodic_center_box(coord, np.asfortranarray(a_vec, dtype='float32'), \

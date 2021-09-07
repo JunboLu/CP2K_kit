@@ -7,7 +7,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import *
 from CP2K_kit.lib.geometry_mod import geometry
 
-def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_conv):
+def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
 
   '''
   choose_lmp_str: choose lammps structure based on force-force correlation.
@@ -19,8 +19,6 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       iter_id is current iteration number.
     atom_type_dic_tot: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
       example : {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
-    atoms_num_tot: 1-d dictionary, dim = num of lammps systems
-      example: {1:192,2:90}
     force_conv: float
       force_conv is the maximum force convergence.
   Returns:
@@ -51,30 +49,25 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
       cmd = "ls | grep %s" % ('model_')
       model_num = len(call.call_returns_shell(lammps_sys_task_dir, cmd))
 
-      cmd = "ls | grep %s" % ('data_')
-      frames = len(call.call_returns_shell(data_dir, cmd))
-      tot_frames_i.append(frames)
-
       log_file = ''.join((lammps_sys_task_dir, '/lammps.out'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
       atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file)
+
+      tot_frames_i.append(frames_num)
 
       force_corr_dist_file_name = ''.join((lammps_sys_task_dir, '/force_corr_devi.out'))
       force_corr_dist_file = open(force_corr_dist_file_name, 'w')
       force_corr_dist_file.write('Frame     MAX_FORCE(eV/Ang)\n')
 
-      #Get atom number
-      atoms_num = atoms_num_tot[i]
-
       choosed_index = []
 
       #Get box parameter, we will calculate distance later.
       success_frames_ij = 0
-      for k in range(frames):
+      for k in range(frames_num):
         box = []
         a_int = file_tools.grep_line_num("'Lx Ly Lz Xy Xz Yz'", log_file, lammps_sys_task_dir)[0]
         line_k = linecache.getline(log_file, a_int+k+1)
-        line_k_split = data_op.str_split(line_k, ' ')
+        line_k_split = data_op.split_str(line_k, ' ')
         for l in range(6):
           box.append(float(line_k_split[l+7]))
 
@@ -84,7 +77,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
 
         for l in range(atoms_num):
           line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
-          line_kl_split = data_op.str_split(line_kl, ' ')
+          line_kl_split = data_op.split_str(line_kl, ' ')
 
           atoms.append(data_op.get_dic_keys(atoms_type_dic_tot[i], int(line_kl_split[1]))[0])
           coord.append([float(line_kl_split[2]), float(line_kl_split[3]), float(line_kl_split[4])])
@@ -97,14 +90,14 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_c
           model_dump_file = ''.join((model_dir, '/traj_', str(k), '/atom.dump'))
           for m in range(atoms_num):
             line_lm = linecache.getline(model_dump_file, m+9+1)
-            line_lm_split = data_op.str_split(line_lm, ' ')
+            line_lm_split = data_op.split_str(line_lm, ' ', '\n')
             id_l.append(int(line_lm_split[0]))
             frc_model_l.append([float(line_lm_split[5]), \
                                 float(line_lm_split[6]), \
-                                float(line_lm_split[7].strip('\n'))])
+                                float(line_lm_split[7])])
 
-          id_l_asc, asc_index = data_op.list_order(id_l, 'ascend', True)
-          frc_model_l_asc = data_op.order_list(frc_model_l, asc_index)
+          id_l_asc, asc_index = data_op.get_list_order(id_l, 'ascend', True)
+          frc_model_l_asc = data_op.reorder_list(frc_model_l, asc_index)
           frc_model.append(frc_model_l_asc)
 
         force_devi = []
@@ -235,7 +228,7 @@ def calc_force_devi(force_a, force_b):
   return deviation
 
 if __name__ == '__main__':
-  from CP2K_kit.deepff import force_eval
+  from CP2K_kit.deepff import model_devi
   from CP2K_kit.tools import get_cell
 
   #Test choose_lmp_str function
@@ -252,5 +245,5 @@ if __name__ == '__main__':
   a, b, c = get_cell.get_triclinic_cell_six([10.0,10.0,10.0,0.0,0.0,0.0])
   atoms = ['C','O','O']
   coord = [[9.99974000,0.00093734,9.99935000], [9.99750000,0.00049800,8.83826000], [0.00269797,9.99880000,1.16223000]]
-  atoms_type_dist = force_eval.calc_dist(atoms, coord, a, b, c)
+  atoms_type_dist = model_devi.calc_dist(atoms, coord, a, b, c)
   print (atoms_type_dist)

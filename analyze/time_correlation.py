@@ -64,10 +64,10 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
   for i in range(frame_num_stat):
     for j in range(len(atom_id)):
       line_ij = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+base+atom_id[j])
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       data[i,j,0] = float(line_ij_split[1])
       data[i,j,1] = float(line_ij_split[2])
-      data[i,j,2] = float(line_ij_split[3].strip('\n'))
+      data[i,j,2] = float(line_ij_split[3])
 
   linecache.clearcache()
 
@@ -159,18 +159,18 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
       for k in range(len(cluster_group_id[i][j])):
         #Dump coordinate
         line_k = linecache.getline(traj_coord_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
-        line_k_split = data_op.str_split(line_k, ' ')
+        line_k_split = data_op.split_str(line_k, ' ', '\n')
         element.append(line_k_split[0])
         pos_data[k,0] = float(line_k_split[1])
         pos_data[k,1] = float(line_k_split[2])
-        pos_data[k,2] = float(line_k_split[3].strip('\n'))
+        pos_data[k,2] = float(line_k_split[3])
 
         #Dump velocity
         line_k = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
-        line_k_split = data_op.str_split(line_k, ' ')
+        line_k_split = data_op.split_str(line_k, ' ', '\n')
         vel_data[k,0] = float(line_k_split[1])
         vel_data[k,1] = float(line_k_split[2])
-        vel_data[k,2] = float(line_k_split[3].strip('\n'))
+        vel_data[k,2] = float(line_k_split[3])
 
       atom_number, atom_mass = atom.get_atom_mass(element)
       mass_array = np.asfortranarray(atom_mass, dtype='float32')

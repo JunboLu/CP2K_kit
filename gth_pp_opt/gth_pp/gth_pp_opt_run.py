@@ -25,7 +25,7 @@ def get_min_step(process_dir):
     cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
     return_temp = call.call_returns_shell(process_dir, cmd)
     if ( return_temp != [] ):
-      return_temp_split = data_op.str_split(return_temp[0], ' ')
+      return_temp_split = data_op.split_str(return_temp[0], ' ')
       if ( len(return_temp_split) > 5 ):
         value.append(return_temp_split[5])
         step_index.append(i+1)
@@ -96,7 +96,7 @@ for i in range(129):
   cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
   return_temp = call.call_returns_shell(process_1_dir, cmd)
   if ( return_temp != [] ):
-    return_temp_split = data_op.str_split(return_temp[0], ' ')
+    return_temp_split = data_op.split_str(return_temp[0], ' ')
     if ( len(return_temp_split) > 5 ):
       value.append(return_temp_split[5])
       step_index.append(i+1)

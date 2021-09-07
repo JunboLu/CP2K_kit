@@ -69,7 +69,7 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
   atom_id_2 = []
   for i in range(atoms_num):
     line_i = linecache.getline(center_file, base+i+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     if ( line_i_split[0] == atom_type_1 ):
       atom_id_1.append(i+1)
     if ( line_i_split[0] == atom_type_2 ):
@@ -82,16 +82,16 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
     distance_i = []
     for j in range(atoms_num):
       line_j = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+j+base+1)
-      line_j_split = data_op.str_split(line_j, ' ')
+      line_j_split = data_op.split_str(line_j, ' ', '\n')
       if ( line_j_split[0] == atom_type_1 ):
         coord_1 = []
         coord_2 = []
         for k in range(atoms_num):
           line_k = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+k+base+1)
-          line_k_split = data_op.str_split(line_k, ' ')
+          line_k_split = data_op.split_str(line_k, ' ', '\n')
           if ( line_k_split[0] == atom_type_2 and j != k ):
-            coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3].strip('\n'))])
-            coord_2.append([float(line_k_split[1]),float(line_k_split[2]),float(line_k_split[3].strip('\n'))])
+            coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3])])
+            coord_2.append([float(line_k_split[1]),float(line_k_split[2]),float(line_k_split[3])])
         dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
                                                         np.asfortranarray(coord_2, dtype='float32'), \
                                                         np.asfortranarray(a_vec, dtype='float32'), \

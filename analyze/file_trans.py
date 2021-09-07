@@ -30,12 +30,12 @@ def xyz2pdb(transd_file, work_dir, file_name):
 
   for i in range(atoms_num):
     line = linecache.getline(transd_file, i+2+1)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ', '\n')
     atom = line_split[0]
     atom_label = atom+'R'
     x = float(line_split[1])
     y = float(line_split[2])
-    z = float(line_split[3].strip('\n'))
+    z = float(line_split[3])
     pdb_file.write('%-6s%5d  %-3s %-3s %1s%4d    %8.3f%8.3f%8.3f%6.2f%6.2f          %2s\n' \
                    %('ATOM', i+1, atom_label, 'RES', 'A', 1, x, y, z, 1.00, 0.00, atom))
 
@@ -64,7 +64,7 @@ def pdb2xyz(transd_file, work_dir, file_name):
   line_num = len(open(transd_file).readlines())
   for i in range(line_num):
     line = linecache.getline(transd_file, i+1)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     if ( line_split[0] == 'ATOM' ):
       line_start = i
       break
@@ -75,7 +75,7 @@ def pdb2xyz(transd_file, work_dir, file_name):
   total_atom_num = 0
   for i in range(line_num-line_start):
     line = linecache.getline(transd_file, i+line_start+1)
-    line_split = data_op.str_split(line.strip('\n'), ' ')
+    line_split = data_op.split_str(line, ' ', '\n')
     if ( len(line_split) == 11 ):
       total_atom_num = total_atom_num + 1
       xyz_file.write('%-3s%8s%8s%8s\n' %(line_split[10].strip('\n'), line_split[5], line_split[6], line_split[7]))

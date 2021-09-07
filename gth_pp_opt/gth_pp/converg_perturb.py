@@ -295,7 +295,7 @@ cd $direc
   for line in iter(p.stdout.readline, 'b'):
     line = line.rstrip().decode('utf8')
     if ( line != '' ):
-      line_split = data_op.str_split(line, ' ')
+      line_split = data_op.split_str(line, ' ')
       if ( len(line_split) == 2 ):
         restart_index.append(int(line_split[0]))
         value.append(float(line_split[1]))

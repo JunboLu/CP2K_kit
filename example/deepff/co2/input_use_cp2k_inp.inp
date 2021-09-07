@@ -40,7 +40,6 @@
       train_stress false
       model_type use_node
       neuron 120 120 120 ... 180 180 180
-      set_prefix set    
       epoch_num 200
       batch_size 1
       disp_freq 100
@@ -65,12 +64,12 @@
     &end system
   &end lammps
 
-  &force_eval
+  &model_devi
     choose_new_data_num_limit 100
     conv_new_data_num 5
     force_conv 0.01
     max_iter 100
-  &end force_eval
+  &end model_devi
 
   &cp2k
     cp2k_inp_file ./cp2k_input.inp

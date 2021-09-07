@@ -35,11 +35,7 @@ def get_proj_name(cp2k_inp_file, work_dir):
 
   proj_line = linecache.getline(cp2k_inp_file, proj_line_num)
   linecache.clearcache()
-  proj_line_split = data_op.str_split(proj_line, ' ')
-  if ( proj_line_split[len(proj_line_split)-1] == '\n' ):
-    proj_line_split.remove(proj_line_split[len(proj_line_split)-1])
-  else:
-    proj_line_split[len(proj_line_split)-1] = proj_line_split[len(proj_line_split)-1].strip('\n')
+  proj_line_split = data_op.split_str(proj_line, ' ', '\n')
   proj_name = proj_line_split[len(proj_line_split)-1]
 
   cmd = 'rm %s' %(upper_file_name_abs)
@@ -76,9 +72,7 @@ def revise_target_value(cp2k_inp_file, target_value, colvar_id, work_dir):
     target_line_num = line_num[colvar_id-1]
   line = linecache.getline(cp2k_inp_file, target_line_num)
   linecache.clearcache()
-  line_split = data_op.str_split(line, ' ')
-  if ( line_split[len(line_split)-1] == '\n' ):
-    line_split.remove(line_split[len(line_split)-1])
+  line_split = data_op.split_str(line, ' ', '\n')
   target_str = data_op.comb_list_2_str(line_split[0:(len(line_split)-1)], ' ')
 
   cmd = "sed -i '%ds/.*/      %s %f/' %s" %(target_line_num, target_str, target_value, cp2k_inp_file)
@@ -140,14 +134,10 @@ def revise_basis_file_name(cp2k_inp_file, work_dir):
     basis_line_num = line_num[0]
     basis_line = linecache.getline(cp2k_inp_file, basis_line_num)
     linecache.clearcache()
-    basis_line_split = data_op.str_split(basis_line, ' ')
-    if ( basis_line_split[len(basis_line_split)-1] == '\n' ):
-      basis_line_split.remove(basis_line_split[len(basis_line_split)-1])
-    else:
-      basis_line_split[len(basis_line_split)-1] = basis_line_split[len(basis_line_split)-1].strip('\n')
+    basis_line_split = data_op.split_str(basis_line, ' ', '\n')
     basis_file_name_abs = os.path.abspath(basis_line_split[len(basis_line_split)-1])
     if ( os.path.exists(basis_file_name_abs) ):
-      basis_file_name_abs_split = data_op.str_split(basis_file_name_abs, '/')
+      basis_file_name_abs_split = data_op.split_str(basis_file_name_abs, '/')
       for i in range(len(basis_file_name_abs_split)):
         basis_file_name_abs_split[i] = '\/'+basis_file_name_abs_split[i]
       basis_file_name_abs_trans = data_op.comb_list_2_str(basis_file_name_abs_split, '')
@@ -181,14 +171,10 @@ def revise_pot_file_name(cp2k_inp_file, work_dir):
     pot_line_num = line_num[0]
     pot_line = linecache.getline(cp2k_inp_file, pot_line_num)
     linecache.clearcache()
-    pot_line_split = data_op.str_split(pot_line, ' ')
-    if ( pot_line_split[len(pot_line_split)-1] == '\n' ):
-      pot_line_split.remove(pot_line_split[len(pot_line_split)-1])
-    else:
-      pot_line_split[len(pot_line_split)-1] = pot_line_split[len(pot_line_split)-1].strip('\n')
+    pot_line_split = data_op.split_str(pot_line, ' ', '\n')
     pot_file_name_abs = os.path.abspath(pot_line_split[len(pot_line_split)-1])
     if ( os.path.exists(pot_file_name_abs) ):
-      pot_file_name_abs_split = data_op.str_split(pot_file_name_abs, '/')
+      pot_file_name_abs_split = data_op.split_str(pot_file_name_abs, '/')
       for i in range(len(pot_file_name_abs_split)):
         pot_file_name_abs_split[i] = '\/'+pot_file_name_abs_split[i]
       pot_file_name_abs_trans = data_op.comb_list_2_str(pot_file_name_abs_split, '')
@@ -222,14 +208,10 @@ def revise_coord_file_name(cp2k_inp_file, work_dir):
     coord_line_num = line_num[0]
     coord_line = linecache.getline(cp2k_inp_file, coord_line_num)
     linecache.clearcache()
-    coord_line_split = data_op.str_split(coord_line, ' ')
-    if ( coord_line_split[len(coord_line_split)-1] == '\n' ):
-      coord_line_split.remove(coord_line_split[len(coord_line_split)-1])
-    else:
-      coord_line_split[len(coord_line_split)-1] = coord_line_split[len(coord_line_split)-1].strip('\n')
+    coord_line_split = data_op.split_str(coord_line, ' ', '\n')
     coord_file_name_abs = os.path.abspath(coord_line_split[len(coord_line_split)-1])
     if ( os.path.exists(coord_file_name_abs) ):
-      coord_file_name_abs_split = data_op.str_split(coord_file_name_abs, '/')
+      coord_file_name_abs_split = data_op.split_str(coord_file_name_abs, '/')
       for i in range(len(coord_file_name_abs_split)):
         coord_file_name_abs_split[i] = '\/'+coord_file_name_abs_split[i]
       coord_file_name_abs_trans = data_op.comb_list_2_str(coord_file_name_abs_split, '')
@@ -263,14 +245,10 @@ def revise_dftd3_file_name(cp2k_inp_file, work_dir):
     dftd3_line_num = line_num[0]
     dftd3_line = linecache.getline(cp2k_inp_file, dftd3_line_num)
     linecache.clearcache()
-    dftd3_line_split = data_op.str_split(dftd3_line, ' ')
-    if ( dftd3_line_split[len(dftd3_line_split)-1] == '\n' ):
-      dftd3_line_split.remove(dftd3_line_split[len(dftd3_line_split)-1])
-    else:
-      dftd3_line_split[len(dftd3_line_split)-1] = dftd3_line_split[len(dftd3_line_split)-1].strip('\n')
+    dftd3_line_split = data_op.split_str(dftd3_line, ' ', '\n')
     dftd3_file_name_abs = os.path.abspath(dftd3_line_split[len(dftd3_line_split)-1])
     if ( os.path.exists(dftd3_file_name_abs) ):
-      dftd3_file_name_abs_split = data_op.str_split(dftd3_file_name_abs, '/')
+      dftd3_file_name_abs_split = data_op.split_str(dftd3_file_name_abs, '/')
       for i in range(len(dftd3_file_name_abs_split)):
         dftd3_file_name_abs_split[i] = '\/'+dftd3_file_name_abs_split[i]
       dftd3_file_name_abs_trans = data_op.comb_list_2_str(dftd3_file_name_abs_split, '')
@@ -304,14 +282,10 @@ def revise_rvv10_file_name(cp2k_inp_file, work_dir):
     rvv10_line_num = line_num[0]
     rvv10_line = linecache.getline(cp2k_inp_file, rvv10_line_num)
     linecache.clearcache()
-    rvv10_line_split = data_op.str_split(rvv10_line, ' ')
-    if ( rvv10_line_split[len(rvv10_line_split)-1] == '\n' ):
-      rvv10_line_split.remove(rvv10_line_split[len(rvv10_line_split)-1])
-    else:
-      rvv10_line_split[len(rvv10_line_split)-1] = rvv10_line_split[len(rvv10_line_split)-1].strip('\n')
+    rvv10_line_split = data_op.split_str(rvv10_line, ' ', '\n')
     rvv10_file_name_abs = os.path.abspath(rvv10_line_split[len(rvv10_line_split)-1])
     if ( os.path.exists(rvv10_file_name_abs) ):
-      rvv10_file_name_abs_split = data_op.str_split(rvv10_file_name_abs, '/')
+      rvv10_file_name_abs_split = data_op.split_str(rvv10_file_name_abs, '/')
       for i in range(len(rvv10_file_name_abs_split)):
         rvv10_file_name_abs_split[i] = '\/'+rvv10_file_name_abs_split[i]
       rvv10_file_name_abs_trans = data_op.comb_list_2_str(rvv10_file_name_abs_split, '')
@@ -345,14 +319,10 @@ def revise_include_file_name(cp2k_inp_file, work_dir):
     for i in range(len(line_num)):
       include_line_num = line_num[i]
       include_line = linecache.getline(cp2k_inp_file, include_line_num)
-      include_line_split = data_op.str_split(include_line, ' ')
-      if ( include_line_split[len(include_line_split)-1] == '\n' ):
-        include_line_split.remove(include_line_split[len(include_line_split)-1])
-      else:
-        include_line_split[len(include_line_split)-1] = include_line_split[len(include_line_split)-1].strip('\n')
+      include_line_split = data_op.split_str(include_line, ' ', '\n')
       include_file_name_abs = os.path.abspath(include_line_split[len(include_line_split)-1])
       if ( os.path.exists(include_file_name_abs) ):
-        include_file_name_abs_split = data_op.str_split(include_file_name_abs, '/')
+        include_file_name_abs_split = data_op.split_str(include_file_name_abs, '/')
         for i in range(len(include_file_name_abs_split)):
           include_file_name_abs_split[i] = '\/'+include_file_name_abs_split[i]
         include_file_name_abs_trans = data_op.comb_list_2_str(include_file_name_abs_split, '')

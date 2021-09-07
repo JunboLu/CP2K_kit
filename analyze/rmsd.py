@@ -48,10 +48,10 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
 
   for i in range(len(atom_id)):
     line_i = linecache.getline(traj_coord_file, int((ref_frame-start_frame_id)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
     coord_ref[i,0] = float(line_i_split[1])
     coord_ref[i,1] = float(line_i_split[2])
-    coord_ref[i,2] = float(line_i_split[3].strip('\n'))
+    coord_ref[i,2] = float(line_i_split[3])
 
   coord_ref_center = np.asfortranarray(np.zeros(3),dtype='float32')
   for i in range(3):
@@ -63,10 +63,10 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
   for m in range(len(comp_frame_list)):
     for i in range(len(atom_id)):
       line_mi = linecache.getline(traj_coord_file, int((comp_frame_list[m]-start_frame_id)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
-      line_mi_split = data_op.str_split(line_mi, ' ')
+      line_mi_split = data_op.split_str(line_mi, ' ', '\n')
       coord_comp[i,0] = float(line_mi_split[1])
       coord_comp[i,1] = float(line_mi_split[2])
-      coord_comp[i,2] = float(line_mi_split[3].strip('\n'))
+      coord_comp[i,2] = float(line_mi_split[3])
 
     coord_comp_center = np.asfortranarray(np.zeros(3),dtype='float32')
 

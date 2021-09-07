@@ -358,13 +358,13 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           data_file_name_abs = ''.join((lammps_sys_task_dir, '/data/data_', str(j), '.lmp'))
 
           line_4 = linecache.getline(data_file_name_abs, 4)
-          line_4_split = data_op.str_split(line_4, ' ')
+          line_4_split = data_op.split_str(line_4, ' ')
           line_5 = linecache.getline(data_file_name_abs, 5)
-          line_5_split = data_op.str_split(line_5, ' ')
+          line_5_split = data_op.split_str(line_5, ' ')
           line_6 = linecache.getline(data_file_name_abs, 6)
-          line_6_split = data_op.str_split(line_6, ' ')
+          line_6_split = data_op.split_str(line_6, ' ')
           line_7 = linecache.getline(data_file_name_abs, 7)
-          line_7_split = data_op.str_split(line_7, ' ')
+          line_7_split = data_op.split_str(line_7, ' ')
           Lx = float(line_4_split[1])
           Ly = float(line_5_split[1])
           Lz = float(line_6_split[1])
@@ -387,11 +387,11 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           atoms_type_dic = atoms_type_dic_tot[key]
           for k in range(atoms_num):
             line_jk = linecache.getline(data_file_name_abs, k+10+1)
-            line_jk_split = data_op.str_split(line_jk, ' ')
+            line_jk_split = data_op.split_str(line_jk, ' ', '\n')
             atom_name = data_op.get_dic_keys(atoms_type_dic, int(line_jk_split[1]))[0]
             x_str = line_jk_split[2]
             y_str = line_jk_split[3]
-            z_str = line_jk_split[4].strip('\n')
+            z_str = line_jk_split[4]
             coord_j.append([atom_name,x_str,y_str,z_str])
 
           linecache.clearcache()
@@ -583,12 +583,12 @@ if __name__ == '__main__':
   from CP2K_kit.deepff import check_deepff
 
   work_dir = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md_mtd'
-  deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  deepff_key = ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   read_input.dump_info(work_dir, 'input.inp', deepff_key)
   proc_num = 4
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
 
   #Test gen_cp2kfrc_file function
   coord = [[['O','-9.64','-0.71','5.80'],['H','-10.39','-1.31','6.15'],['H','-8.89','-35.4','6.37']],

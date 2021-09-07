@@ -122,7 +122,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((model_dir, '/input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, usage, cuda_dir):
+def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
   deepmd_parallel: run deepmd calculation in parallel.
@@ -152,12 +152,6 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, host, device, us
   #point calculation.
 
   model_num = end-start+1
-  dp_exe = call.call_returns_shell(deepmd_train_dir, 'which dp')
-  if ( len(dp_exe) == 0 ):
-    log_info.log_error('Envrionment error: can not find dp executable file, please set the environment for deepmd-kit')
-    exit()
-  else:
-    dp_path = dp_exe[0][:-7]
 
   model_num = end-start+1
   if ( all(os.path.exists(''.join((deepmd_train_dir, '/', str(i), '/model.ckpt.index'))) for i in range(model_num)) ):
@@ -693,7 +687,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
         if ( run_end > end ):
           run_end = end
 
-def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
+def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
   run_deepmd: kernel function to run deepmd.
@@ -740,7 +734,7 @@ def run_deepmd(work_dir, iter_id, parallel_exe, host, device, usage, cuda_dir):
     exit()
 
   #Run deepmd-kit tasks
-  deepmd_parallel(train_dir, 0, model_num-1, parallel_exe, host, device, usage, cuda_dir)
+  deepmd_parallel(train_dir, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
 
   #Check the deepmd tasks.
   check_deepmd_run = []
@@ -763,14 +757,14 @@ if __name__ == '__main__':
   from CP2K_kit.deepff import load_data
   from CP2K_kit.deepff import check_deepff
 
-  deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
+  deepff_key = ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
   work_dir = '/home/lujunbo/code/github/CP2K_kit/deepff/work_dir'
 
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   read_input.dump_info(work_dir, 'input.inp', deepff_key)
   proc_num = 4
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
 
   seed = [1,2,3,4]
   numb_test = int(deepmd_dic['training']['numb_test'])

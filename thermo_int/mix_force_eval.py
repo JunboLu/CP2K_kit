@@ -47,11 +47,7 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
   call.call_simple_shell(work_dir, cmd)
 
   proj_line = linecache.getline(mix_inp_file, proj_line_num)
-  proj_line_split = data_op.str_split(proj_line, ' ')
-  if ( proj_line_split[len(proj_line_split)-1] == '\n' ):
-    proj_line_split.remove(proj_line_split[len(proj_line_split)-1])
-  else:
-    proj_line_split[len(proj_line_split)-1] = proj_line_split[len(proj_line_split)-1].strip('\n')
+  proj_line_split = data_op.split_str(proj_line, ' ', '\n')
   proj_name = proj_line_split[len(proj_line_split)-1]
 
   restart_file_name = ''.join((proj_name, '-1.restart'))
@@ -124,11 +120,7 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
         group_line_num = line_num[0]
         line = linecache.getline(upper_file_name_abs, group_line_num)
         linecache.clearcache()
-        line_split = data_op.str_split(line, ' ')
-        if ( line_split[len(line_split)-1] == '\n' ):
-          line_split.remove(line_split[len(line_split)-1])
-        else:
-          line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+        line_split = data_op.split_str(line, ' ', '\n')
         if ( len(line_split) == 3 and all(data_op.eval_str(i) == 1 for i in line_split[1:3]) ):
           proc_num = sum([int(x) for x in line_split[1:3]])
         else:

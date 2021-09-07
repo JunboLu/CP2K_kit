@@ -13,11 +13,11 @@ def ti_method(force_cmd_file):
   total_num = len(open(force_cmd_file).readlines())
 
   line_1 = linecache.getline(force_cmd_file, 1)
-  line_1_split = data_op.str_split(line_1, ' ')
+  line_1_split = data_op.split_str(line_1, ' ')
   target_1 = float(line_1_split[0])
 
   line_2 = linecache.getline(force_cmd_file, 2)
-  line_2_split = data_op.str_split(line_2, ' ')
+  line_2_split = data_op.split_str(line_2, ' ')
   target_2 = float(line_2_split[0])
 
   increment = target_2-target_1
@@ -28,9 +28,9 @@ def ti_method(force_cmd_file):
 
   for i in range(total_num):
     line = linecache.getline(force_cmd_file,i+1)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ', '\n')
     target_value.append(float(line_split[0]))
-    force_value.append(float(line_split[1].strip('\n')))
+    force_value.append(float(line_split[1]))
 
   linecache.clearcache()
 

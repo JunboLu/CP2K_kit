@@ -44,11 +44,7 @@ def get_box_coord(box_file_name, coord_file_name):
   cell_vec_c = []
   for i in range(whole_line_num):
     line_i = linecache.getline(box_file_name, i+1)
-    line_i_split = data_op.str_split(line_i, ' ')
-    if ( line_i_split[len(line_i_split)-1] == '\n' ):
-      line_i_split.remove(line_i_split[len(line_i_split)-1])
-    else:
-      line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
     if ( len(line_i_split) == 4 and all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
       if ( line_i_split[0] == 'a' ):
         cell_vec_a.append(float(line_i_split[1]))
@@ -62,6 +58,9 @@ def get_box_coord(box_file_name, coord_file_name):
         cell_vec_c.append(float(line_i_split[1]))
         cell_vec_c.append(float(line_i_split[2]))
         cell_vec_c.append(float(line_i_split[3]))
+    else:
+      log_info.log_error('Input error: box setting error, please check or reset deepff/lammps/system/box')
+      exit()
 
   linecache.clearcache()
 
@@ -94,11 +93,7 @@ def get_box_coord(box_file_name, coord_file_name):
   z = []
   for i in range(whole_line_num):
     line_i = linecache.getline(coord_file_name, i+1)
-    line_i_split = data_op.str_split(line_i, ' ')
-    if ( line_i_split[len(line_i_split)-1] == '\n' ):
-      line_i_split.remove(line_i_split[len(line_i_split)-1])
-    else:
-      line_i_split[len(line_i_split)-1] = line_i_split[len(line_i_split)-1].strip('\n')
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
     if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 and \
          all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
       atoms.append(line_i_split[0])
@@ -111,6 +106,9 @@ def get_box_coord(box_file_name, coord_file_name):
       x.append(x_float_str)
       y.append(y_float_str)
       z.append(z_float_str)
+    else:
+      log_info.log_error('Input error: coordination setting error, please check or reset deepff/lammps/system/coord')
+      exit()
 
   linecache.clearcache()
 
@@ -122,8 +120,10 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
   get_md_sys_info: get the system information for lammps md.
 
   Args:
-    lmp_dic: dict
+    lmp_dic: dictionary
       lmp_dic contains parameters for lammps.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     atom_type_dic_tot : dictionary
       Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
@@ -300,7 +300,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         restart_steps = []
         if ( len(restart_file_name) != 0 ):
           for i in restart_file_name:
-            i_split = data_op.str_split(i, '.')
+            i_split = data_op.split_str(i, '.')
             restart_steps.append(int(i_split[len(i_split)-1]))
           restart_step = max(restart_steps)
 
@@ -433,7 +433,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
       for k in range(tot_frame):
         box_vec = []
         line_k = linecache.getline(log_file_name_abs, a_int+k+1)
-        line_k_split = data_op.str_split(line_k, ' ')
+        line_k_split = data_op.split_str(line_k, ' ')
         for l in range(6):
           box_param_float = float(line_k_split[l+7])
           box_param_float_str = numeric.get_as_num_string(box_param_float)
@@ -455,7 +455,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         id_k = []
         for l in range(atoms_num):
           line_kl = linecache.getline(dump_file_name_abs, (atoms_num+9)*k+l+9+1)
-          line_kl_split = data_op.str_split(line_kl, ' ')
+          line_kl_split = data_op.split_str(line_kl, ' ')
           id_k.append(int(line_kl_split[0]))
           type_k.append(line_kl_split[1])
           x_float = float(line_kl_split[2])
@@ -470,11 +470,11 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
 
         #The atoms order in lammps trajectory is not same with that in data file.
         #So we should reorder it.
-        id_k_asc, asc_index = data_op.list_order(id_k, 'ascend', True)
-        type_index_tot.append(data_op.order_list(type_k, asc_index))
-        x_tot.append(data_op.order_list(x_k, asc_index))
-        y_tot.append(data_op.order_list(y_k, asc_index))
-        z_tot.append(data_op.order_list(z_k, asc_index))
+        id_k_asc, asc_index = data_op.get_list_order(id_k, 'ascend', True)
+        type_index_tot.append(data_op.reorder_list(type_k, asc_index))
+        x_tot.append(data_op.reorder_list(x_k, asc_index))
+        y_tot.append(data_op.reorder_list(y_k, asc_index))
+        z_tot.append(data_op.reorder_list(z_k, asc_index))
 
       for k in range(tot_frame):
         data_file_name = 'data_' + str(k) + '.lmp'
@@ -593,7 +593,7 @@ def combine_frag_traj_file(lmp_task_dir):
     tot_dump_file.close()
     tot_log_file.close()
 
-def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
+def run_lmpmd(work_dir, iter_id, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num, device):
 
   '''
   rum_lmpmd: kernel function to run lammps md.
@@ -666,21 +666,35 @@ def run_lmpmd(work_dir, iter_id, lmp_mpi_num, lmp_openmp_num, device):
         run = '''
 #! /bin/bash
 
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
 export OMP_NUM_THREADS=%d
 
 mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
-''' %(lmp_openmp_num, lmp_mpi_num, log_file_name)
+''' %(lmp_path, mpi_path, lmp_openmp_num, lmp_mpi_num, log_file_name)
 
       else:
         device_str=data_op.comb_list_2_str(device, ',')
         run = '''
 #! /bin/bash
 
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
 export CUDA_VISIBLE_DEVICES=%s
 export OMP_NUM_THREADS=%d
 
 mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
-''' %(device_str, lmp_openmp_num, lmp_mpi_num, log_file_name)
+''' %(lmp_path, mpi_path, device_str, lmp_openmp_num, lmp_mpi_num, log_file_name)
 
       run_file_name_abs = ''.join((lmp_sys_task_dir, '/run.sh'))
       with open(run_file_name_abs, 'w') as f:
@@ -713,7 +727,7 @@ mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
     log_info.log_error('lammps molecular dynamics error, please check iteration %d' %(iter_id))
     exit()
 
-def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe):
+def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe, lmp_path, mpi_path):
 
   '''
   lmpfrc_parallel : run lammps force calculation in parallel.
@@ -748,6 +762,14 @@ run_end=%d
 parallel_exe=%s
 
 produce() {
+
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
 export OMP_NUM_THREADS=1
 x=$1
 direc=$2
@@ -758,8 +780,7 @@ lmp < ./frc_in.lammps 1> lammps.out 2> lammps.err
 export -f produce
 
 seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
-
-''' %(model_dir, parallel_num, start, end, parallel_exe)
+''' %(model_dir, parallel_num, start, end, parallel_exe, lmp_path, mpi_path)
 
   run_file_name_abs = ''.join((model_dir, '/run.sh'))
   with open(run_file_name_abs, 'w') as f:
@@ -768,7 +789,7 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
 
-def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
+def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
   '''
   rum_lmpfrc: kernel function to run lammps force calculation.
@@ -885,7 +906,7 @@ def run_lmpfrc(work_dir, iter_id, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
-              lmpfrc_parallel(model_dir, end-start+1, start, end, parallel_exe)
+              lmpfrc_parallel(model_dir, end-start+1, start, end, parallel_exe, lmp_path, mpi_path)
             start = start+lmp_mpi_num
             end = end+lmp_mpi_num
             if ( end > traj_num-1 ):
@@ -940,12 +961,12 @@ if __name__ == '__main__':
 
   exit()
   work_dir = '/home/lujunbo/code/github/CP2K_kit/deepff/work_dir'
-  deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
-  deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  deepff_key = ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
+  deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic = \
   read_input.dump_info(work_dir, 'input.inp', deepff_key)
   proc_num = 4
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
 
   #Test gen_lmpmd_task function
   atoms_type_dic_tot, atoms_num_tot = \

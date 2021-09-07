@@ -113,10 +113,10 @@ def expand_cell(atoms_num, base, pre_base, file_name, a_vec, b_vec, c_vec, a_exp
   coord_atom = np.asfortranarray(np.zeros((atoms_num,3)),dtype='float32')
   for i in range(atoms_num):
     line_i = linecache.getline(file_name, i+base+pre_base+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
     coord_atom[i,0] = float(line_i_split[1])
     coord_atom[i,1] = float(line_i_split[2])
-    coord_atom[i,2] = float(line_i_split[3].strip('\n'))
+    coord_atom[i,2] = float(line_i_split[3])
     atom.append(line_i_split[0])
 
   linecache.clearcache()
@@ -203,16 +203,16 @@ def bond_length_stat(atoms_num, base, pre_base, start_frame_id, frames_num, each
   for i in range(frame_stat_num):
     time.append(time_step*each*i)
     line_i_1 = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_1_id+base)
-    line_i_1_split = data_op.str_split(line_i_1, ' ')
+    line_i_1_split = data_op.split_str(line_i_1, ' ', '\n')
     coord_atom_1[i,0] = float(line_i_1_split[1])
     coord_atom_1[i,1] = float(line_i_1_split[2])
-    coord_atom_1[i,2] = float(line_i_1_split[3].strip('\n'))
+    coord_atom_1[i,2] = float(line_i_1_split[3])
 
     line_i_2 = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+2)+atom_2_id+base)
-    line_i_2_split = data_op.str_split(line_i_2, ' ')
+    line_i_2_split = data_op.split_str(line_i_2, ' ', '\n')
     coord_atom_2[i,0] = float(line_i_2_split[1])
     coord_atom_2[i,1] = float(line_i_2_split[2])
-    coord_atom_2[i,2] = float(line_i_2_split[3].strip('\n'))
+    coord_atom_2[i,2] = float(line_i_2_split[3])
 
   linecache.clearcache()
 
@@ -381,9 +381,9 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, tra
           group_atom_id_j = []
           for k in atom_id_i:
             line_k = linecache.getline(traj_coord_file, pre_base+base+k)
-            line_k_split = data_op.str_split(line_k, ' ')
+            line_k_split = data_op.split_str(line_k, ' ', '\n')
             if ( line_k_split[0] == group_atom_type[j] ):
-              group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3].strip('\n'))])
+              group_coord_j.append([float(line_k_split[1]), float(line_k_split[2]), float(line_k_split[3])])
               group_atom_id_j.append(k)
           group_coord.append(group_coord_j)
           group_atom_id.append(group_atom_id_j)
@@ -405,7 +405,7 @@ def order_struct(atoms_num, frames_num, base, pre_base, group_atom, atom_id, tra
                                                             np.asfortranarray(c_vec, dtype='float32'), \
                                                             len(coord_1), 3)
 
-            dist_ascend, dist_ascend_index = data_op.list_order(dist, 'ascend', True)
+            dist_ascend, dist_ascend_index = data_op.get_list_order(dist, 'ascend', True)
             coord_1 = []
             coord_2 = []
             for l in range(group_atom_type_num[0+k+1]):
@@ -535,10 +535,10 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
 
   coord_atom_1 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
   a_atom_1 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+center_atom_id+base+pre_base)
-  c = data_op.str_split(a_atom_1, ' ')
+  c = data_op.split_str(a_atom_1, ' ', '\n')
   coord_atom_1[0,0] = float(c[1])
   coord_atom_1[0,1] = float(c[2])
-  coord_atom_1[0,2] = float(c[3].strip('\n'))
+  coord_atom_1[0,2] = float(c[3])
 
   pattern_1 = []
   pattern_2 = []
@@ -549,19 +549,19 @@ def order_angle(center_atom_id, sur_atom_id, frame_id, each, traj_coord_file):
     id_list = []
     coord_atom_2 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
     a_atom_2 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+sur_atom_id[i]+base+pre_base)
-    c = data_op.str_split(a_atom_2, ' ')
+    c = data_op.split_str(a_atom_2, ' ', '\n')
     coord_atom_2[0,0] = float(c[1])
     coord_atom_2[0,1] = float(c[2])
-    coord_atom_2[0,2] = float(c[3].strip('\n'))
+    coord_atom_2[0,2] = float(c[3])
 
     for j in range(len(sur_atom_id)):
       if (j != i):
         coord_atom_3 = np.asfortranarray(np.zeros((1,3)),dtype='float32')
         a_atom_3 = linecache.getline(traj_coord_file, int((frame_id-start_frame_id)/each)*(atoms_num+2)+sur_atom_id[j]+base)
-        c = data_op.str_split(a_atom_3, ' ')
+        c = data_op.split_str(a_atom_3, ' ', '\n')
         coord_atom_3[0,0] = float(c[1])
         coord_atom_3[0,1] = float(c[2])
-        coord_atom_3[0,2] = float(c[3].strip('\n'))
+        coord_atom_3[0,2] = float(c[3])
         angle = geometry_mod.geometry.calculate_angle(coord_atom_3,coord_atom_1,coord_atom_2)
         angle_list.append(angle[0])
         id_list.append(sur_atom_id[j])
@@ -631,7 +631,7 @@ def geometry_run(geometry_param, work_dir):
     atoms = []
     for i in range(atoms_num):
       line_i = linecache.getline(center_file, pre_base+base+i+1)
-      line_i_split = data_op.str_split(line_i, ' ')
+      line_i_split = data_op.split_str(line_i, ' ')
       atoms.append(line_i_split[0])
 
     atoms_type = data_op.list_replicate(atoms)
@@ -642,9 +642,9 @@ def geometry_run(geometry_param, work_dir):
       coord = []
       for j in range(atoms_num):
         line_ij = linecache.getline(center_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+pre_base+base+j+1)
-        line_ij_split = data_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.split_str(line_ij, ' ', '\n')
         atoms.append(line_ij_split[0])
-        coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
+        coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3])])
       atoms_type_j, coord_num_j = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
       for j in range(len(atoms_type)):
         coord_num_tot[j] = coord_num_tot[j] + coord_num_j[j]

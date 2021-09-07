@@ -832,7 +832,7 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
     atom_label = lmp2cp2k_dic['atom_label']
     atom_label_dic = OrderedDict()
     for i in range (len(atom_label)):
-      label_split = data_op.str_split(atom_label[i], ':')
+      label_split = data_op.split_str(atom_label[i], ':')
       atom_label_dic[int(label_split[0])] = label_split[1]
     lmp2cp2k_dic['atom_label'] = atom_label_dic
   else:
@@ -1544,7 +1544,7 @@ def check_dp_test_inp(dp_test_dic):
       atom_label = dp_test_dic['atom_label']
       atom_label_dic = OrderedDict()
       for i in range (len(atom_label)):
-        label_split = data_op.str_split(atom_label[i], ':')
+        label_split = data_op.split_str(atom_label[i], ':')
         atom_label_dic[int(label_split[0])] = label_split[1]
       dp_test_dic['atom_label'] = atom_label
     else:
@@ -1645,7 +1645,7 @@ def check_dp_test_inp(dp_test_dic):
     atom_label = dp_test_dic['atom_label']
     atom_label_dic = OrderedDict()
     for i in range (len(atom_label)):
-      label_split = data_op.str_split(atom_label[i], ':')
+      label_split = data_op.split_str(atom_label[i], ':')
       atom_label_dic[int(label_split[0])] = label_split[1]
     dp_test_dic['atom_label'] = atom_label_dic
   else:

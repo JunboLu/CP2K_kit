@@ -148,7 +148,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
   for i in range(frames_num):
     #Dump box
     line_i = linecache.getline(cp2k_cell_file, i+1+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     cell_vec = [float(x) for x in line_i_split[2:11]]
     tri_cell_a, tri_cell_b, tri_cell_c = \
     get_cell.get_triclinic_cell(cell_vec[0:3], cell_vec[3:6], cell_vec[6:10])
@@ -162,8 +162,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     z_i = []
     for j in range(atoms_num):
       line_ij = linecache.getline(cp2k_pos_file, (atoms_num+base)*i+j+pre_base+base+1)
-      line_ij_split = data_op.str_split(line_ij, ' ')
-      line_ij_split[len(line_ij_split)-1] = line_ij_split[len(line_ij_split)-1].strip('\n')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       atom_type_i.append(data_op.get_dic_keys(atom_label, line_ij_split[0])[0])
       x_i.append(line_ij_split[1])
       y_i.append(line_ij_split[2])
@@ -178,7 +177,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
   cmd = "cp %s %s" %(dpff_file, work_dir)
   call.call_simple_shell(work_dir, cmd)
 
-  dpff_file_split = data_op.str_split(dpff_file, '/')
+  dpff_file_split = data_op.split_str(dpff_file, '/')
   dpff_file_name = dpff_file_split[len(dpff_file_split)-1]
 
   print ('Run lammps jobs for %s system' %(frames_num), flush=True)
@@ -232,7 +231,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     a = call.call_returns_shell(frame_dir, cmd_a)
     a_int = int(a[0].split(':')[0])
     line_log_i = linecache.getline(lmp_log_file, a_int+1)
-    line_log_i_split = data_op.str_split(line_log_i, ' ')
+    line_log_i_split = data_op.split_str(line_log_i, ' ')
     energy_lmp.append(float(line_log_i_split[2])/atoms_num)
     atom_id_i = []
     frc_lmp_i = []
@@ -241,14 +240,14 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_z_lmp_i = []
     for j in range(atoms_num):
       line_traj_ij = linecache.getline(lmp_traj_file, j+1+9)
-      line_traj_ij_split = data_op.str_split(line_traj_ij, ' ')
+      line_traj_ij_split = data_op.split_str(line_traj_ij, ' ', '\n')
       atom_id_i.append(int(line_traj_ij_split[0]))
       frc_x_lmp_i.append(float(line_traj_ij_split[5]))
       frc_y_lmp_i.append(float(line_traj_ij_split[6]))
-      frc_z_lmp_i.append(float(line_traj_ij_split[7].strip('\n')))
-      frc_lmp_i.append([float(line_traj_ij_split[5]), float(line_traj_ij_split[6]), float(line_traj_ij_split[7].strip('\n'))])
+      frc_z_lmp_i.append(float(line_traj_ij_split[7]))
+      frc_lmp_i.append([float(line_traj_ij_split[5]), float(line_traj_ij_split[6]), float(line_traj_ij_split[7])])
 
-    atom_id_i_asc, asc_index = data_op.list_order(atom_id_i, 'ascend', True)
+    atom_id_i_asc, asc_index = data_op.get_list_order(atom_id_i, 'ascend', True)
     frc_x_lmp_i_asc = data_op.order_list(frc_x_lmp_i, asc_index)
     frc_y_lmp_i_asc = data_op.order_list(frc_y_lmp_i, asc_index)
     frc_z_lmp_i_asc = data_op.order_list(frc_z_lmp_i, asc_index)
@@ -260,8 +259,8 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_z_lmp.append(frc_z_lmp_i_asc)
 
     line_cp2k = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+2)
-    line_cp2k_split = data_op.str_split(line_cp2k, ' ')
-    energy_cp2k.append(float(line_cp2k_split[len(line_cp2k_split)-1].strip('\n'))*hartree_to_ev/atoms_num)
+    line_cp2k_split = data_op.split_str(line_cp2k, ' ', '\n')
+    energy_cp2k.append(float(line_cp2k_split[len(line_cp2k_split)-1])*hartree_to_ev/atoms_num)
 
     frc_cp2k_i = []
     frc_x_cp2k_i = []
@@ -269,10 +268,10 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_z_cp2k_i = []
     for j in range(atoms_num):
       line_cp2k_ij = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+j+1+pre_base+base)
-      line_cp2k_ij_split = data_op.str_split(line_cp2k_ij, ' ')
+      line_cp2k_ij_split = data_op.split_str(line_cp2k_ij, ' ', '\n')
       fx = float(line_cp2k_ij_split[1])*hartree_to_ev*ang_to_bohr
       fy = float(line_cp2k_ij_split[2])*hartree_to_ev*ang_to_bohr
-      fz = float(line_cp2k_ij_split[3].strip('\n'))*hartree_to_ev*ang_to_bohr
+      fz = float(line_cp2k_ij_split[3])*hartree_to_ev*ang_to_bohr
       frc_x_cp2k_i.append(fx)
       frc_y_cp2k_i.append(fy)
       frc_z_cp2k_i.append(fz)
@@ -330,7 +329,7 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, c
   atoms, energy, coord, vel, frc, cell = \
   read_lmp.read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label, [], True, True, False, True, True)
 
-  cp2k_inp_split = data_op.str_split(os.path.abspath(cp2k_inp_file), '/')
+  cp2k_inp_split = data_op.split_str(os.path.abspath(cp2k_inp_file), '/')
   cp2k_inp_file = cp2k_inp_split[len(cp2k_inp_split)-1]
 
   print ('Run cp2k jobs for %d systems' %(frames_num), flush=True)
@@ -382,10 +381,10 @@ def active_learning_test(lmp_traj_file, lmp_log_file, cp2k_inp_file, cp2k_exe, c
     frc_file_i = ''.join((frame_dir, '/cp2k-1_0.xyz'))
     for j in range(atoms_num):
       line_ij = linecache.getline(frc_file_i, j+4+1)
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       fx = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
       fy = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
-      fz = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
+      fz = float(line_ij_split[5])*hartree_to_ev*ang_to_bohr
       frc_cp2k_i.append(fx)
       frc_cp2k_i.append(fy)
       frc_cp2k_i.append(fz)

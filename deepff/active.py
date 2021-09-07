@@ -14,7 +14,7 @@ from CP2K_kit.deepff import check_deepff
 from CP2K_kit.deepff import load_data
 from CP2K_kit.deepff import deepmd_run
 from CP2K_kit.deepff import lammps_run
-from CP2K_kit.deepff import force_eval
+from CP2K_kit.deepff import model_devi
 from CP2K_kit.deepff import cp2k_run
 from CP2K_kit.deepff import sysinfo
 from CP2K_kit.analyze import dp_test
@@ -30,7 +30,7 @@ def dump_input(work_dir, inp_file, f_key):
     inp_file: string
       inp_file is the deepff input file
     f_key: 1-d string list
-      f_key is fixed to: ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
+      f_key is fixed to: ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
   Returns :
     deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
@@ -38,8 +38,8 @@ def dump_input(work_dir, inp_file, f_key):
       lammpd_dic contains keywords used in lammps.
     cp2k_dic: dictionary
       cp2k_dic contains keywords used in cp2k.
-    force_eval_dic: dictionary
-      force_eval contains keywords used in force_eval.
+    model_devi_dic: dictionary
+      model_devi contains keywords used in model_devi.
     environ_dic: dictionary
       environ_dic contains keywords used in environment.
   '''
@@ -48,10 +48,10 @@ def dump_input(work_dir, inp_file, f_key):
   deepmd_dic = job_type_param[0]
   lammps_dic = job_type_param[1]
   cp2k_dic = job_type_param[2]
-  force_eval_dic = job_type_param[3]
+  model_devi_dic = job_type_param[3]
   environ_dic = job_type_param[4]
 
-  return deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic
+  return deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic
 
 def get_atoms_type(deepmd_dic):
 
@@ -81,10 +81,13 @@ def get_atoms_type(deepmd_dic):
         atoms = []
         for i in range(atoms_num):
           line_i = linecache.getline(md_coord_file, i+3)
-          line_i_split = data_op.str_split(line_i, ' ')
+          line_i_split = data_op.split_str(line_i, ' ')
           atoms.append(line_i_split[0])
         linecache.clearcache()
         atoms_type.append(data_op.list_replicate(atoms))
+      else:
+        log_info.log_error('Input error: %s does not exist, proj_name maybe wrong' %(md_coord_file))
+        exit()
 
   tot_atoms_type = data_op.list_reshape(atoms_type)
   final_atoms_type = data_op.list_replicate(tot_atoms_type)
@@ -294,8 +297,8 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     frc_traj_file.close()
     cell_traj_file.close()
 
-def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, restart_data_num, \
-             restart_stage, work_dir, max_iter, restart_iter, tot_atoms_type_dic, proc_num, host, device, usage):
+def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, init_train_data, \
+             init_data_num, work_dir, tot_atoms_type_dic, proc_num, host, device, usage):
 
   '''
   run_iter: run active learning iterations.
@@ -309,22 +312,18 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
       lammpd_dic contains keywords used in lammps.
     cp2k_dic: dictionary
       cp2k_dic contains keywords used in cp2k.
-    force_eval_dic: dictionary
-      force_eval_dic contains keywords used in force_eval.
+    model_devi_dic: dictionary
+      model_devi_dic contains keywords used in model_devi.
     environ_dic: dictionary
       environ_dic contains keywords used in environment.
     init_train_data: 1-d string list
       init_train_data contains initial training data directories.
-    restart_data_num: int
-      restart_data_num is the data number in restart step.
-    restart_stage: int
-      restart_stage is the stage of restart.
+    init_data_num: int
+      init_data_num is the data number for initial training.
     work_dir: string
       work_dir is working directory of CP2K_kit.
-    max_iter: int
-      max_iter is the maxium iterations for active learning.
-    restart_iter: int
-      restart_iter is the iteration number of restart.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
     proc_num: int
       proc_num is the number of processors.
     host: 1-d string list
@@ -337,16 +336,23 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
     none
   '''
 
-  np.random.seed(1234567890)
+  max_iter = model_devi_dic['max_iter']
+  restart_iter = model_devi_dic['restart_iter']
+
+  if ( restart_iter == 0 ):
+    restart_data_num = init_data_num
+  else:
+    restart_data_num = model_devi_dic['restart_data_num']
+  restart_stage = model_devi_dic['restart_stage']
 
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
   neuron = deepmd_dic['training']['neuron']
   train_stress = deepmd_dic['training']['train_stress']
 
-  conv_new_data_num = force_eval_dic['conv_new_data_num']
-  choose_new_data_num_limit = force_eval_dic['choose_new_data_num_limit']
-  force_conv = force_eval_dic['force_conv']
+  conv_new_data_num = model_devi_dic['conv_new_data_num']
+  choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
+  force_conv = model_devi_dic['force_conv']
 
   cp2k_exe = environ_dic['cp2k_exe']
   cp2k_env_file = environ_dic['cp2k_env_file']
@@ -356,8 +362,14 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
   lmp_mpi_num = environ_dic['lmp_mpi_num']
   lmp_openmp_num = environ_dic['lmp_openmp_num']
 
+  dp_path = sysinfo.get_dp_path(work_dir)
+  lmp_path = sysinfo.get_lmp_path(work_dir)
+  mpi_path = sysinfo.get_mpi_path(work_dir)
+
   data_num = []
   data_num.append(restart_data_num)
+
+  np.random.seed(1234567890)
 
   for i in range(restart_iter, max_iter, 1):
 
@@ -401,7 +413,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
 
       deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                  descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
-      deepmd_run.run_deepmd(work_dir, i, parallel_exe, host, device, usage, cuda_dir)
+      deepmd_run.run_deepmd(work_dir, i, parallel_exe, dp_path, host, device, usage, cuda_dir)
       check_deepff.write_restart_inp(inp_file, i, 1, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 ):
@@ -409,7 +421,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
       print ('Step 2: lammps tasks', flush=True)
 
       lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, tot_atoms_type_dic)
-      lammps_run.run_lmpmd(work_dir, i, lmp_mpi_num, lmp_openmp_num, device[0])
+      lammps_run.run_lmpmd(work_dir, i, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num, device[0])
       check_deepff.write_restart_inp(inp_file, i, 2, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
@@ -418,13 +430,13 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ
         print ('Step 2: lammps tasks', flush=True)
       sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
-      lammps_run.run_lmpfrc(work_dir, i, parallel_exe, proc_num, atoms_num_tot)
+      lammps_run.run_lmpfrc(work_dir, i, lmp_path, mpi_path, parallel_exe, proc_num, atoms_num_tot)
       check_deepff.write_restart_inp(inp_file, i, 3, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
       #Get force-force correlation and then choose new structures
       sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
-      struct_index, success_ratio_sys, success_ratio = force_eval.choose_lmp_str(work_dir, i, atoms_type_dic_tot, atoms_num_tot, force_conv)
+      struct_index, success_ratio_sys, success_ratio = model_devi.choose_lmp_str(work_dir, i, atoms_type_dic_tot, force_conv)
 
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
@@ -482,17 +494,16 @@ def kernel(work_dir, inp_file):
   proc_num, host, ssh = sysinfo.get_host(work_dir)
   device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 
-  deepff_key = ['deepmd', 'lammps', 'cp2k', 'force_eval', 'environ']
+  deepff_key = ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
 
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   dump_input(work_dir, inp_file, deepff_key)
 
-  deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num)
+  deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
   print ('Check input file: no error in %s' %(inp_file), flush=True)
 
-  max_iter = force_eval_dic['max_iter']
-  restart_iter = force_eval_dic['restart_iter']
+  restart_iter = model_devi_dic['restart_iter']
   train_stress = deepmd_dic['training']['train_stress']
 
   tot_atoms_type = get_atoms_type(deepmd_dic)
@@ -507,18 +518,12 @@ def kernel(work_dir, inp_file):
 
   init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic)
 
-  if ( restart_iter == 0 ):
-    restart_data_num = init_data_num
-  else:
-    restart_data_num = force_eval_dic['restart_data_num']
-  restart_stage = force_eval_dic['restart_stage']
-
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):
     print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
-  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, force_eval_dic, environ_dic, init_train_data, restart_data_num, \
-           restart_stage, work_dir, max_iter, restart_iter, tot_atoms_type_dic, proc_num, host, device, usage)
+  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, init_train_data, \
+           init_data_num, work_dir, tot_atoms_type_dic, proc_num, host, device, usage)
 
 if __name__ == '__main__':
 

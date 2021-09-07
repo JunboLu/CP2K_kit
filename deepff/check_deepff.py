@@ -8,7 +8,7 @@ from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import file_tools
 
-def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_num):
+def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num):
 
   '''
   check_inp: check the deepff input file
@@ -20,8 +20,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       lammpd_dic contains keywords used in lammps.
     cp2k_dic: dictionary
       cp2k_dic contains keywords used in cp2k.
-    force_eval_dic: dictionary
-      force_eval contains keywords used in force_eval.
+    model_devi_dic: dictionary
+      model_devi_dic contains keywords used in model_devi.
     environ_dic: dictionary
       environ_dic contains keywords used in environment.
   Returns:
@@ -31,8 +31,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       lmp_dic is the revised lmp_dic.
     cp2k_dic: dictionary
       cp2k_dic is the revised cp2k_dic.
-    force_eval_dic: dictionary
-      force_eval_dic is the revised force_eval_dic.
+    model_devi_dic: dictionary
+      model_devi_dic is the revised model_devi_dic.
     environ_dic: dictionary
       environ_dic is the revised environ_dic.
   '''
@@ -321,10 +321,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       if ( deepmd_dic['training']['model_type'] == 'use_node' ):
         neuron = []
         tmp_str = data_op.comb_list_2_str(neuron_list, ' ')
-        tmp_list = data_op.str_split(tmp_str, '...')
+        tmp_list = data_op.split_str(tmp_str, '...')
 
         for i in range(len(tmp_list)):
-          neuron_i = data_op.str_split(tmp_list[i], ' ')
+          neuron_i = data_op.split_str(tmp_list[i], ' ')
           if ( all(data_op.eval_str(j) == 1 for j in neuron_i) ):
             neuron.append([int(x) for x in neuron_i])
           else:
@@ -339,17 +339,6 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
       deepmd_dic['training']['neuron'] = neuron
     else:
       log_info.log_error('Input error: no neuron, please set deepff/deepmd/training/neuron')
-      exit()
-
-    if ( 'set_prefix' in deepmd_dic['training'].keys() ):
-      set_prefix = deepmd_dic['training']['set_prefix']
-      if ( data_op.eval_str(set_prefix) == 0 ):
-        pass
-      else:
-        log_info.log_error('Input error: set_prefix error, please check or reset deepff/deepmd/training/set_prefix')
-        exit()
-    else:
-      log_info.log_error('Input error: no set_prefix, please set deepff/deepmd/training/set_prefix')
       exit()
 
     if ( 'epoch_num' in deepmd_dic['training'].keys() ):
@@ -413,6 +402,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     else:
       deepmd_dic['training']['disp_training'] = True
 
+    deepmd_dic['training']['set_prefix'] = 'set'
     deepmd_dic['training']['disp_file'] = 'lcurve.out'
     deepmd_dic['training']['load_ckpt'] = 'model.ckpt'
     deepmd_dic['training']['save_ckpt'] = 'model.ckpt'
@@ -580,76 +570,76 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
     log_info.log_error('Input error: no system for lammps calculation, please set deepff/lammps/system')
     exit()
 
-  #Check parameters for force_eval
-  if ( 'choose_new_data_num_limit' in force_eval_dic.keys() ):
-    choose_new_data_num_limit = force_eval_dic['choose_new_data_num_limit']
+  #Check parameters for model_devi
+  if ( 'choose_new_data_num_limit' in model_devi_dic.keys() ):
+    choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
     if ( data_op.eval_str(choose_new_data_num_limit) == 1 ):
-      force_eval_dic['choose_new_data_num_limit'] = int(choose_new_data_num_limit)
+      model_devi_dic['choose_new_data_num_limit'] = int(choose_new_data_num_limit)
     else:
-      log_info.log_error('Input error: choose_new_data_num_limit should be integer, please check or reset deepff/force_eval/choose_new_data_num_limit')
+      log_info.log_error('Input error: choose_new_data_num_limit should be integer, please check or reset deepff/model_devi/choose_new_data_num_limit')
       exit()
   else:
-    force_eval_dic['choose_new_data_num_limit'] = 100
+    model_devi_dic['choose_new_data_num_limit'] = 100
 
-  if ( 'conv_new_data_num' in force_eval_dic.keys() ):
-    conv_new_data_num = force_eval_dic['conv_new_data_num']
+  if ( 'conv_new_data_num' in model_devi_dic.keys() ):
+    conv_new_data_num = model_devi_dic['conv_new_data_num']
     if ( data_op.eval_str(conv_new_data_num) == 1 ):
-      force_eval_dic['conv_new_data_num'] = int(conv_new_data_num)
+      model_devi_dic['conv_new_data_num'] = int(conv_new_data_num)
     else:
-      log_info.log_error('Input error: conv_new_data_num should be integer, please check or reset deepff/force_eval/conv_new_data_num')
+      log_info.log_error('Input error: conv_new_data_num should be integer, please check or reset deepff/model_devi/conv_new_data_num')
       exit()
   else:
-    force_eval_dic['conv_new_data_num'] = 5
+    model_devi_dic['conv_new_data_num'] = 5
 
-  if ( 'force_conv' in force_eval_dic.keys() ):
-    force_conv = force_eval_dic['force_conv']
+  if ( 'force_conv' in model_devi_dic.keys() ):
+    force_conv = model_devi_dic['force_conv']
     if ( data_op.eval_str(force_conv) == 1 or data_op.eval_str(force_conv) == 2 ):
-      force_eval_dic['force_conv'] = float(force_conv)
+      model_devi_dic['force_conv'] = float(force_conv)
     else:
-      log_info.log_error('Input error: force_conv should be integer or float, please check or set deepff/force_eval/force_conv')
+      log_info.log_error('Input error: force_conv should be integer or float, please check or set deepff/model_devi/force_conv')
       exit()
   else:
-    force_eval_dic['force_conv'] = 0.05
+    model_devi_dic['force_conv'] = 0.05
 
-  if ( 'max_iter' in force_eval_dic.keys() ):
-    max_iter = force_eval_dic['max_iter']
+  if ( 'max_iter' in model_devi_dic.keys() ):
+    max_iter = model_devi_dic['max_iter']
     if ( data_op.eval_str(max_iter) == 1 ):
-      force_eval_dic['max_iter'] = int(max_iter)
+      model_devi_dic['max_iter'] = int(max_iter)
     else:
-      log_info.log_error('Input error: max_iter should be integer, please check or reset deepff/force_eval/max_iter')
+      log_info.log_error('Input error: max_iter should be integer, please check or reset deepff/model_devi/max_iter')
       exit()
   else:
-    force_eval_dic['max_iter'] = 100
+    model_devi_dic['max_iter'] = 100
 
-  if ( 'restart_iter' in force_eval_dic.keys() ):
-    restart_iter = force_eval_dic['restart_iter']
+  if ( 'restart_iter' in model_devi_dic.keys() ):
+    restart_iter = model_devi_dic['restart_iter']
     if ( data_op.eval_str(restart_iter) == 1 ):
-      force_eval_dic['restart_iter'] = int(restart_iter)
+      model_devi_dic['restart_iter'] = int(restart_iter)
     else:
-      log_info.log_error('Input error: restart_iter should be integer, please check or reset deepff/force_eval/restart_iter')
+      log_info.log_error('Input error: restart_iter should be integer, please check or reset deepff/model_devi/restart_iter')
       exit()
   else:
-    force_eval_dic['restart_iter'] = 0
+    model_devi_dic['restart_iter'] = 0
 
-  if ( 'restart_data_num' in force_eval_dic.keys() ):
-    restart_data_num = force_eval_dic['restart_data_num']
+  if ( 'restart_data_num' in model_devi_dic.keys() ):
+    restart_data_num = model_devi_dic['restart_data_num']
     if ( data_op.eval_str(restart_data_num) == 1 ):
-      force_eval_dic['restart_data_num'] = int(restart_data_num)
+      model_devi_dic['restart_data_num'] = int(restart_data_num)
     else:
-      log_info.log_error('Input error: restart_data_num should be integer, please check or reset deepff/force_eval/restart_data_num')
+      log_info.log_error('Input error: restart_data_num should be integer, please check or reset deepff/model_devi/restart_data_num')
       exit()
   else:
-    force_eval_dic['restart_data_num'] = 0
+    model_devi_dic['restart_data_num'] = 0
 
-  if ( 'restart_stage' in force_eval_dic.keys() ):
-    restart_stage = force_eval_dic['restart_stage']
+  if ( 'restart_stage' in model_devi_dic.keys() ):
+    restart_stage = model_devi_dic['restart_stage']
     if ( data_op.eval_str(restart_stage) == 1 ):
-      force_eval_dic['restart_stage'] = int(restart_stage)
+      model_devi_dic['restart_stage'] = int(restart_stage)
     else:
-      log_info.log_error('Input error: restart_stage should be integer, please check or reset deepff/force_eval/restart_stage')
+      log_info.log_error('Input error: restart_stage should be integer, please check or reset deepff/model_devi/restart_stage')
       exit()
   else:
-    force_eval_dic['restart_stage'] = 0
+    model_devi_dic['restart_stage'] = 0
 
   #Check parameters for CP2K
   #For multi-system, we need multi cp2k input files.
@@ -902,7 +892,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic, proc_n
   else:
     environ_dic['lmp_openmp_num'] = 2
 
-  return deepmd_dic, lmp_dic, cp2k_dic, force_eval_dic, environ_dic
+  return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
 
 def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, work_dir):
 
@@ -938,12 +928,12 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
   restart_inp_file_name = ''.join((work_dir, '/CP2K_KIT.restart'))
   whole_line_num = len(open(inp_tmp_file_name).readlines())
 
-  line_1_num = file_tools.grep_line_num("'&force_eval'", inp_tmp_file_name, work_dir)[0]
+  line_1_num = file_tools.grep_line_num("'&model_devi'", inp_tmp_file_name, work_dir)[0]
   line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_tmp_file_name, work_dir)[0]
   line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_tmp_file_name, work_dir)[0]
   line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)[0]
   line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)[0]
-  line_6_num = file_tools.grep_line_num("'&end force_eval'", inp_tmp_file_name, work_dir)[0]
+  line_6_num = file_tools.grep_line_num("'&end model_devi'", inp_tmp_file_name, work_dir)[0]
 
   restart_inp_file = open(restart_inp_file_name, 'w')
   for i in range(line_1_num):

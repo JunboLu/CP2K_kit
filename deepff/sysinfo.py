@@ -7,6 +7,7 @@ import linecache
 import multiprocessing
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import log_info
 
 def get_host(work_dir):
 
@@ -45,7 +46,7 @@ def get_host(work_dir):
     cmd = "cat %s | sort | uniq -c" %(node_info_file)
     node_info = call.call_returns_shell(work_dir, cmd)
     for node in node_info:
-      node_split = data_op.str_split(node, ' ')
+      node_split = data_op.split_str(node, ' ')
       host.append(node_split[1])
     #Get ssh
     ssh = True
@@ -85,10 +86,10 @@ def read_gpuinfo(work_dir, gpuinfo_file):
     device_num = len(b)
     for i in range(device_num):
       line_1 = linecache.getline(gpuinfo_file, a_int+i*4+1)
-      line_1_split = data_op.str_split(line_1, ' ')
+      line_1_split = data_op.split_str(line_1, ' ')
       device.append(line_1_split[1])
       line_2 = linecache.getline(gpuinfo_file, a_int+i*4+2)
-      line_2_split = data_op.str_split(line_2, ' ')
+      line_2_split = data_op.split_str(line_2, ' ')
       mem_used = float(line_2_split[8][0:line_2_split[8].index('M')])
       mem_tot = float(line_2_split[10][0:line_2_split[10].index('M')])
       usage.append(mem_used/mem_tot)
@@ -154,3 +155,73 @@ nvidia-smi > %s
   call.call_simple_shell(work_dir, cmd_2)
 
   return device, usage
+
+def get_lmp_path(work_dir):
+
+  '''
+  get_lmp_path: get the path of lammps.
+
+  Args:
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+    lmp_path: string
+      lmp_path is the path of lammps.
+  '''
+
+  lmp_exe = call.call_returns_shell(work_dir, 'which lmp')
+  if ( len(lmp_exe) == 0 ):
+    lmp_exe = call.call_returns_shell(work_dir, 'which lmp_mpi')
+    if ( len(lmp_exe) == 0 ):
+      log_info.log_error('Envrionment error: can not find lmp executable file, please set the environment for lammps')
+      exit()
+  lmp_exe_split = data_op.split_str(lmp_exe[0], '/')
+  lmp_path = data_op.comb_list_2_str(lmp_exe_split[:-2], '/', True)
+
+  return lmp_path
+
+def get_mpi_path(work_dir):
+
+  '''
+  get_mpi_path: get the path of mpi
+
+  Args:
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+    mpi_path: string
+      mpi_path is the path of mpi.
+  '''
+
+  mpi_exe = call.call_returns_shell(work_dir, 'which mpirun')
+  if ( len(mpi_exe) == 0 ):
+    log_info.log_error('Envrionment error: can not find mpi executable file, please set the environment for mpi')
+    exit()
+  else:
+    mpi_exe_split = data_op.split_str(mpi_exe[0], '/')
+    mpi_path = data_op.comb_list_2_str(mpi_exe_split[:-2], '/', True)
+
+  return mpi_path
+
+def get_dp_path(work_dir):
+
+  '''
+  get_dp_path: get the path of deepmd-kit
+
+  Args:
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+  Returns:
+    dp_path: string
+      dp_path is the path of deepmd-kit.
+  '''
+
+  dp_exe = call.call_returns_shell(work_dir, 'which dp')
+  if ( len(dp_exe) == 0 ):
+    log_info.log_error('Envrionment error: can not find dp executable file, please set the environment for deepmd-kit')
+    exit()
+  else:
+    dp_exe_split = data_op.split_str(dp_exe[0], '/')
+    dp_path = data_op.comb_list_2_str(dp_exe_split[:-2], '/', True)
+
+  return dp_path

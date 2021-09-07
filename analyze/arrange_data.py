@@ -47,7 +47,7 @@ def arrange_temp(frames_num, pre_base, time_step, traj_ener_file, work_dir, each
   for i in range(frames_num):
     time.append(time_step*i*each)
     line_i = linecache.getline(traj_ener_file, i+pre_base+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     temp.append(float(line_i_split[3])) #The temperature is in 4th row in energy file.
 
   linecache.clearcache()
@@ -90,7 +90,7 @@ def arrange_pot(frames_num, pre_base, time_step, traj_ener_file, work_dir, each=
   for i in range(frames_num):
     time.append(time_step*i*each)
     line_i = linecache.getline(traj_ener_file, i+pre_base+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     pot.append(float(line_i_split[4])) #The potential energy is in 5th row in energy file. 
 
   linecache.clearcache()
@@ -137,14 +137,14 @@ def arrange_mulliken(frames_num, atoms_num, time_step, atom_id, traj_mul_file, w
     time.append(i*time_step*each)
     if ( isinstance(atom_id, int) ):
       line_i = linecache.getline(file_name, i*(mulliken_pre_base+atoms_num+mulliken_late_base)+atom_id+mulliken_pre_base)
-      line_i_split = data_op.str_split(line_i, ' ')
-      mulliken.append(float(line_i_split[6].strip('\n'))) #Mulliken charge is in 6th row of mulliken file.
+      line_i_split = data_op.split_str(line_i, ' ', '\n')
+      mulliken.append(float(line_i_split[6])) #Mulliken charge is in 6th row of mulliken file.
     elif ( isinstance(atom_id, list) ):
       mulliken_i = 0.0
       for j in range(len(atom_id)):
         line_ij = linecache.getline(file_name, i*(mulliken_pre_base+atoms_num+mulliken_late_base)+atom_id[j]+mulliken_pre_base)
-        line_ij_split = data_op.str_split(line_ij, ' ')
-        mulliken_i = mulliken_i + float(line_ij_split[6].strip('\n'))
+        line_ij_split = data_op.split_str(line_ij, ' ', '\n')
+        mulliken_i = mulliken_i + float(line_ij_split[6])
       mulliken.append(mulliken_i)
 
   linecache.clearcache()
@@ -224,7 +224,7 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
 
   for i in range(stat_num):
     line_i = linecache.getline(mix_ene_file, start-file_start+i+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     delta_ene = (float(line_i_split[index_1])-float(line_i_split[index_2]))*27.2114 #The unit for vertical energy is eV.
     vertical_ene.append(delta_ene)
     if ( slow_growth == 0 ):
@@ -316,10 +316,10 @@ def arrange_ti_force(stat_num, lagrange_file):
 
   for i in range(stat_num):
     line_i = linecache.getline(lagrange_file, (frames_num-stat_num+i)*(blocks_num+base)+1)
-    line_i_split = data_op.str_split(line_i, ' ')
-    s_sum = s_sum+float(line_i_split[3].strip('\n'))
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    s_sum = s_sum+float(line_i_split[3])
 
-    sq_sum = sq_sum+(float(line_i_split[3].strip('\n')))**2
+    sq_sum = sq_sum+(float(line_i_split[3]))**2
 
   linecache.clearcache()
 

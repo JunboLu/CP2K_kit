@@ -53,7 +53,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
     #Dump atoms type information
     for i in range(atoms_num):
       line_i = linecache.getline(coord_file_0, i+1)
-      line_i_split = data_op.str_split(line_i, ' ')
+      line_i_split = data_op.split_str(line_i, ' ')
       atoms.append(line_i_split[0])
 
     linecache.clearcache()
@@ -86,15 +86,15 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           vec = []
           for j in range(3):
             line_ij = linecache.getline(box_file_i, j+1)
-            line_ij_split = data_op.str_split(line_ij, ' ')
+            line_ij_split = data_op.split_str(line_ij, ' ', '\n')
             #vol will be used in stress calculation.
             vec.append([float(line_ij_split[1]), \
                         float(line_ij_split[2]), \
                         float(line_ij_split[3])])
             if ( j== 0 ):
-              frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+              frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
             else:
-              frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+              frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3]))
 
           linecache.clearcache()
 
@@ -112,11 +112,11 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           #Dump coord information
           for j in range(atoms_num):
             line_ij = linecache.getline(coord_file_i, j+1)
-            line_ij_split = data_op.str_split(line_ij, ' ')
+            line_ij_split = data_op.split_str(line_ij, ' ', '\n')
             if (j==0):
-              frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+              frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
             else:
-              frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+              frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3]))
 
           linecache.clearcache()
 
@@ -126,10 +126,10 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           #Dump force information
           for j in range(atoms_num):
             line_ij = linecache.getline(frc_file_i, j+4+1)
-            line_ij_split = data_op.str_split(line_ij, ' ')
+            line_ij_split = data_op.split_str(line_ij, ' ', '\n')
             f1 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
             f2 = float(line_ij_split[4])*hartree_to_ev*ang_to_bohr
-            f3 = float(line_ij_split[5].strip('\n'))*hartree_to_ev*ang_to_bohr
+            f3 = float(line_ij_split[5])*hartree_to_ev*ang_to_bohr
             if (j==0):
               frame_str = ' '.join((str(f1), str(f2), str(f3)))
             else:
@@ -145,10 +145,10 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           if os.path.exists(stress_file_i):
             for j in range(3):
               line_ij = linecache.getline(stress_file_i, j+5)
-              line_ij_split = data_op.str_split(line_ij, ' ')
+              line_ij_split = data_op.split_str(line_ij, ' ', '\n')
               stress_1 = float(line_ij_split[1])*vol/160.21766208
               stress_2 = float(line_ij_split[2])*vol/160.21766208
-              stress_3 = float(line_ij_split[3].strip('\n'))*vol/160.21766208
+              stress_3 = float(line_ij_split[3])*vol/160.21766208
               stress_str_1 = numeric.get_as_num_string(stress_1)
               stress_str_2 = numeric.get_as_num_string(stress_2)
               stress_str_3 = numeric.get_as_num_string(stress_3)
@@ -247,8 +247,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   if os.path.exists(md_cell_file):
     for i in range(len(choosed_index)):
       line_i = linecache.getline(md_cell_file, int((choosed_index[i]-start_id)/each)+2)
-      line_i_split = data_op.str_split(line_i, ' ')
-      vol.append(float(line_i_split[len(line_i_split)-1].strip('\n')))
+      line_i_split = data_op.split_str(line_i, ' ', '\n')
+      vol.append(float(line_i_split[len(line_i_split)-1]))
       for j in range(9):
         if ( j == 0 ):
           frame_str = ''.join((line_i_split[j+2]))
@@ -266,11 +266,11 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
       a_int = int(a[0].split(':')[0])
       for i in range(3):
         line_i = linecache.getline(restart_file, a_int+i+1)
-        line_i_split = data_op.str_split(line_i, ' ')
+        line_i_split = data_op.split_str(line_i, ' ', '\n')
         if ( i == 0 ):
-          frame_str = ' '.join((line_i_split[1], line_i_split[2], line_i_split[3].strip('\n')))
+          frame_str = ' '.join((line_i_split[1], line_i_split[2], line_i_split[3]))
         else:
-          frame_str = ' '.join((frame_str, line_i_split[1], line_i_split[2], line_i_split[3].strip('\n')))
+          frame_str = ' '.join((frame_str, line_i_split[1], line_i_split[2], line_i_split[3]))
 
       linecache.clearcache()
 
@@ -287,8 +287,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
   for i in range(len(choosed_index)):
     line_i = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2) + 2)
-    line_i_split = data_op.str_split(line_i, ' ')
-    energy = float(line_i_split[len(line_i_split)-1].strip('\n'))*hartree_to_ev
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    energy = float(line_i_split[len(line_i_split)-1])*hartree_to_ev
     energy_file.write(''.join((str(energy),'\n')))
 
   linecache.clearcache()
@@ -298,7 +298,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   atoms = []
   for i in range(atoms_num):
     line_i = linecache.getline(md_pos_file, 2+i+1)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ')
     atoms.append(line_i_split[0])
 
   linecache.clearcache()
@@ -313,11 +313,11 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
     frame_str = ''
     for j in range(atoms_num):
       line_ij = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
-      line_ij_split = data_op.str_split(line_ij, ' ')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       if (j==0):
-        frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+        frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
       else:
-        frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3].strip('\n')))
+        frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3]))
 
     frame_str = ''.join((frame_str, '\n'))
     coord_file.write(frame_str)
@@ -333,10 +333,10 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
       frame_str = ''
       for j in range(atoms_num):
         line_ij = linecache.getline(md_frc_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
-        line_ij_split = data_op.str_split(line_ij, ' ')
+        line_ij_split = data_op.split_str(line_ij, ' ', '\n')
         f1 = float(line_ij_split[1])*hartree_to_ev*ang_to_bohr
         f2 = float(line_ij_split[2])*hartree_to_ev*ang_to_bohr
-        f3 = float(line_ij_split[3].strip('\n'))*hartree_to_ev*ang_to_bohr
+        f3 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
         if ( j == 0 ):
           frame_str = ' '.join((str(f1), str(f2), str(f3)))
         else:
@@ -362,13 +362,10 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
         frame_str = ''
         #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
         line_i = linecache.getline(stress_file, int((choosed_index[i]-start_id)/each)+2)
-        line_i_split = data_op.str_split(line_i, ' ')
+        line_i_split = data_op.split_str(line_i, ' ', '\n')
         #The unit of stress tensor in 'xx-1.stress' file is bar.
         for j in range(9):
-          if ( j != 9 ):
-            stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
-          else:
-            stress_j = float(line_i_split[j+2].strip('\n'))*vol[i]/(1602176.6208)
+          stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
           stress_j_str = numeric.get_as_num_string(stress_j)
           if ( j == 0 ):
             frame_str = ''.join((stress_j_str))

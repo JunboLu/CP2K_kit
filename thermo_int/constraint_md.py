@@ -96,21 +96,13 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
     if ( os.path.exists(task_dir) and os.path.exists(restart_file_name_abs) ):
       cmd_1 = "grep %s %s" %("'STEP_START_VAL'", restart_file_name_abs)
       line_1 = call.call_returns_shell(task_dir, cmd_1)
-      line_1_split = data_op.str_split(line_1[0], ' ')
-      if ( line_1_split[len(line_1_split)-1] == '\n' ):
-        line_1_split.remove(line_1_split[len(line_1_split)-1])
-      else:
-        line_1_split[len(line_1_split)-1] = line_1_split[len(line_1_split)-1].strip('\n')
+      line_1_split = data_op.split_str(line_1[0], ' ', '\n')
       cmd_2 = "grep %s %s" %("'STEP_START_VAL'", 'input.inp')
       line_2 = call.call_returns_shell(task_dir, cmd_2)
       if ( len(line_2) == 0 ):
         num = int(line_1_split[len(line_1_split)-1])
       else:
-        line_2_split = data_op.str_split(line_2[0], ' ')
-        if ( line_2_split[len(line_2_split)-2] == '\n' ):
-          line_2_split.remove(line_2_split[len(line_2_split)-1])
-        else:
-          line_2_split[len(line_2_split)-1] = line_2_split[len(line_2_split)-1].strip('\n')
+        line_2_split = data_op.split_str(line_2[0], ' ', '\n')
         num = int(line_1_split[len(line_1_split)-1]) - int(line_2_split[len(line_2_split)-1])
       whole_line_num = len(open(lag_file_name_abs, 'r').readlines())
       if ( whole_line_num > 2*num ):

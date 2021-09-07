@@ -55,7 +55,7 @@ def space_file(file_name, space_char, save_dir):
 
   while True:
     line = origin_file.readline()
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     line_comb = data_op.comb_list_2_str(line_split, space_char)
     rev_file.write(line_comb)
     if not line:
@@ -93,7 +93,7 @@ def grep_line_num(choosed_str, file_name, work_dir):
 
 if __name__ == '__main__':
 
-  choosed_line = "'&force_eval'"
+  choosed_line = "'&model_devi'"
   file_name = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md/input.inp'
   work_dir = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md'
   line_num = grep_line_num(choosed_line, file_name, work_dir)

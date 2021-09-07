@@ -70,9 +70,9 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
   atom_name = []
   for i in range(len(center_id)):
     line_i = linecache.getline(file_name, center_id[i]+pre_base+base)
-    line_i_split = data_op.str_split(line_i, ' ')
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
     atom_name.append(line_i_split[0])
-    center_atom_coord.append([float(line_i_split[1]), float(line_i_split[2]), float(line_i_split[3].strip('\n'))])
+    center_atom_coord.append([float(line_i_split[1]), float(line_i_split[2]), float(line_i_split[3])])
 
   center_coord = center_of_mass(atom_name, center_atom_coord)
 
@@ -86,8 +86,8 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
     group_atom_coord = []
     for j in range(len(group_atom)):
       line_ij = linecache.getline(file_name, pre_base+base+i+j+1)
-      line_ij_split = data_op.str_split(line_ij, ' ')
-      group_atom_coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3].strip('\n'))])
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
+      group_atom_coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3])])
       if ( line_ij_split[0] == group_atom[j] ):
         check_group.append(True)
       else:

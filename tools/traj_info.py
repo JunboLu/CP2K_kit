@@ -62,7 +62,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
 
   if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
     a = linecache.getline(file_name, pre_base+2)
-    b = data_op.str_split(a, ' ')
+    b = data_op.split_str(a, ' ')
     if ( len(b) > 5 ):
       start_frame_id = int(b[2].strip(','))
       start_time = float(b[5].strip(','))
@@ -72,7 +72,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
 
     if ( whole_line_num_1 > blocks_num+base+pre_base ):
       a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+2)
-      b = data_op.str_split(a, ' ')
+      b = data_op.split_str(a, ' ')
       if ( len(b) > 5 ):
         second_frame_id = int(b[2].strip(','))
         second_time = float(b[5].strip(','))
@@ -81,7 +81,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
         second_time = 0.0
 
       a = linecache.getline(file_name, (frames_num_1-1)*(blocks_num+base)+pre_base+2)
-      b = data_op.str_split(a, ' ')
+      b = data_op.split_str(a, ' ')
       if ( len(b) > 5 ):
         end_frame_id = int(b[2].strip(','))
     else:
@@ -91,18 +91,18 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
   if ( file_type == 'ener' or file_type == 'mix_ener' ):
 
     a = linecache.getline(file_name, pre_base+1)
-    b = data_op.str_split(a, ' ')
+    b = data_op.split_str(a, ' ')
     start_frame_id = int(b[0])
     start_time = float(b[1])
 
     if ( whole_line_num_1 > blocks_num+base+pre_base ):
       a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+1)
-      b = data_op.str_split(a, ' ')
+      b = data_op.split_str(a, ' ')
       second_frame_id = int(b[0])
       second_time = float(b[1])
 
       a = linecache.getline(file_name, whole_line_num_1)
-      b = data_op.str_split(a, ' ')
+      b = data_op.split_str(a, ' ')
       end_frame_id = int(b[0])
     else:
       end_frame_id = start_frame_id
@@ -129,7 +129,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
       element = []
       for i in range(blocks_num):
         line_i = linecache.getline(file_name, i+pre_base+base+1)
-        line_i_split = data_op.str_split(line_i, ' ')
+        line_i_split = data_op.split_str(line_i, ' ')
         element.append(line_i_split[0])
 
       group_atom_1_id = []

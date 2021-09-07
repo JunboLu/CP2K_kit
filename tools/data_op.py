@@ -32,7 +32,7 @@ def gen_list(start, end, incre):
 
   return list_num
 
-def comb_list_2_str(list_temp, space_char):
+def comb_list_2_str(list_temp, space_char, first_space=False, end_space=False):
 
   '''
   comb_list_2_str : combine list element as string
@@ -52,7 +52,15 @@ def comb_list_2_str(list_temp, space_char):
   for i in range(len(list_temp)):
     comb_str = comb_str + str(list_temp[i]) + space_char
 
-  return comb_str.strip(space_char)
+  comb_str = comb_str.strip(space_char)
+
+  if first_space:
+    comb_str = ''.join((space_char, comb_str))
+
+  if end_space:
+    comb_str = ''.join((comb_str, space_char))
+
+  return comb_str
 
 def list_reshape(list_temp):
 
@@ -74,12 +82,12 @@ def list_reshape(list_temp):
 
   return list_true
 
-def order_list(list_temp, order_index):
+def reorder_list(list_temp, order_index):
 
   #The dims of list_temp and order_index should be same.
 
   '''
-  order_list : order the list with an ordered index
+  reorder_list : order the list with an ordered index
 
   Args :
     list_temp : 1-d list
@@ -179,10 +187,10 @@ def list_replicate(list_temp, return_num=False):
   elif return_num == False:
     return list_type
 
-def list_order(list_temp, order, return_index=False):
+def get_list_order(list_temp, order, return_index=False):
 
   '''
-  list_order : order a list.
+  get_list_order : order a list.
 
   Args :
     list_temp : 1-d int or float list
@@ -289,46 +297,55 @@ def str_wrap(str_tmp, max_width, indent_char=''):
     str_wrap = '\n'.join(list_tmp)
     return str_wrap
 
-def str_split(str_temp, space_char):
+def split_str(str_tmp, space_char, strip_char=''):
 
   '''
-  str_split : split the string and then return a list.
+  split_str: split the string and then return a list.
 
-  Args :
-    str_temp : string
-      str_temp is the string needed to be splitted.
-      Example : 'a b c'
-    space_char : string
+  Args:
+    str_tmp: string
+      str_tmp is the string needed to be splitted.
+      Example: 'a b c'
+    space_char: string
       space_char is the splitting element.
-      Example : ' '
-  Returns :
-    list_temp : 1-d string list
-      list_temp is the final splited list.
-      Example : ['a', 'b', 'c']
+      Example: ' '
+    strip_char: string
+      strip_char is the stripping character.
+      Example: '\n'
+  Returns:
+    list_tmp: 1-d string list
+      list_tmp is the final splited list.
+      Example: ['a', 'b', 'c']
   '''
 
-  str_temp_split = str_temp.split(space_char)
-  list_temp = []
-  for i in range(len(str_temp_split)):
-    if ( str_temp_split[i] != ''):
-      list_temp.append(str_temp_split[i])
+  str_tmp_split = str_tmp.split(space_char)
+  list_tmp = []
+  for i in range(len(str_tmp_split)):
+    if ( str_tmp_split[i] != ''):
+      list_tmp.append(str_tmp_split[i])
 
-  return list_temp
+  if ( strip_char != '' ):
+    if ( list_tmp[len(list_tmp)-1] == strip_char ):
+      list_tmp.remove(list_tmp[len(list_tmp)-1])
+    else:
+      list_tmp[len(list_tmp)-1] = list_tmp[len(list_tmp)-1].strip(strip_char)
 
-def get_str_num(str_temp):
+  return list_tmp
+
+def get_str_num(str_tmp):
 
   '''
   get_str_num : get the number string in a string.
 
   Args :
-    str_temp : string
+    str_tmp : string
       Example : '123/q'
   Return :
     string
       Example : '123'
   '''
 
-  return re.sub('\D', '', str_temp)
+  return re.sub('\D', '', str_tmp)
 
 def get_id_list(id_str):
 
@@ -349,7 +366,7 @@ def get_id_list(id_str):
   if ( isinstance(id_str, list) ):
     a = copy.deepcopy(id_str)
   elif ( isinstance(id_str, str) ):
-    a = str_split(id_str, ' ')
+    a = split_split(id_str, ' ')
 
   id_list = []
   for i in range(len(a)):

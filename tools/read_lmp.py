@@ -38,17 +38,16 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   a_int = int(a[0].split(':')[0])
 
   line = linecache.getline(lmp_log_file, a_int)
-  line_split = data_op.str_split(line, ' ')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  line_split = data_op.split_str(line, ' ', '\n')
   log_id_num = len(line_split)
   step_id = line_split.index('Step')
 
   line = linecache.getline(lmp_log_file, a_int+1)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ')
   start_id = int(line_split[step_id])
 
   line = linecache.getline(lmp_log_file, a_int+2)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ', '\n')
   if ( len(line_split) == log_id_num ):
     each = int(line_split[step_id])-start_id
   else:
@@ -57,14 +56,14 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   line_num = a_int+traj_frames_num
   while True:
     line = linecache.getline(lmp_log_file, line_num)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ', '\n')
     if ( len(line_split) != log_id_num ):
       line_num = line_num-1
     else:
       break
 
   line = linecache.getline(lmp_log_file, line_num)
-  line_split = data_op.str_split(line, ' ')
+  line_split = data_op.split_str(line, ' ', '\n')
   end_id = int(line_split[step_id])
   if ( each != 0 ):
     frames_num = int((end_id-start_id)/each)+1
@@ -116,8 +115,8 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
   '''
 
   line = linecache.getline(lmp_traj_file, 9)
-  line_split = data_op.str_split(line, ' ')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  line_split = data_op.split_str(line, ' ', '\n')
+  line_split[len(line_split)-1] = line_split[len(line_split)-1]
 
   if ( 'id' in line_split ):
     atom_id_id = line_split.index('id')-2
@@ -165,8 +164,8 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
   a = call.call_returns_shell(os.getcwd(), cmd_a)
   a_int = int(a[0].split(':')[0])
   line = linecache.getline(lmp_log_file, a_int)
-  line_split = data_op.str_split(line, ' ')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1].strip('\n')
+  line_split = data_op.split_str(line, ' ', '\n')
+  line_split[len(line_split)-1] = line_split[len(line_split)-1]
 
   if ene_return:
     if ( 'PotEng' in line_split ):
@@ -184,22 +183,22 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
   for i in frames:
     if ene_return:
       line_log_i = linecache.getline(lmp_log_file, int((i-start_id)/each)+a_int+1)
-      line_log_i_split = data_op.str_split(line_log_i, ' ')
+      line_log_i_split = data_op.split_str(line_log_i, ' ')
       energy.append(float(line_log_i_split[ene_id]))
 
     if cell_return:
       line_1 = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+6)
-      line_1_split = data_op.str_split(line_1, ' ')
+      line_1_split = data_op.split_str(line_1, ' ', '\n')
       line_2 = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+7)
-      line_2_split = data_op.str_split(line_2, ' ')
+      line_2_split = data_op.split_str(line_2, ' ', '\n')
       line_3 = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+8)
-      line_3_split = data_op.str_split(line_3, ' ')
+      line_3_split = data_op.split_str(line_3, ' ', '\n')
       Lx = float(line_1_split[1]) - float(line_1_split[0])
       Ly = float(line_2_split[1]) - float(line_2_split[0])
       Lz = float(line_3_split[1]) - float(line_3_split[0])
-      xy = float(line_1_split[2].strip('\n'))
-      xz = float(line_2_split[2].strip('\n'))
-      yz = float(line_3_split[2].strip('\n'))
+      xy = float(line_1_split[2])
+      xz = float(line_2_split[2])
+      yz = float(line_3_split[2])
       a_vec, b_vec, c_vec = get_cell.get_triclinic_cell_six([Lx, Ly, Lz, xy, xz, yz])
       cell.append([a_vec, b_vec, c_vec])
 
@@ -211,8 +210,8 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
 
     for j in range(atoms_num):
       line_ij = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+j+1+9)
-      line_ij_split = data_op.str_split(line_ij, ' ')
-      line_ij_split[len(line_ij_split)-1] = line_ij_split[len(line_ij_split)-1].strip('\n')
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
+      line_ij_split[len(line_ij_split)-1] = line_ij_split[len(line_ij_split)-1]
       atom_type = int(line_ij_split[atom_type_id])
       atom_id = int(line_ij_split[atom_id_id])
       atom_id_i.append(atom_id)
@@ -234,18 +233,18 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
         fz = float(line_ij_split[fz_id])
         frc_i.append([fx,fy,fz])
 
-    atom_id_i_asc, asc_index = data_op.list_order(atom_id_i, 'ascend', True)
+    atom_id_i_asc, asc_index = data_op.get_list_order(atom_id_i, 'ascend', True)
     if ( atom_label != {} ):
-      atom_type_i_asc = data_op.order_list(atom_type_i, asc_index)
+      atom_type_i_asc = data_op.reorder_list(atom_type_i, asc_index)
       atoms.append(atom_type_i_asc)
     if coord_return:
-      coord_i_asc = data_op.order_list(coord_i, asc_index)
+      coord_i_asc = data_op.reorder_list(coord_i, asc_index)
       coord.append(coord_i_asc)
     if vel_return:
-      vel_i_asc = data_op.order_list(vel_i, asc_index)
+      vel_i_asc = data_op.reorder_list(vel_i, asc_index)
       vel.append(vel_i_asc)
     if frc_return:
-      frc_i_asc = data_op.order_list(frc_i, asc_index)
+      frc_i_asc = data_op.reorder_list(frc_i, asc_index)
       frc.append(frc_i_asc)
 
   linecache.clearcache()

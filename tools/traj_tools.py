@@ -33,7 +33,7 @@ def get_block_base(file_name, file_type):
     p_base = 0
     base = 2
     line = linecache.getline(file_name, 2)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     if ( len(line_split) > 1 ):
       if ( data_op.eval_str(line_split[2].strip(',')) == 1 ):
         file_start = int(line_split[2].strip(','))
@@ -47,7 +47,7 @@ def get_block_base(file_name, file_type):
     p_base = 0
     base = 0
     line = linecache.getline(file_name, 1)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     file_start = int(line_split[0])
 
   if ( file_type == 'ener' ):
@@ -55,7 +55,7 @@ def get_block_base(file_name, file_type):
     p_base = 1
     base = 0
     line = linecache.getline(file_name, 2)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     file_start = int(line_split[0])
 
   linecache.clearcache()
@@ -96,7 +96,7 @@ def find_breakpoint(file_name, file_type):
   compare_list = []
   for i in range(blocks_num):
     line = linecache.getline(file_name, pre_base+base+i+1)
-    line_split = data_op.str_split(line, ' ')
+    line_split = data_op.split_str(line, ' ')
     compare_list.append(line_split[0])
 
   breakpoint = frame_start
@@ -106,7 +106,7 @@ def find_breakpoint(file_name, file_type):
     for j in range(blocks_num):
       line_num = pre_base+(blocks_num+base)*i+base+j+1
       line = linecache.getline(file_name,line_num)
-      c = data_op.str_split(line, ' ')
+      c = data_op.split_str(line, ' ')
       frame_list.append(c[0])
     if (frame_list != compare_list and frame_list != []):
       break
