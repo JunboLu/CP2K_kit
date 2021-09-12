@@ -245,8 +245,8 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
       call.call_simple_shell(work_dir, cmd)
 
       whole_line_num = len(open(lag_file_name_abs, 'r').readlines())
-      if ( whole_line_num > 2*(restart_step-1) ):
-        cmd = "sed -i '%d,%dd' %s" %(2*(restart_step-1)+1, whole_line_num, lag_file_name)
+      if ( whole_line_num > 2*(restart_step-1)*micro_steps ):
+        cmd = "sed -i '%d,%dd' %s" %(2*(restart_step-1)*micro_steps+1, whole_line_num, lag_file_name)
         call.call_simple_shell(work_dir, cmd)
 
     restart_inp_file = open(restart_inp_file_name_abs, 'w')

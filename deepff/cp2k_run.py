@@ -269,11 +269,11 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
           cmd = "sed -i '%d s/^/    WFN_RESTART_FILE_NAME ..\/task_%d\/cp2k-RESTART.wfn\\n/' input.inp" %(pot_line_num+1, i-1)
           call.call_simple_shell(cp2k_task_dir, cmd)
 
-def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, \
+def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, \
                   struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress):
 
   '''
-  gen_cp2k_task: generate cp2k tasks based on choosed struct_index
+  gen_cp2k_task: generate cp2k tasks based on choosed structure index
 
   Args:
     cp2k_dic: dictionary
@@ -282,8 +282,9 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
       work_dir is the workding directory of CP2K_kit.
     iter_id: int
       iter_id is current iteration number.
-    atom_type_dic_tot: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
-      example: {1:{'O':1,'H':2,'N':3},2:{'O':1,'S':2,'N':3}}
+    atoms_type_multi_sys: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
+      atoms_type_multi_sys is the atoms type for multi-systems.
+      example: {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
     atoms_num_tot: 1-d dictionary, dim = num of lammps systems
       example: {1:192,2:90}
     struct_index: dictionary (both are int)
@@ -384,7 +385,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot
           box.append(box_j)
 
           atoms_num = atoms_num_tot[key]
-          atoms_type_dic = atoms_type_dic_tot[key]
+          atoms_type_dic = atoms_type_multi_sys[key]
           for k in range(atoms_num):
             line_jk = linecache.getline(data_file_name_abs, k+10+1)
             line_jk_split = data_op.split_str(line_jk, ' ', '\n')
@@ -519,17 +520,21 @@ rm cp2k-1_0.xyz
 fi
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 
-grep "SCF run NOT converged" cp2k.out > converge_info
+converge_info=`grep "SCF run NOT converged" cp2k.out`
+if [ $? -eq 0 ]; then
+wfn_line=`grep -n "WFN_RESTART_FILE_NAME" input.inp`
 if [ $? -eq 0 ]; then
 line=`grep -n "WFN_RESTART_FILE_NAME" input.inp | awk -F ":" '{print $1}'`
-sed -ie ''$line's/.*/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn/' input.inp
+sed -i ''$line's/.*/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn/' input.inp
+else
+line=`grep -n "POTENTIAL_FILE_NAME" input.inp | awk -F ":" '{print $1}'`
+sed -i ''$line' s/^/    WFN_RESTART_FILE_NAME .\/cp2k-RESTART.wfn\\n/' input.inp
+fi
 if [ -f "cp2k-1_0.xyz" ]; then
 rm cp2k-1_0.xyz
 fi
 mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
 fi
-
-rm converge_info
 ''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
 
         run_file_name_abs = ''.join((cp2k_sys_dir, '/run.sh'))
@@ -560,21 +565,26 @@ rm converge_info
   #check running cp2k tasks
   check_cp2k_run = []
   for i in range(sys_num):
-   cp2k_sys_dir = ''.join((cp2k_calc_dir, '/sys_', str(i)))
-   cmd = "ls | grep %s" %('task_')
-   task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
-   for j in range(task_num):
-     cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
-     frc_file_name_abs = ''.join((cp2k_sys_task_dir, '/cp2k-1_0.xyz'))
-     if ( os.path.exists(frc_file_name_abs) and len(open(frc_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+5 ):
-       check_cp2k_run.append(0)
-     else:
-       check_cp2k_run.append(1)
-  if ( all(i == 0 for i in check_cp2k_run) ):
+    cp2k_sys_dir = ''.join((cp2k_calc_dir, '/sys_', str(i)))
+    cmd = "ls | grep %s" %('task_')
+    task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
+    check_cp2k_run_i = []
+    for j in range(task_num):
+      cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(j)))
+      frc_file_name_abs = ''.join((cp2k_sys_task_dir, '/cp2k-1_0.xyz'))
+      if ( os.path.exists(frc_file_name_abs) and len(open(frc_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+5 ):
+        check_cp2k_run_i.append(0)
+      else:
+        check_cp2k_run_i.append(1)
+    check_cp2k_run.append(check_cp2k_run_i)
+  if ( all(i == 0 for i in data_op.list_reshape(check_cp2k_run)) ):
     print ('  Success: ab initio force calculations for %d systems by cp2k' %(sys_num), flush=True)
   else:
-    log_info.log_error('cp2k running error, please check iteration %d' %(iter_id))
-    exit()
+    for j in range(sys_num):
+      failure_task_id = [index for (index,value) in enumerate(check_cp2k_run[j]) if value==1]
+      if ( len(failure_task_id) != 0 ):
+        failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
+        print ('  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id, i), flush=True)
 
 if __name__ == '__main__':
   from collections import OrderedDict
@@ -598,12 +608,12 @@ if __name__ == '__main__':
 #  cp2k_run.gen_cp2kfrc_file(cp2k_dic, work_dir, 1, 0, coord, box)
 
   #Test gen_cp2k_task function
-  atoms_type_dic_tot = {0: {'C': 1, 'O': 2}, 1: {'C': 1, 'O': 2}}
+  atoms_type_multi_sys = {0: {'C': 1, 'O': 2}, 1: {'C': 1, 'O': 2}}
   atoms_num_tot = {0:3, 1:3}
   struct_index = OrderedDict([(0, OrderedDict([(0, [237, 264, 275, 291, 331, 367, 422])])), (1, OrderedDict([(0, [])]))])
   conv_new_data_num = 5
   choose_new_data_num_limit = 100
-  cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, 17, atoms_type_dic_tot, atoms_num_tot, \
+  cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, 17, atoms_type_multi_sys, atoms_num_tot, \
                          struct_index, conv_new_data_num, choose_new_data_num_limit, False)
 
   #Test run_cp2kfrc function

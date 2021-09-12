@@ -9,7 +9,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import file_tools
 from CP2K_kit.thermo_int import check_thermo_int
 
-def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
+def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_exe, work_dir):
 
   '''
   mix_force_eval: mixing force eval calculation
@@ -52,6 +52,8 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
 
   restart_file_name = ''.join((proj_name, '-1.restart'))
   restart_file_name_abs = ''.join((work_dir, '/', restart_file_name))
+  mix_ene_file_name = ''.join((proj_name, '-mix-1.ener'))
+  mix_ene_file_name_abs = ''.join((work_dir, '/', mix_ene_file_name))
 
   if ( restart_step == 1 ):
     cmd = "cp %s %s" %(mix_inp_file, restart_file_name)
@@ -82,6 +84,11 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
       cmd = "cp %s %s" %('RESTART_BAK_FILE', restart_file_name)
       call.call_simple_shell(work_dir, cmd)
 
+    whole_line_num = len(open(mix_ene_file_name_abs, 'r').readlines())
+    if ( whole_line_num > 2*(restart_step-1)*micro_steps ):
+      cmd = "sed -i '%d,%dd' %s" %((restart_step-1)*micro_steps+1, whole_line_num, mix_ene_file_name)
+      call.call_simple_shell(work_dir, cmd)
+
     restart_inp_file = open(restart_inp_file_name_abs, 'w')
     restart_inp_file.write('&global\n')
     restart_inp_file.write('  run_type thermo_int\n')
@@ -93,6 +100,7 @@ def mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir):
     restart_inp_file.write('  &mix_force_eval\n')
     restart_inp_file.write('    mix_inp_file %s\n' %(mix_inp_file))
     restart_inp_file.write('    macro_steps %d\n' %(macro_steps))
+    restart_inp_file.write('    micro_steps %d\n' %(micro_steps))
     if ( os.path.exists(restart_file_name_abs) ):
       restart_inp_file.write('    restart_step %d\n' %(i))
     else:
@@ -160,11 +168,12 @@ def mix_force_eval_run(mix_param, work_dir):
 
   mix_inp_file = mix_param['mix_inp_file']
   macro_steps = mix_param['macro_steps']
+  micro_steps = mix_param['micro_steps']
   restart_step = mix_param['restart_step']
   cp2k_exe = mix_param['cp2k_exe']
 
   print ('MIX_FORCE_EVAL'.center(80, '*'), flush=True)
   print ('Run slow-growth mixing force eval claculation', flush=True)
   print ('%d tasks from initial value %f to endding value %f' %(macro_steps, 0.0, 1.0), flush=True)
-  mix_force_eval(mix_inp_file, macro_steps, restart_step, cp2k_exe, work_dir)
+  mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_exe, work_dir)
 

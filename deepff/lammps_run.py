@@ -125,14 +125,17 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
     tot_atoms_type_dic: dictionary
       tot_atoms_type_dic is the atoms type dictionary.
   Returns:
-    atom_type_dic_tot : dictionary
-      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
+    sys_num: int
+      sys_num is the number of systems.
+    atoms_type_multi_sys: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
+      atoms_type_multi_sys is the atoms type for multi-systems.
+      example: {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
     atoms_num_tot: dictionary
       atoms_num_tot contains number of atoms for different systems.
       Example: {0:3, 1:3}
   '''
 
-  atoms_type_dic_tot = OrderedDict()
+  atoms_type_multi_sys = OrderedDict()
   atoms_num_tot = OrderedDict()
   sys_num = 0
   for key in lmp_dic:
@@ -152,10 +155,10 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
       else:
         log_info.log_error('Input error: %s atom type in system %d is not trained, please check deepff/lammps/system' %(j, i+1))
         exit()
-    atoms_type_dic_tot[i] = atoms_type_dic
+    atoms_type_multi_sys[i] = atoms_type_dic
     atoms_num_tot[i] = len(atoms)
 
-  return sys_num, atoms_type_dic_tot, atoms_num_tot
+  return sys_num, atoms_type_multi_sys, atoms_num_tot
 
 def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
@@ -178,8 +181,8 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
     file_name: string
       lammps data file name
   Returns:
-    atoms_type_dic_tot: dictionary, dim = the number of lammps md systems
-      example: {1:{'O':1,'H':2,'N':3},2:{'O':1,'S':2,'N':3}}
+    atoms_type_multi_sys: dictionary, dim = the number of lammps md systems
+      example: {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
     atoms_num_tot: dictionary, dim = num of lammps systems
       example: {1:192,2:90}
   '''
@@ -246,7 +249,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
   #The other deep potential models will run force calculation.
   train_dir_first = ''.join((work_dir, '/iter_', str(iter_id), '/01.train/0'))
 
-  sys_num, atoms_type_dic_tot, atoms_num_tot = get_md_sys_info(lmp_dic, tot_atoms_type_dic)
+  sys_num, atoms_type_multi_sys, atoms_num_tot = get_md_sys_info(lmp_dic, tot_atoms_type_dic)
 
   for i in range(sys_num):
     lmp_sys_dir = ''.join((lmp_dir, '/', 'sys_', str(i)))
@@ -267,7 +270,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
     atoms_type = data_op.list_replicate(atoms)
     atoms_type_index = []
     for j in range(len(atoms)):
-      atoms_type_index.append(atoms_type_dic_tot[i][atoms[j]])
+      atoms_type_index.append(atoms_type_multi_sys[i][atoms[j]])
 
     gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, lmp_sys_dir, 'data.lmp')
 
@@ -372,7 +375,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
         md_in_file.close()
 
-def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
+def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
 
   '''
   gen_lmpfrc_file: generate lammps parameter (.in file) for force calculations.
@@ -434,10 +437,11 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
         box_vec = []
         line_k = linecache.getline(log_file_name_abs, a_int+k+1)
         line_k_split = data_op.split_str(line_k, ' ')
-        for l in range(6):
-          box_param_float = float(line_k_split[l+7])
-          box_param_float_str = numeric.get_as_num_string(box_param_float)
-          box_vec.append(box_param_float_str)
+        if ( data_op.eval_str(line_k_split[0]) == 1 ):
+          for l in range(6):
+            box_param_float = float(line_k_split[l+7])
+            box_param_float_str = numeric.get_as_num_string(box_param_float)
+            box_vec.append(box_param_float_str)
         box_tot.append(box_vec)
 
       #Get atom number
@@ -510,7 +514,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_dic_tot):
             data_l_file_name_abs = ''.join((model_data_dir, '/data_', str(l), '.lmp'))
             frc_in_file.write(''.join(('read_data       ', data_l_file_name_abs,'\n')))
 
-            atoms_type_i = atoms_type_dic_tot[i]
+            atoms_type_i = atoms_type_multi_sys[i]
             for key in atoms_type_i:
               atom_num, atom_mass = atom.get_atom_mass(key)
               line_key = ''.join(('mass            ', str(atoms_type_i[key]), ' ', str(atom_mass),'\n'))
@@ -969,17 +973,17 @@ if __name__ == '__main__':
   check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
 
   #Test gen_lmpmd_task function
-  atoms_type_dic_tot, atoms_num_tot = \
+  atoms_type_multi_sys, atoms_num_tot = \
   lmp_run.gen_lmpmd_task(lmp_dic, work_dir, 0)
-  #print (atoms_type_dic_tot, atoms_num_tot)
+  #print (atoms_type_multi_sys, atoms_num_tot)
 
   #Test run_lmpmd function
   lmp_run.run_lmpmd(work_dir, 0, 4)
 
   #Test gen_lmpfrc_file function
   atoms_num_tot = {0:3}
-  atoms_type_dic_tot = {0: {'O': 1, 'H': 2}}
-  lmp_run.gen_lmpfrc_file(work_dir, 0, atoms_num_tot, atoms_type_dic_tot)
+  atoms_type_multi_sys = {0: {'O': 1, 'H': 2}}
+  lmp_run.gen_lmpfrc_file(work_dir, 0, atoms_num_tot, atoms_type_multi_sys)
 
   #Test run_lmpfrc
   lmp_run.run_lmpfrc(work_dir, 0, 4)

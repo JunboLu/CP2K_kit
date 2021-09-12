@@ -159,8 +159,17 @@ def check_mix_force_eval_inp(mix_dic):
       log_info.log_error('Input error: macro steps should be integer, please check or reset thermo_int/mix_force_eval/macro_steps')
       exit()
   else:
-    log_info.log_error('Input error: no macro steps, please set thermo_int/mix_force_eval/macro_steps')
-    exit()
+    mix_dic['macro_steps'] = 10000
+
+  if ( 'micro_steps' in mix_dic.keys() ):
+    micro_steps = mix_dic['micro_steps']
+    if ( data_op.eval_str(micro_steps) == 1 ):
+      mix_dic['micro_steps'] = int(micro_steps)
+    else:
+      log_info.log_error('Input error: micro steps should be integer, please check or reset thermo_int/mix_force_eval/micro_steps')
+      exit()
+  else:
+    mix_dic['micro_steps'] = 1
 
   if ( 'restart_step' in mix_dic.keys() ):
     restart_step = mix_dic['restart_step']

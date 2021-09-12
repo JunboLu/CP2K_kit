@@ -3,7 +3,6 @@
 import os
 import copy
 import math
-import random
 import linecache
 import numpy as np
 from CP2K_kit.tools import call
@@ -12,8 +11,8 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import log_info
 
-hartree_to_ev = 27.211396641308
-ang_to_bohr = 1.8897259886
+hartree_to_ev = 2.72113838565563E+01
+ang_to_bohr = 1.0/5.29177208590000E-01
 
 def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic):
 
@@ -27,6 +26,8 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
       file_prefix is the prefix of file name.
     proj_name: string
       proj_name is the cp2k project name.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     none
   '''
@@ -40,7 +41,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
     save_dir = ''.join((file_dir, '/data'))
     type_file = open(''.join((save_dir, '/type.raw')), 'w')
     box_file = open(''.join((save_dir, '/box.raw')), 'w')
-    force_file = open(''.join((save_dir, '/force.raw')), 'w')
+    frc_file = open(''.join((save_dir, '/force.raw')), 'w')
     coord_file = open(''.join((save_dir, '/coord.raw')), 'w')
     energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
     virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
@@ -138,7 +139,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           linecache.clearcache()
 
           frame_str = ''.join((frame_str, '\n'))
-          force_file.write(frame_str)
+          frc_file.write(frame_str)
 
           #Dump virial information
           #stress in 'xx-1.stress_tensor' is GPa.
@@ -163,7 +164,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
             virial_file.write(frame_str)
 
     box_file.close()
-    force_file.close()
+    frc_file.close()
     coord_file.close()
     energy_file.close()
     virial_file.close()
@@ -172,28 +173,35 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
       cmd = "rm %s" % (''.join((save_dir, '/virial.raw')))
       call.call_simple_shell(save_dir, cmd)
 
-def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress, tot_atoms_type_dic):
+def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_name, traj_stress_file_name, \
+                       train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic):
 
   '''
   load_data_from_dir: load initial training data from cp2k calculation directory.
 
   Args:
-    proj_dir: string
-      proj_dir is the cp2k project directory.
+    traj_coord_file_name: string
+      traj_coord_file_name is the name of coordination trajectory file.
+    traj_frc_file_name: string
+      traj_frc_file_name is the name of force trajectory file.
+    traj_cell_file_name: string
+      traj_cell_file_name is the name of cell trajectory file.
+    traj_stress_file_name: string
+      traj_stress_file_name is the name of stress trajectory file.
+    train_stress: bool
+      train_stress is whether we need to train stress
     work_dir: string
       work_dir is workding directory.
     save_dir: string
       save_dir is the directory where data will be saved.
-    proj_name: string
-      proj_name is the cp2k project name.
     start: int
       start is the starting id of trajectory.
     end: int
       end is the endding id of trajectory.
     choosed_num: int
       choosed_num is the number of choosed frames.
-    train_stress: bool
-      train_stress is whether we need to dump stress.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     none
   '''
@@ -201,13 +209,8 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   cmd = "mkdir %s" % (save_dir)
   call.call_simple_shell(work_dir, cmd)
 
-  md_pos_file = ''.join((proj_dir, '/', proj_name, '-pos-1.xyz'))
-  if os.path.exists(md_pos_file):
-    atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-    traj_info.get_traj_info(md_pos_file, 'coord')
-  else:
-    log_info.log_error('There is no position trajectory file in %s' %(proj_dir))
-    exit()
+  atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+  traj_info.get_traj_info(traj_coord_file_name, 'coord')
 
   if ( start == 0 and end == 0 and choosed_num == 0 ):
     start = start_id
@@ -216,18 +219,17 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
 
   if ( start != 0 or end != 0 ):
     if ( start >= end ):
-      log_info.log_error('End frame id is less than end frame id for trajectory in %s, please check!' %(proj_dir))
+      log_info.log_error('Input error: End frame id is less than end frame id in trajectory, please check!')
       exit()
     else:
       total_index = data_op.gen_list(start, end, each)
       max_choosed_num = int((end-start)/each)+1
       if ( choosed_num > max_choosed_num ):
-        log_info.log_error('choosed_frame_num is larger than max choosed_frame_num for trajectory in %s, please check!' %(proj_dir))
+        log_info.log_error('Input error: choosed_frame_num is larger than the number of frames in trajectory, please check!')
         exit()
       else:
         total_index_array = np.array(total_index)
         np.random.shuffle(total_index_array)
-        #random.shuffle(total_index)
         choosed_index = list(total_index_array[0:choosed_num])
 
   if ( start < start_id ):
@@ -240,53 +242,28 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
 
   #Dump box information
   box_file = open(''.join((save_dir, '/box.raw')),'w')
-  md_cell_file = ''.join((proj_dir, '/', proj_name, '-1.cell'))
-  restart_file = ''.join((proj_dir, '/', proj_name, '-1.restart'))
   #vol is volume, it will be used in virial. The unit of vol is A^3.
   vol = []
-  if os.path.exists(md_cell_file):
-    for i in range(len(choosed_index)):
-      line_i = linecache.getline(md_cell_file, int((choosed_index[i]-start_id)/each)+2)
-      line_i_split = data_op.split_str(line_i, ' ', '\n')
-      vol.append(float(line_i_split[len(line_i_split)-1]))
-      for j in range(9):
-        if ( j == 0 ):
-          frame_str = ''.join((line_i_split[j+2]))
-        else:
-          frame_str = ' '.join((frame_str, line_i_split[j+2]))
-      frame_str = ''.join((frame_str, '\n'))
-      box_file.write(frame_str)
+  for i in range(len(choosed_index)):
+    line_i = linecache.getline(traj_cell_file_name, int((choosed_index[i]-start_id)/each)+2)
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    vol.append(float(line_i_split[len(line_i_split)-1]))
+    for j in range(9):
+      if ( j == 0 ):
+        frame_str = ''.join((line_i_split[j+2]))
+      else:
+        frame_str = ' '.join((frame_str, line_i_split[j+2]))
+    frame_str = ''.join((frame_str, '\n'))
+    box_file.write(frame_str)
 
-    linecache.clearcache()
-
-  else:
-    if os.path.exists(restart_file):
-      cmd = "grep -n %s %s" %("'&CELL'", os.path.abspath(restart_file))
-      a = call.call_returns_shell(proj_dir, cmd)
-      a_int = int(a[0].split(':')[0])
-      for i in range(3):
-        line_i = linecache.getline(restart_file, a_int+i+1)
-        line_i_split = data_op.split_str(line_i, ' ', '\n')
-        if ( i == 0 ):
-          frame_str = ' '.join((line_i_split[1], line_i_split[2], line_i_split[3]))
-        else:
-          frame_str = ' '.join((frame_str, line_i_split[1], line_i_split[2], line_i_split[3]))
-
-      linecache.clearcache()
-
-      frame_str = ''.join((frame_str, '\n'))
-      for i in range(len(choosed_index)):
-        box_file.write(frame_str)
-    else:
-      log_info.log_error('Cannot find box')
-      exit()
+  linecache.clearcache()
 
   box_file.close()
 
   #Dump energy information
   energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
   for i in range(len(choosed_index)):
-    line_i = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2) + 2)
+    line_i = linecache.getline(traj_coord_file_name, int((choosed_index[i]-start_id)/each)*(atoms_num+2) + 2)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
     energy = float(line_i_split[len(line_i_split)-1])*hartree_to_ev
     energy_file.write(''.join((str(energy),'\n')))
@@ -297,7 +274,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   type_file = open(''.join((save_dir, '/type.raw')), 'w')
   atoms = []
   for i in range(atoms_num):
-    line_i = linecache.getline(md_pos_file, 2+i+1)
+    line_i = linecache.getline(traj_coord_file_name, 2+i+1)
     line_i_split = data_op.split_str(line_i, ' ')
     atoms.append(line_i_split[0])
 
@@ -312,7 +289,7 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   for i in range(len(choosed_index)):
     frame_str = ''
     for j in range(atoms_num):
-      line_ij = linecache.getline(md_pos_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
+      line_ij = linecache.getline(traj_coord_file_name, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       if (j==0):
         frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
@@ -326,59 +303,49 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   coord_file.close()
 
   #Dump force information
-  force_file = open(''.join((save_dir, '/force.raw')), 'w')
-  md_frc_file = ''.join((proj_dir, '/', proj_name, '-frc-1.xyz'))
-  if os.path.exists(md_frc_file):
+  frc_file = open(''.join((save_dir, '/force.raw')), 'w')
+  for i in range(len(choosed_index)):
+    frame_str = ''
+    for j in range(atoms_num):
+      line_ij = linecache.getline(traj_frc_file_name, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
+      line_ij_split = data_op.split_str(line_ij, ' ', '\n')
+      f1 = float(line_ij_split[1])*hartree_to_ev*ang_to_bohr
+      f2 = float(line_ij_split[2])*hartree_to_ev*ang_to_bohr
+      f3 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
+      if ( j == 0 ):
+        frame_str = ' '.join((str(f1), str(f2), str(f3)))
+      else:
+        frame_str = ' '.join((frame_str, str(f1), str(f2), str(f3)))
+
+    frame_str = ''.join((frame_str, '\n'))
+    frc_file.write(frame_str)
+
+  linecache.clearcache()
+
+  frc_file.close()
+
+  #Dump virial information
+  if ( train_stress and traj_stress_file_name != 'none' ):
+    virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
     for i in range(len(choosed_index)):
       frame_str = ''
-      for j in range(atoms_num):
-        line_ij = linecache.getline(md_frc_file, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
-        line_ij_split = data_op.split_str(line_ij, ' ', '\n')
-        f1 = float(line_ij_split[1])*hartree_to_ev*ang_to_bohr
-        f2 = float(line_ij_split[2])*hartree_to_ev*ang_to_bohr
-        f3 = float(line_ij_split[3])*hartree_to_ev*ang_to_bohr
+      #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
+      line_i = linecache.getline(traj_stress_file_name, int((choosed_index[i]-start_id)/each)+2)
+      line_i_split = data_op.split_str(line_i, ' ', '\n')
+      #The unit of stress tensor in 'xx-1.stress' file is bar.
+      for j in range(9):
+        stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
+        stress_j_str = numeric.get_as_num_string(stress_j)
         if ( j == 0 ):
-          frame_str = ' '.join((str(f1), str(f2), str(f3)))
+          frame_str = ''.join((stress_j_str))
         else:
-          frame_str = ' '.join((frame_str, str(f1), str(f2), str(f3)))
-
+          frame_str = ' '.join((frame_str, stress_j_str))
       frame_str = ''.join((frame_str, '\n'))
-      force_file.write(frame_str)
+      virial_file.write(frame_str)
 
     linecache.clearcache()
 
-  else:
-    log_info.log_error('There is no force trajectory file in %s' %(proj_dir))
-    exit()
-
-  force_file.close()
-
-  #Dump virial information
-  if train_stress:
-    stress_file = ''.join((proj_dir, '/', proj_name, '-1.stress'))
-    if os.path.exists(stress_file):
-      virial_file = open(''.join((save_dir, '/virial.raw')), 'w')
-      for i in range(len(choosed_index)):
-        frame_str = ''
-        #There are 9 elements: xx, xy, xz, yx, yy, yz, zx, zy, zz.
-        line_i = linecache.getline(stress_file, int((choosed_index[i]-start_id)/each)+2)
-        line_i_split = data_op.split_str(line_i, ' ', '\n')
-        #The unit of stress tensor in 'xx-1.stress' file is bar.
-        for j in range(9):
-          stress_j = float(line_i_split[j+2])*vol[i]/(1602176.6208)
-          stress_j_str = numeric.get_as_num_string(stress_j)
-          if ( j == 0 ):
-            frame_str = ''.join((stress_j_str))
-          else:
-            frame_str = ' '.join((frame_str, stress_j_str))
-        frame_str = ''.join((frame_str, '\n'))
-        virial_file.write(frame_str)
-
-      linecache.clearcache()
-
-      virial_file.close()
-    else:
-      log_info.log_error('Load data error: no stress data file')
+    virial_file.close()
 
   total_index = data_op.gen_list(start_id, end_id, each)
   no_train_data_index = copy.deepcopy(total_index)
@@ -394,15 +361,15 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
   train_pos_file = open(train_pos_file_name, 'w')
   train_frc_file = open(train_frc_file_name, 'w')
   for i in choosed_index:
-    line_1 = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+1)
-    line_2 = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+2)
+    line_1 = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+1)
+    line_2 = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+2)
     train_pos_file.write(line_1)
     train_pos_file.write(line_2)
     train_frc_file.write(line_1)
     train_frc_file.write(line_2)
     for j in range(atoms_num):
-      line_pos = linecache.getline(md_pos_file, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
-      line_frc = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
+      line_pos = linecache.getline(traj_coord_file_name, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
+      line_frc = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
       train_pos_file.write(line_pos)
       train_frc_file.write(line_frc)
   train_pos_file.close()
@@ -417,15 +384,15 @@ def load_data_from_dir(proj_dir, work_dir, save_dir, proj_name, start, end, choo
     no_train_pos_file = open(no_train_pos_file_name, 'w')
     no_train_frc_file = open(no_train_frc_file_name, 'w')
     for i in no_train_data_index:
-      line_1 = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+1)
-      line_2 = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+2)
+      line_1 = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+1)
+      line_2 = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+2)
       no_train_pos_file.write(line_1)
       no_train_pos_file.write(line_2)
       no_train_frc_file.write(line_1)
       no_train_frc_file.write(line_2)
       for j in range(atoms_num):
-        line_pos = linecache.getline(md_pos_file, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
-        line_frc = linecache.getline(md_frc_file, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
+        line_pos = linecache.getline(traj_coord_file_name, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
+        line_frc = linecache.getline(traj_frc_file_name, int((i-start_id)/each)*(atoms_num+2)+j+1+2)
         no_train_pos_file.write(line_pos)
         no_train_frc_file.write(line_frc)
     no_train_pos_file.close()
@@ -549,11 +516,11 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
   '''
 
   frames_num = len(energy_array)
-  index = list(range(frames_num))
-  random.shuffle(index)
+  index = np.array(list(range(frames_num)))
+  np.random.shuffle(index)
   part_num = math.ceil(frames_num/parts)
   index_parts = []
-  index_temp = data_op.list_split(index, part_num)
+  index_temp = data_op.list_split(list(index), part_num)
   for i in index_temp:
     index_parts.append(i)
 
@@ -573,10 +540,10 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
     cmd = "mkdir %s" % (sub_dir_name)
     call.call_simple_shell(data_dir, cmd)
 
-    energy_array_i = energy_array[index_parts[i]]
-    coord_array_i = coord_array[index_parts[i]]
-    frc_array_i = frc_array[index_parts[i]]
-    box_array_i = box_array[index_parts[i]]
+    energy_array_i = energy_array[index_parts[i]].astype(np.float32)
+    coord_array_i = coord_array[index_parts[i]].astype(np.float32)
+    frc_array_i = frc_array[index_parts[i]].astype(np.float32)
+    box_array_i = box_array[index_parts[i]].astype(np.float32)
 
     np.save(''.join((data_dir, '/', sub_dir_name, '/energy.npy')), energy_array_i)
     np.save(''.join((data_dir, '/', sub_dir_name, '/coord.npy')), coord_array_i)
@@ -585,7 +552,7 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
 
     #virial is not necessary
     if ( virial_array.shape != (1,0) ):
-      virial_array_i = virial_array[index_parts[i]]
+      virial_array_i = virial_array[index_parts[i]].astype(np.float32)
       np.save(''.join((data_dir, '/', sub_dir_name, '/virial.npy')), virial_array_i)
 
   return train_data_num

@@ -130,7 +130,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         pass
       else:
         log_info.log_error('Input error: type in learning_rate should be string, please check or reset deepff/deepmd/learning_rate/type')
-        eixt()
+        exit()
     else:
       deepmd_dic['learning_rate']['type'] = 'exp'
 
@@ -224,21 +224,45 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
   else:
     for i in deepmd_dic['training'].keys():
       if ( 'system' in i ):
-        if ( 'directory' in deepmd_dic['training'][i] ):
-          directory = deepmd_dic['training'][i]['directory']
-          if ( os.path.exists(os.path.abspath(directory)) ):
-            deepmd_dic['training'][i]['directory'] = os.path.abspath(directory)
+        if ( 'traj_coord_file' in deepmd_dic['training'][i] ):
+          traj_coord_file = deepmd_dic['training'][i]['traj_coord_file']
+          if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
+            deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(traj_coord_file)
           else:
-            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/directory' %(directory))
-            eixt()
+            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_coord_file' %(traj_coord_file))
+            exit()
         else:
-          log_info.log_error('Input error: no directory, please check deepff/deepmd/training/system/directory')
+          log_info.log_error('Input error: no coordination trajectory file, please check deepff/deepmd/training/system/traj_coord_file')
           exit()
-        if ( 'proj_name' in deepmd_dic['training'][i]):
-          pass
+        if ( 'traj_frc_file' in deepmd_dic['training'][i] ):
+          traj_frc_file = deepmd_dic['training'][i]['traj_frc_file']
+          if ( os.path.exists(os.path.abspath(traj_frc_file)) ):
+            deepmd_dic['training'][i]['traj_frc_file'] = os.path.abspath(traj_frc_file)
+          else:
+            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_frc_file' %(traj_frc_file))
+            exit()
         else:
-          log_info.log_error('Input error: no proj_name, please check deepff/deepmd/training/system/proj_name')
+          log_info.log_error('Input error: no force trajectory file, please check deepff/deepmd/training/system/traj_frc_file')
           exit()
+        if ( 'traj_cell_file' in deepmd_dic['training'][i] ):
+          traj_cell_file = deepmd_dic['training'][i]['traj_cell_file']
+          if ( os.path.exists(os.path.abspath(traj_cell_file)) ):
+            deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(traj_cell_file)
+          else:
+            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_cell_file' %(traj_cell_file))
+            exit()
+        else:
+          log_info.log_error('Input error: no cell trajectory file, please check deepff/deepmd/training/system/traj_cell_file')
+          exit()
+        if ( 'traj_stress_file' in deepmd_dic['training'][i] ):
+          traj_stress_file = deepmd_dic['training'][i]['traj_stress_file']
+          if ( os.path.exists(os.path.abspath(traj_stress_file)) ):
+            deepmd_dic['training'][i]['traj_stress_file'] = os.path.abspath(traj_stress_file)
+          else:
+            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_stress_file' %(traj_stress_file))
+            exit()
+        else:
+          deepmd_dic['training'][i]['traj_stress_file'] = 'none'
         if ( 'start_frame' in deepmd_dic['training'][i] ):
           start_frame = deepmd_dic['training'][i]['start_frame']
           if ( data_op.eval_str(start_frame) == 1 ):
@@ -332,7 +356,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             exit()
       elif ( deepmd_dic['training']['model_type'] == 'use_seed' ):
         if ( all(data_op.eval_str(j) == 1 for j in neuron_list) ):
-          neuron = [int(x) for x in neuron]
+          neuron = [int(x) for x in neuron_list]
         else:
           log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd/training/neuron')
           exit()
@@ -432,18 +456,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
   else:
     lmp_dic['write_restart_freq'] = '1000'
 
-  if ( 'model_devi_freq' in lmp_dic.keys() ):
-    model_devi_freq = lmp_dic['model_devi_freq']
+  if ( 'model_devi_freq' in model_devi_dic.keys() ):
+    model_devi_freq = model_devi_dic['model_devi_freq']
     if ( data_op.eval_str(model_devi_freq) == 1 ):
       pass
     else:
       log_info.log_error('Input error: model_devi_freq should be integer, please check or reset deepff/lammps/model_devi_freq')
       exit()
   else:
-    lmp_dic['write_traj_freq'] = '10'
+    model_devi_dic['model_devi_freq'] = '10'
 
-  model_devi_freq = lmp_dic['model_devi_freq']
-  lmp_dic.pop('model_devi_freq')
+  model_devi_freq = model_devi_dic['model_devi_freq']
 
   lmp_dic['thermo_freq'] = model_devi_freq
   lmp_dic['dump_freq'] = model_devi_freq
@@ -580,16 +603,6 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       exit()
   else:
     model_devi_dic['choose_new_data_num_limit'] = 100
-
-  if ( 'conv_new_data_num' in model_devi_dic.keys() ):
-    conv_new_data_num = model_devi_dic['conv_new_data_num']
-    if ( data_op.eval_str(conv_new_data_num) == 1 ):
-      model_devi_dic['conv_new_data_num'] = int(conv_new_data_num)
-    else:
-      log_info.log_error('Input error: conv_new_data_num should be integer, please check or reset deepff/model_devi/conv_new_data_num')
-      exit()
-  else:
-    model_devi_dic['conv_new_data_num'] = 5
 
   if ( 'force_conv' in model_devi_dic.keys() ):
     force_conv = model_devi_dic['force_conv']
@@ -929,10 +942,10 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
   whole_line_num = len(open(inp_tmp_file_name).readlines())
 
   line_1_num = file_tools.grep_line_num("'&model_devi'", inp_tmp_file_name, work_dir)[0]
-  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_tmp_file_name, work_dir)[0]
-  line_3_num = file_tools.grep_line_num("'conv_new_data_num'", inp_tmp_file_name, work_dir)[0]
-  line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)[0]
-  line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)[0]
+  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_tmp_file_name, work_dir)
+  line_3_num = file_tools.grep_line_num("'model_devi_freq'", inp_tmp_file_name, work_dir)
+  line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)
+  line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)
   line_6_num = file_tools.grep_line_num("'&end model_devi'", inp_tmp_file_name, work_dir)[0]
 
   restart_inp_file = open(restart_inp_file_name, 'w')
@@ -941,8 +954,9 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
     restart_inp_file.write(line_i)
 
   for i in [line_2_num, line_3_num, line_4_num, line_5_num]:
-    line_i = linecache.getline(inp_tmp_file_name, i)
-    restart_inp_file.write(line_i)
+    if ( i != 0 ):
+      line_i = linecache.getline(inp_tmp_file_name, i[0])
+      restart_inp_file.write(line_i)
 
   restart_inp_file.write('    restart_iter %d\n' %(restart_iter))
   restart_inp_file.write('    restart_data_num %d\n' %(tot_data_num))

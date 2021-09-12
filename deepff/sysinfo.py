@@ -127,7 +127,10 @@ def analyze_gpu(host, ssh, work_dir):
 #! /bin/bash
 
 ssh %s
+nvidia-smi 1> /dev/null 2> /dev/null
+if [ $? -eq 0 ]; then
 nvidia-smi > %s
+fi
 exit
 ''' %(host[i], gpuinfo_file)
 
@@ -170,9 +173,9 @@ def get_lmp_path(work_dir):
   '''
 
   lmp_exe = call.call_returns_shell(work_dir, 'which lmp')
-  if ( len(lmp_exe) == 0 ):
+  if ( len(lmp_exe) == 0 or 'no lmp in' in lmp_exe[0] ):
     lmp_exe = call.call_returns_shell(work_dir, 'which lmp_mpi')
-    if ( len(lmp_exe) == 0 ):
+    if ( len(lmp_exe) == 0 or 'no lmp_mpi in' in lmp_exe[0] ):
       log_info.log_error('Envrionment error: can not find lmp executable file, please set the environment for lammps')
       exit()
   lmp_exe_split = data_op.split_str(lmp_exe[0], '/')
@@ -194,7 +197,7 @@ def get_mpi_path(work_dir):
   '''
 
   mpi_exe = call.call_returns_shell(work_dir, 'which mpirun')
-  if ( len(mpi_exe) == 0 ):
+  if ( len(mpi_exe) == 0 or 'no mpirun in' in mpi_exe[0] ):
     log_info.log_error('Envrionment error: can not find mpi executable file, please set the environment for mpi')
     exit()
   else:
@@ -217,7 +220,7 @@ def get_dp_path(work_dir):
   '''
 
   dp_exe = call.call_returns_shell(work_dir, 'which dp')
-  if ( len(dp_exe) == 0 ):
+  if ( len(dp_exe) == 0 or 'no dp in' in dp_exe[0] ):
     log_info.log_error('Envrionment error: can not find dp executable file, please set the environment for deepmd-kit')
     exit()
   else:

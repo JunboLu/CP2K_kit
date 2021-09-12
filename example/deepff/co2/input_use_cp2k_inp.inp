@@ -51,7 +51,6 @@
   &lammps
     nsteps 1000
     write_restart_freq 10
-    model_devi_freq 10
     time_step 0.0005
     temp 50.0
     pres 1.0
@@ -65,8 +64,8 @@
   &end lammps
 
   &model_devi
+    model_devi_freq 10
     choose_new_data_num_limit 100
-    conv_new_data_num 5
     force_conv 0.01
     max_iter 100
   &end model_devi

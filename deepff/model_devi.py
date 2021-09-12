@@ -7,7 +7,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import *
 from CP2K_kit.lib.geometry_mod import geometry
 
-def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
+def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
 
   '''
   choose_lmp_str: choose lammps structure based on force-force correlation.
@@ -17,8 +17,9 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
       work_dir is the workding directory of CP2K_kit.
     iter_id: int
       iter_id is current iteration number.
-    atom_type_dic_tot: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
-      example : {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
+    atoms_type_multi_sys: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
+      atoms_type_multi_sys is the atoms type for multi-systems.
+      example: {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
     force_conv: float
       force_conv is the maximum force convergence.
   Returns:
@@ -30,9 +31,10 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
 
   struct_index = OrderedDict()
   success_frames = []
+  success_devi_frames = []
   tot_frames = []
   lammps_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
-  sys_num = len(atoms_type_dic_tot)
+  sys_num = len(atoms_type_multi_sys)
 
   for i in range(sys_num):
     struct_index_i = OrderedDict()
@@ -42,6 +44,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
     task_num = len(call.call_returns_shell(lammps_sys_dir, cmd))
     tot_frames_i = []
     success_frames_i = []
+    success_devi_frames_i = []
     for j in range(task_num):
       lammps_sys_task_dir = ''.join((lammps_sys_dir, '/task_', str(j)))
       data_dir = ''.join((lammps_sys_task_dir, '/data'))
@@ -63,6 +66,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
 
       #Get box parameter, we will calculate distance later.
       success_frames_ij = 0
+      success_devi_frames_ij = 0
       for k in range(frames_num):
         box = []
         a_int = file_tools.grep_line_num("'Lx Ly Lz Xy Xz Yz'", log_file, lammps_sys_task_dir)[0]
@@ -79,7 +83,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
           line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
           line_kl_split = data_op.split_str(line_kl, ' ')
 
-          atoms.append(data_op.get_dic_keys(atoms_type_dic_tot[i], int(line_kl_split[1]))[0])
+          atoms.append(data_op.get_dic_keys(atoms_type_multi_sys[i], int(line_kl_split[1]))[0])
           coord.append([float(line_kl_split[2]), float(line_kl_split[3]), float(line_kl_split[4])])
 
         #Dump forces for models.
@@ -130,6 +134,8 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
         if ( max_force < force_conv ):
           success_frames_ij = success_frames_ij + 1
         else:
+          if ( abs(max_force-force_conv) < 0.05 ):
+            success_devi_frames_ij = success_devi_frames_ij + 1
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
           if ( min_dist > atom_cov_radii_plus*0.6 ):
@@ -137,24 +143,29 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, force_conv):
 
       linecache.clearcache()
       success_frames_i.append(success_frames_ij)
+      success_devi_frames_i.append(success_devi_frames_ij)
       struct_index_i[j] = choosed_index
       force_corr_dist_file.close()
 
     tot_frames.append(tot_frames_i)
     success_frames.append(success_frames_i)
+    success_devi_frames.append(success_devi_frames_i)
     struct_index[i] = struct_index_i
 
   success_ratio_sys = []
   tot_frames_sys = []
   success_frames_sys = []
+  success_devi_frames_sys = []
   for i in range(len(tot_frames)):
     success_ratio_sys.append(float(float(sum(success_frames[i]))/float(sum(tot_frames[i]))))
     tot_frames_sys.append(sum(tot_frames[i]))
     success_frames_sys.append(sum(success_frames[i]))
+    success_devi_frames_sys.append(sum(success_devi_frames[i]))
 
   success_ratio = float(float(sum(success_frames_sys))/float(sum(tot_frames_sys)))
+  success_devi_ratio = float(float(sum(success_devi_frames_sys))/float(sum(tot_frames_sys)))
 
-  return struct_index, success_ratio_sys, success_ratio
+  return struct_index, success_ratio_sys, success_ratio, success_devi_ratio
 
 def calc_dist(atoms, coord, a_vec, b_vec, c_vec):
 
@@ -234,10 +245,10 @@ if __name__ == '__main__':
   #Test choose_lmp_str function
   work_dir = '/home/lujunbo/WORK/Deepmd/CP2K_kit/co2/md_mtd'
   iter_id = 17
-  atoms_type_dic_tot = {0: {'C': 1, 'O': 2}, 1: {'C': 1, 'O': 2}}
+  atoms_type_multi_sys = {0: {'C': 1, 'O': 2}, 1: {'C': 1, 'O': 2}}
   atoms_num_tot = {0:3,1:3}
   force_conv = 0.05
-  struct_index = choose_lmp_str(work_dir, iter_id, atoms_type_dic_tot, atoms_num_tot, force_conv)
+  struct_index = choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, force_conv)
   print (struct_index)
 
   exit()

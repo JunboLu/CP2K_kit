@@ -17,7 +17,6 @@ from CP2K_kit.deepff import lammps_run
 from CP2K_kit.deepff import model_devi
 from CP2K_kit.deepff import cp2k_run
 from CP2K_kit.deepff import sysinfo
-from CP2K_kit.analyze import dp_test
 
 def dump_input(work_dir, inp_file, f_key):
 
@@ -62,8 +61,9 @@ def get_atoms_type(deepmd_dic):
     deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
   Returns:
-    tot_atoms_type_dic: dictionary
-      Example: {'O':0, 'H':1}
+    final_atoms_type: list
+      final_atoms_type is the atoms type for all systems.
+      Example: ['O', 'H']
   '''
 
   import linecache
@@ -72,22 +72,16 @@ def get_atoms_type(deepmd_dic):
   train_dic = deepmd_dic['training']
   for key in train_dic:
     if ( 'system' in key ):
-      proj_dir =  train_dic[key]['directory']
-      proj_name = train_dic[key]['proj_name']
-      md_coord_file = ''.join((proj_dir, '/', proj_name, '-pos-1.xyz'))
-      if ( os.path.exists(md_coord_file) ):
-        atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(md_coord_file, 'coord')
-        atoms = []
-        for i in range(atoms_num):
-          line_i = linecache.getline(md_coord_file, i+3)
-          line_i_split = data_op.split_str(line_i, ' ')
-          atoms.append(line_i_split[0])
-        linecache.clearcache()
-        atoms_type.append(data_op.list_replicate(atoms))
-      else:
-        log_info.log_error('Input error: %s does not exist, proj_name maybe wrong' %(md_coord_file))
-        exit()
+      traj_coord_file = train_dic[key]['traj_coord_file']
+      atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+      traj_info.get_traj_info(traj_coord_file, 'coord')
+      atoms = []
+      for i in range(atoms_num):
+        line_i = linecache.getline(traj_coord_file, i+3)
+        line_i_split = data_op.split_str(line_i, ' ')
+        atoms.append(line_i_split[0])
+      linecache.clearcache()
+      atoms_type.append(data_op.list_replicate(atoms))
 
   tot_atoms_type = data_op.list_reshape(atoms_type)
   final_atoms_type = data_op.list_replicate(tot_atoms_type)
@@ -108,6 +102,8 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
       restart_iter is the iteration number of restart.
     train_stress: bool
       train_stress is whether we need to dump stress.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     init_train_data: 1-d string list
       init_train_data contains initial training data directories.
@@ -126,20 +122,21 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
   if ( restart_iter == 0 ):
     call.call_simple_shell(work_dir, cmd)
   train_dic = deepmd_dic['training']
-  if ( 'set_data_dir' in train_dic.keys() ):
-    set_data_dir = train_dic['set_data_dir']
   for key in train_dic:
     if ( 'system' in key):
       save_dir = ''.join((work_dir, '/init_train_data/data_', str(i)))
       init_train_data.append(save_dir)
       if ( restart_iter == 0 ):
-        init_train_key_dir = train_dic[key]['directory']
-        proj_name = train_dic[key]['proj_name']
+        traj_coord_file = train_dic[key]['traj_coord_file']
+        traj_frc_file = train_dic[key]['traj_frc_file']
+        traj_cell_file = train_dic[key]['traj_cell_file']
+        traj_stress_file = train_dic[key]['traj_stress_file']
         start = train_dic[key]['start_frame']
         end = train_dic[key]['end_frame']
         choosed_num = train_dic[key]['choosed_frame_num']
         parts = train_dic[key]['set_parts']
-        load_data.load_data_from_dir(init_train_key_dir, work_dir, save_dir, proj_name, start, end, choosed_num, train_stress, tot_atoms_type_dic)
+        load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
+                                     train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         data_num = load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
         init_data_num = init_data_num+data_num
@@ -151,8 +148,8 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
           exit()
       i = i+1
 
-  if 'set_data_dir' in locals():
-    init_train_data.append(os.path.abspath(set_data_dir))
+  if ( 'set_data_dir' in train_dic.keys() ):
+    init_train_data.append(os.path.abspath(train_dic['set_data_dir']))
 
   return init_train_data, init_data_num
 
@@ -166,13 +163,13 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
       work_dir is the working directory.
     conv_iter: int
       conv_iter is the number of iteration.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns :
     none
   '''
 
   active_data_dir = ''.join((work_dir, '/active_data'))
-  str_print = 'Active data is written in %s' %(active_data_dir)
-  print (data_op.str_wrap(str_print, 80), flush=True)
 
   cmd = "mkdir %s" %('active_data')
   call.call_simple_shell(work_dir, cmd)
@@ -199,12 +196,12 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     frc_file = open(frc_file_name, 'w')
     cell_file = open(cell_file_name, 'w')
 
-    coord_traj_file_name = ''.join((sys_dir, '/active-pos-1.xyz'))
-    frc_traj_file_name = ''.join((sys_dir, '/active-frc-1.xyz'))
-    cell_traj_file_name = ''.join((sys_dir, '/active-1.cell'))
-    coord_traj_file = open(coord_traj_file_name, 'w')
-    frc_traj_file = open(frc_traj_file_name, 'w')
-    cell_traj_file = open(cell_traj_file_name, 'w')
+    traj_coord_file_name = ''.join((sys_dir, '/active-pos-1.xyz'))
+    traj_frc_file_name = ''.join((sys_dir, '/active-frc-1.xyz'))
+    traj_cell_file_name = ''.join((sys_dir, '/active-1.cell'))
+    traj_coord_file = open(traj_coord_file_name, 'w')
+    traj_frc_file = open(traj_frc_file_name, 'w')
+    traj_cell_file = open(traj_cell_file_name, 'w')
 
     for j in range(conv_iter):
       iter_dir = ''.join((work_dir, '/iter_', str(j)))
@@ -270,7 +267,7 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     for j in range(len(type_raw)):
       atoms.append(data_op.get_dic_key(tot_atoms_type_dic, int(type_raw[j].decode())))
 
-    cell_traj_file.write('#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n')
+    traj_cell_file.write('#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n')
     frames_num_tot = len(energy_array)
     for j in range(frames_num_tot):
       frc_array_j = frc_array[j].reshape(atoms_num, 3)
@@ -278,24 +275,27 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
       cell_array_j = cell_array[j].reshape(3,3)
       vol = np.linalg.det(cell_array_j)
 
-      coord_traj_file.write('%8d\n' %(atoms_num))
-      coord_traj_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
+      traj_coord_file.write('%8d\n' %(atoms_num))
+      traj_coord_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
       for k in range(atoms_num):
-        coord_traj_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], coord_array_j[k][0], coord_array_j[k][1], coord_array_j[k][2]))
+        traj_coord_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], coord_array_j[k][0], coord_array_j[k][1], coord_array_j[k][2]))
 
-      frc_traj_file.write('%8d\n' %(atoms_num))
-      frc_traj_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
+      traj_frc_file.write('%8d\n' %(atoms_num))
+      traj_frc_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
       for k in range(atoms_num):
-        frc_traj_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], frc_array_j[k][0], frc_array_j[k][1], frc_array_j[k][2]))
+        traj_frc_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], frc_array_j[k][0], frc_array_j[k][1], frc_array_j[k][2]))
 
-      cell_traj_file.write('%8d%12.3f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%25.10f\n' \
+      traj_cell_file.write('%8d%12.3f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%25.10f\n' \
                            %(j, j*0.5, cell_array_j[0][0], cell_array_j[0][1], cell_array_j[0][2], \
                              cell_array_j[1][0], cell_array_j[1][1], cell_array_j[1][2], \
                              cell_array_j[2][0], cell_array_j[2][1], cell_array_j[2][2], vol))
 
-    coord_traj_file.close()
-    frc_traj_file.close()
-    cell_traj_file.close()
+    traj_coord_file.close()
+    traj_frc_file.close()
+    traj_cell_file.close()
+
+  str_print = 'Active data is written in %s' %(active_data_dir)
+  print (data_op.str_wrap(str_print, 80), flush=True)
 
 def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, init_train_data, \
              init_data_num, work_dir, tot_atoms_type_dic, proc_num, host, device, usage):
@@ -350,7 +350,9 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   neuron = deepmd_dic['training']['neuron']
   train_stress = deepmd_dic['training']['train_stress']
 
-  conv_new_data_num = model_devi_dic['conv_new_data_num']
+  model_devi_freq = int(model_devi_dic['model_devi_freq'])
+  nsteps = int(lammps_dic['nsteps'])
+  conv_new_data_num = int(nsteps/model_devi_freq*0.02)
   choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
   force_conv = model_devi_dic['force_conv']
 
@@ -428,27 +430,23 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       #Perform lammps force calculations
       if ( restart_stage == 2 ):
         print ('Step 2: lammps tasks', flush=True)
-      sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
-      lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_dic_tot)
+      sys_num, atoms_type_multi_sys, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
+      lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_multi_sys)
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, mpi_path, parallel_exe, proc_num, atoms_num_tot)
       check_deepff.write_restart_inp(inp_file, i, 3, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
       #Get force-force correlation and then choose new structures
-      sys_num, atoms_type_dic_tot, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
-      struct_index, success_ratio_sys, success_ratio = model_devi.choose_lmp_str(work_dir, i, atoms_type_dic_tot, force_conv)
+      sys_num, atoms_type_multi_sys, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
+      struct_index, success_ratio_sys, success_ratio, success_devi_ratio = \
+      model_devi.choose_lmp_str(work_dir, i, atoms_type_multi_sys, force_conv)
 
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
 
-      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%%' %(sys_num, i, success_ratio*100), flush=True)
-      choose_data_num = []
-      for key1 in struct_index:
-        for key2 in struct_index[key1]:
-          choose_data_num.append(len(struct_index[key1][key2]))
+      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%% %.2f%%' %(sys_num, i, success_ratio*100, success_devi_ratio*100), flush=True)
 
-      max_choose_data_num = max(choose_data_num)
-      if ( max_choose_data_num <= conv_new_data_num ):
+      if ( min(success_ratio_sys) > 0.98 and success_ratio+success_devi_ratio > 0.99 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
@@ -457,11 +455,11 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
 
       print ('Step 3: cp2k tasks', flush=True)
       #Perform cp2k calculation
-      cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_dic_tot, atoms_num_tot, \
-                           struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
+      cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, \
+                             struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num, atoms_num_tot)
 
-      #Get new data of cp2k
+      #Dump new data of cp2k
       for j in range(sys_num):
         file_dir = ''.join((work_dir, '/iter_', str(i), '/03.cp2k_calc/sys_', str(j)))
         load_data.load_data_from_sepfile(file_dir, 'task_', 'cp2k', tot_atoms_type_dic)
