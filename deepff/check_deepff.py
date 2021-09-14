@@ -6,6 +6,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
 
 def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num):
@@ -263,6 +264,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             exit()
         else:
           deepmd_dic['training'][i]['traj_stress_file'] = 'none'
+        atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+        traj_info.get_traj_info(traj_coord_file, 'coord')
         if ( 'start_frame' in deepmd_dic['training'][i] ):
           start_frame = deepmd_dic['training'][i]['start_frame']
           if ( data_op.eval_str(start_frame) == 1 ):
@@ -271,7 +274,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             log_info.log_error('Input error: start_frame should be integer, please check deepff/deepmd/training/system/start_frame')
             exit()
         else:
-          deepmd_dic['training'][i]['start_frame'] = 0
+          deepmd_dic['training'][i]['start_frame'] = start_id
         if ( 'end_frame' in deepmd_dic['training'][i] ):
           end_frame = deepmd_dic['training'][i]['end_frame']
           if ( data_op.eval_str(end_frame) == 1 ):
@@ -280,7 +283,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             log_info.log_error('Input error: end_frame should be integer, please check deepff/deepmd/training/system/end_frame')
             exit()
         else:
-          deepmd_dic['training'][i]['end_frame'] = 0
+          deepmd_dic['training'][i]['end_frame'] = end_id
         if ( 'choosed_frame_num' in deepmd_dic['training'][i] ):
           choosed_frame_num = deepmd_dic['training'][i]['choosed_frame_num']
           if ( data_op.eval_str(choosed_frame_num) == 1 ):
@@ -289,7 +292,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             log_info.log_error('Input error: choosed_frame_num should be integer, please check deepff/deepmd/training/system/choosed_frame_num')
             exit()
         else:
-          deepmd_dic['training'][i]['choosed_frame_num'] = 0
+          deepmd_dic['training'][i]['choosed_frame_num'] = int((end_id-start_id)/each)+1
         if ( 'set_parts' in deepmd_dic['training'][i] ):
           set_parts = deepmd_dic['training'][i]['set_parts']
           if ( data_op.eval_str(set_parts) == 1 ):
@@ -299,6 +302,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             exit()
         else:
           deepmd_dic['training'][i]['set_parts'] = 1
+
+    if ( 'shuffle_data' in deepmd_dic['training'].keys() ):
+      shuffle_data = deepmd_dic['training']['shuffle_data']
+      shuffle_data_bool = data_op.str_to_bool(shuffle_data)
+      if ( isinstance(shuffle_data_bool, bool) ):
+        deepmd_dic['training']['shuffle_data'] = shuffle_data_bool
+      else:
+        log_info.log_error('Input error: shuffle_data should be bool, please check or reset deepff/deepmd/training/shuffle_data')
+        exit()
+    else:
+      deepmd_dic['training']['shuffle_data'] = False
 
     if ( 'train_stress' in deepmd_dic['training'].keys() ):
       train_stress = deepmd_dic['training']['train_stress']

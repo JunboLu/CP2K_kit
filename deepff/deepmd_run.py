@@ -88,6 +88,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
 
   deepmd_param['training'].pop('model_type')
   deepmd_param['training'].pop('neuron')
+  deepmd_param['training'].pop('shuffle_data')
   deepmd_param['training'].pop('train_stress')
 
   deepmd_param['training']['systems'] = data_dir

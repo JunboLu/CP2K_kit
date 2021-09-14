@@ -1,13 +1,11 @@
 #! /usr/env/bin python
 
 import os
-import subprocess
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import read_input
 from CP2K_kit.tools import data_op
-from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
 from CP2K_kit.deepff import check_deepff
@@ -122,6 +120,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
   if ( restart_iter == 0 ):
     call.call_simple_shell(work_dir, cmd)
   train_dic = deepmd_dic['training']
+  shuffle_data = train_dic['shuffle_data']
   for key in train_dic:
     if ( 'system' in key):
       save_dir = ''.join((work_dir, '/init_train_data/data_', str(i)))
@@ -138,7 +137,7 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
         load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
                                      train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
-        data_num = load_data.raw_data_to_set(parts, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+        data_num = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
         init_data_num = init_data_num+data_num
       else:
         if ( os.path.exists(save_dir) ):
@@ -260,12 +259,12 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     cell_file.close()
 
     energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(sys_dir)
-    load_data.raw_data_to_set(1, sys_dir, energy_array, coord_array, frc_array, cell_array, virial_array)
+    load_data.raw_data_to_set(1, False, sys_dir, energy_array, coord_array, frc_array, cell_array, virial_array)
 
     atoms = []
     type_raw = open(''.join((sys_dir, '/type.raw')), 'rb').read().split()
     for j in range(len(type_raw)):
-      atoms.append(data_op.get_dic_key(tot_atoms_type_dic, int(type_raw[j].decode())))
+      atoms.append(data_op.get_dic_keys(tot_atoms_type_dic, int(type_raw[j].decode())))
 
     traj_cell_file.write('#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n')
     frames_num_tot = len(energy_array)
@@ -348,6 +347,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
   neuron = deepmd_dic['training']['neuron']
+  shuffle_data = deepmd_dic['training']['shuffle_data']
   train_stress = deepmd_dic['training']['train_stress']
 
   model_devi_freq = int(model_devi_dic['model_devi_freq'])
@@ -444,9 +444,10 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
 
-      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%% %.2f%%' %(sys_num, i, success_ratio*100, success_devi_ratio*100), flush=True)
+      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%% %.2f%%' \
+             %(sys_num, i, success_ratio*100, success_devi_ratio*100), flush=True)
 
-      if ( min(success_ratio_sys) > 0.98 and success_ratio+success_devi_ratio > 0.99 ):
+      if ( min(success_ratio_sys) >= 0.98 and success_ratio+success_devi_ratio >= 0.999 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
@@ -466,7 +467,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
         cp2k_data_dir = ''.join((file_dir, '/data'))
         if ( os.path.exists(cp2k_data_dir) ):
           energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
-          train_data_num = load_data.raw_data_to_set(1, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+          train_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
           data_num.append(train_data_num)
 
       print ('  Success: dump new raw data of cp2k', flush=True)

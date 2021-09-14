@@ -122,14 +122,16 @@ def analyze_gpu(host, ssh, work_dir):
 
   for i in range(len(host)):
     gpuinfo_file = ''.join((work_dir, '/gpuinfo_', host[i]))
+    cmd = "touch %s" %(gpuinfo_file)
+    call.call_simple_shell(work_dir, cmd)
     if ssh:
       check_gpu = '''
 #! /bin/bash
 
-ssh %s
+ssh -T %s
 nvidia-smi 1> /dev/null 2> /dev/null
 if [ $? -eq 0 ]; then
-nvidia-smi > %s
+nvidia-smi >> %s
 fi
 exit
 ''' %(host[i], gpuinfo_file)
@@ -138,7 +140,10 @@ exit
       check_gpu = '''
 #! /bin/bash
 
-nvidia-smi > %s
+nvidia-smi 1> /dev/null 2> /dev/null
+if [ $? -eq 0 ]; then
+nvidia-smi >> %s
+fi
 ''' %(gpuinfo_file)
 
     check_gpu_file = ''.join((work_dir, '/check_gpu.sh'))

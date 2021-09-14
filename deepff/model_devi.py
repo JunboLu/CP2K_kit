@@ -131,10 +131,10 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
         min_dist_index = dist.index(min_dist)
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
-        if ( max_force < force_conv ):
+        if ( max_force <= force_conv ):
           success_frames_ij = success_frames_ij + 1
         else:
-          if ( abs(max_force-force_conv) < 0.05 ):
+          if ( abs(max_force-force_conv) <= 0.05 ):
             success_devi_frames_ij = success_devi_frames_ij + 1
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])

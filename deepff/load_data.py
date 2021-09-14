@@ -212,26 +212,6 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
   atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
   traj_info.get_traj_info(traj_coord_file_name, 'coord')
 
-  if ( start == 0 and end == 0 and choosed_num == 0 ):
-    start = start_id
-    end = end_id
-    choosed_index = data_op.gen_list(start, end, each)
-
-  if ( start != 0 or end != 0 ):
-    if ( start >= end ):
-      log_info.log_error('Input error: End frame id is less than end frame id in trajectory, please check!')
-      exit()
-    else:
-      total_index = data_op.gen_list(start, end, each)
-      max_choosed_num = int((end-start)/each)+1
-      if ( choosed_num > max_choosed_num ):
-        log_info.log_error('Input error: choosed_frame_num is larger than the number of frames in trajectory, please check!')
-        exit()
-      else:
-        total_index_array = np.array(total_index)
-        np.random.shuffle(total_index_array)
-        choosed_index = list(total_index_array[0:choosed_num])
-
   if ( start < start_id ):
     log_info.log_error('Input error: start is less than the starting frame id in trajectory, please check or reset deepff/deepmd/training/system/start')
     exit()
@@ -239,6 +219,21 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
   if ( end > end_id ):
     log_info.log_error('Input error: end is larger than the endding frame id in trajectory, please check or reset deepff/deepmd/training/system/end')
     exit()
+
+  if ( start >= end ):
+    log_info.log_error('Input error: start_frame is larger than end_frame, please check!')
+    exit()
+  else:
+    total_index = data_op.gen_list(start, end, each)
+    max_choosed_num = int((end-start)/each)+1
+    if ( choosed_num > max_choosed_num ):
+      log_info.log_error('Input error: choosed_frame_num is larger than the number of frames in trajectory, please check!')
+      exit()
+    else:
+      total_index_array = np.array(total_index)
+      if ( choosed_num < max_choosed_num ):
+        np.random.shuffle(total_index_array)
+      choosed_index = list(total_index_array[0:choosed_num])
 
   #Dump box information
   box_file = open(''.join((save_dir, '/box.raw')),'w')
@@ -490,7 +485,7 @@ def read_raw_data(data_dir):
 
     return energy_array, coord_array, frc_array, box_array, virial_array
 
-def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_array, virial_array):
+def raw_data_to_set(parts, shuffle_data, data_dir, energy_array, coord_array, frc_array, box_array, virial_array):
 
   '''
   raw_data_to_set: divide the raw data into several parts
@@ -498,6 +493,8 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
   Args:
     parts: int
       parts is the number of divided parts.
+    shuffle_data: bool
+      shuffle_data is whether we need to shuffle data.
     data_dir: string
       data_dir is the directory of raw data.
     energy_array: 1-d float array, dim = num of frames
@@ -517,7 +514,8 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
 
   frames_num = len(energy_array)
   index = np.array(list(range(frames_num)))
-  np.random.shuffle(index)
+  if shuffle_data:
+    np.random.shuffle(index)
   part_num = math.ceil(frames_num/parts)
   index_parts = []
   index_temp = data_op.list_split(list(index), part_num)
@@ -532,10 +530,12 @@ def raw_data_to_set(parts, data_dir, energy_array, coord_array, frc_array, box_a
   for i in range(len(index_parts)):
     if ( len(index_parts) > 1 and i != len(index_parts)-1 ):
       train_data_num = train_data_num+len(index_parts[i])
-    if (i > 10 or i == 10):
+    if ( i > 10 or i == 10 ):
       sub_dir_name = 'set.0'+str(i)
-    elif (i < 10):
+    elif ( i < 10 ):
       sub_dir_name = 'set.00'+str(i)
+    elif ( i > 100 ):
+      sub_dir_name = 'set.'+str(i)
 
     cmd = "mkdir %s" % (sub_dir_name)
     call.call_simple_shell(data_dir, cmd)
