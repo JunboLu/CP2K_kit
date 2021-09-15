@@ -8,6 +8,7 @@ from CP2K_kit.tools import read_input
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import traj_info
+from CP2K_kit.tools import file_tools
 from CP2K_kit.deepff import check_deepff
 from CP2K_kit.deepff import load_data
 from CP2K_kit.deepff import deepmd_run
@@ -71,13 +72,21 @@ def get_atoms_type(deepmd_dic):
   for key in train_dic:
     if ( 'system' in key ):
       traj_coord_file = train_dic[key]['traj_coord_file']
-      atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-      traj_info.get_traj_info(traj_coord_file, 'coord')
+      line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file, os.getcwd())
+      if ( line_num == 0 ):
+        coord_file_type = 'coord_xyz'
+      else:
+        coord_file_type = 'coord_pdb'
+      atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
+      traj_info.get_traj_info(traj_coord_file, coord_file_type)
       atoms = []
       for i in range(atoms_num):
-        line_i = linecache.getline(traj_coord_file, i+3)
-        line_i_split = data_op.split_str(line_i, ' ')
-        atoms.append(line_i_split[0])
+        line_i = linecache.getline(traj_coord_file, pre_base+pre_base_block+i+1)
+        line_i_split = data_op.split_str(line_i, ' ', '\n')
+        if ( coord_file_type == 'coord_xyz' ):
+          atoms.append(line_i_split[0])
+        elif ( coord_file_type == 'coord_pdb' ):
+          atoms.append(line_i_split[len(line_i_split)-1])
       linecache.clearcache()
       atoms_type.append(data_op.list_replicate(atoms))
 
@@ -500,7 +509,6 @@ def kernel(work_dir, inp_file):
 
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
-  print ('Check input file: no error in %s' %(inp_file), flush=True)
 
   restart_iter = model_devi_dic['restart_iter']
   train_stress = deepmd_dic['training']['train_stress']
@@ -515,8 +523,13 @@ def kernel(work_dir, inp_file):
     log_info.log_error('Input error: type_map should be %s, please reset deepff/deepmd/model/type_map' %(type_map_str))
     exit()
 
+  if ( len(deepmd_dic['model']['descriptor']['sel']) != len(tot_atoms_type) ):
+    log_info.log_error('Input error: sel should be %d integers, please reset deepff/deepmd/model/descriptor/sel' %(len(tot_atoms_type)))
+    exit()
+
   init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic)
 
+  print ('Check input file: no error in %s' %(inp_file), flush=True)
   print ('Initial training data:', flush=True)
   for i in range(len(init_train_data)):
     print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)

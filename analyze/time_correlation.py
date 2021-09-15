@@ -16,8 +16,8 @@ from CP2K_kit.analyze import check_analyze
 #We transfer velocity in cm/s
 #The unit of intensity is cm^2/s
 
-def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, \
-                   max_frame_corr, atom_id, traj_vel_file, work_dir, file_name, normalize):
+def time_corr_func(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, \
+                   init_step, end_step, max_frame_corr, atom_id, traj_vel_file, work_dir, file_name, normalize):
 
   '''
   time_corr_func: calculate time correlation function.
@@ -25,8 +25,8 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
   Args:
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     each: int
@@ -63,7 +63,8 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
   data = np.asfortranarray(np.zeros((frame_num_stat,len(atom_id),3)),dtype='float32')
   for i in range(frame_num_stat):
     for j in range(len(atom_id)):
-      line_ij = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+base+atom_id[j])
+      line_ij_num = (pre_base_block+atoms_num+end_base_block)*(int((init_step-start_frame_id)/each)+i)+pre_base_block+pre_base+atom_id[j]
+      line_ij = linecache.getline(traj_vel_file, line_ij_num)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       data[i,j,0] = float(line_ij_split[1])
       data[i,j,1] = float(line_ij_split[2])
@@ -85,8 +86,8 @@ def time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, i
 
   return data_tcf, tcf_file
 
-def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
-                        cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize=1):
+def time_corr_mode_func(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, \
+                        max_frame_corr, cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize=1):
 
   '''
   time_corr_mode_func: calculate mode time correlation function.
@@ -94,8 +95,8 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
   Args:
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     each: int
@@ -158,7 +159,8 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
       element = []
       for k in range(len(cluster_group_id[i][j])):
         #Dump coordinate
-        line_k = linecache.getline(traj_coord_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
+        line_k_num = (pre_base_block+atoms_num+end_base_block)*(int((init_step-start_frame_id)/each)+i)+cluster_group_id[i][j][k]+pre_base_block+pre_base
+        line_k = linecache.getline(traj_coord_file, line_k_num)
         line_k_split = data_op.split_str(line_k, ' ', '\n')
         element.append(line_k_split[0])
         pos_data[k,0] = float(line_k_split[1])
@@ -166,7 +168,7 @@ def time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_st
         pos_data[k,2] = float(line_k_split[3])
 
         #Dump velocity
-        line_k = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+cluster_group_id[i][j][k]+base+pre_base)
+        line_k = linecache.getline(traj_vel_file, line_k_num)
         line_k_split = data_op.split_str(line_k, ' ', '\n')
         vel_data[k,0] = float(line_k_split[1])
         vel_data[k,1] = float(line_k_split[2])
@@ -234,7 +236,7 @@ def time_corr_run(time_corr_param, work_dir):
   time_corr_param = check_analyze.check_time_correlation_inp(time_corr_param)
 
   traj_file = time_corr_param['traj_file']
-  atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
   traj_info.get_traj_info(traj_file, 'vel')
 
   log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
@@ -247,7 +249,7 @@ def time_corr_run(time_corr_param, work_dir):
 
   print ('TIME_CORRELATION'.center(80, '*'))
   print ('Calculate time correlation function', flush=True)
-  data_tcf, tcf_file = time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, \
+  data_tcf, tcf_file = time_corr_func(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, \
                        init_step, end_step, max_frame_corr, atom_id, traj_file, work_dir, 'tcf.csv', normalize)
 
   str_print = 'The time correlation function is written in %s' %(tcf_file)

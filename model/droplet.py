@@ -63,13 +63,13 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
   coord_1 = []
   coord_2 = []
 
-  atoms_num, pre_base, base, frame_start = traj_tools.get_block_base(file_name)
+  atoms_num, pre_base, pre_base_block, end_base_block, frame_start = traj_tools.get_block_base(file_name)
 
   #Get the center of mass of center part
   center_atom_coord = []
   atom_name = []
   for i in range(len(center_id)):
-    line_i = linecache.getline(file_name, center_id[i]+pre_base+base)
+    line_i = linecache.getline(file_name, center_id[i]+pre_base+pre_base_block)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
     atom_name.append(line_i_split[0])
     center_atom_coord.append([float(line_i_split[1]), float(line_i_split[2]), float(line_i_split[3])])
@@ -85,7 +85,7 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
     check_group = []
     group_atom_coord = []
     for j in range(len(group_atom)):
-      line_ij = linecache.getline(file_name, pre_base+base+i+j+1)
+      line_ij = linecache.getline(file_name, pre_base+pre_base_block+i+j+1)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       group_atom_coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3])])
       if ( line_ij_split[0] == group_atom[j] ):
@@ -109,13 +109,13 @@ def build_droplet(work_dir, file_name, center_id, group_atom, len_conv, a_vec, b
   new_file_name = ''.join((work_dir, '/', 'droplet.xyz'))
   new_file = open(new_file_name, 'w')
   for i in range(len(center_id)):
-    line = linecache.getline(file_name, center_id[i]+pre_base+base)
+    line = linecache.getline(file_name, center_id[i]+pre_base+pre_base_block)
     new_file.write(line)
 
   for i in range(len(index_first_atom)):
     if ( distance[i] < len_conv ):
       for j in range(len(group_atom)):
-        line = linecache.getline(file_name, index_first_atom[i]+pre_base+base+j)
+        line = linecache.getline(file_name, index_first_atom[i]+pre_base+pre_base_block+j)
         new_file.write(line)
 
   linecache.clearcache()

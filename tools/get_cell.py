@@ -47,21 +47,25 @@ def get_cell_const(a_vec, b_vec, c_vec):
 
   return a, b, c, alpha, beta, gamma
 
-def get_triclinic_cell(a_vec, b_vec, c_vec):
+def get_triclinic_cell(a, b, c, alpha, beta, gamma):
 
   '''
   get_triclinic_cell: get triclinic cell from conventional cell vectors.
 
   Args:
-    a_vec: 1-d float array, dim = 3
-      a_vec is the cell vector of a.
-      Example : array([12.42, 0.0, 0.0])
-    b_vec: 1-d float array, dim = 3
-      b_vec is the cell vector of b.
-      Example : array([0.0, 12.42, 0.0])
-    c_vec: 1-d float array, dim = 3
-      c_vec is the cell vector of c.
-      Example : array([0.0, 0.0, 12.42])
+    a: float
+      a is the length of a_vec.
+    b: float
+      b is the length of b_vec.
+    c: float
+      c is the length of c_vec.
+    alpha: float
+      alpha is the angle between b_vec and c_vec.
+    beta: float
+      beta is the angle between a_vec and c_vec.
+    gamma: float
+      gamma is the angle between a_vec and b_vec.
+    Noting: Both alpha, beta and gamma are rad.
   Returns:
     tri_a_vec: 1-d float array, dim = 3
       tri_a_vec is the cell vector of a in triclinic cell.
@@ -73,11 +77,9 @@ def get_triclinic_cell(a_vec, b_vec, c_vec):
       Example: array([xz, yz, Lz])
   '''
 
-  a, b, c, alpha, beta, gamma = get_cell_const(a_vec, b_vec, c_vec)
-
-  tri_a_vec = np.zeros(len(a_vec))
-  tri_b_vec = np.zeros(len(b_vec))
-  tri_c_vec = np.zeros(len(c_vec))
+  tri_a_vec = np.zeros(3)
+  tri_b_vec = np.zeros(3)
+  tri_c_vec = np.zeros(3)
 
   tri_a_vec[0] = a
   tri_b_vec[0] = b*np.cos(gamma)

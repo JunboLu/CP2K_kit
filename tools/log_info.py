@@ -75,4 +75,3 @@ def log_error(error, error_lable='Error'):
 
   print (error_lable.center(80,'*'), flush=True)
   print (data_op.str_wrap(error,80), flush=True)
-  print ('\n', flush=True)

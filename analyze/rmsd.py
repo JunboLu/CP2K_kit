@@ -11,7 +11,7 @@ from CP2K_kit.analyze import check_analyze
 from CP2K_kit.lib import rmsd_mod
 from CP2K_kit.lib import statistic_mod
 
-def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, comp_frame_list, traj_coord_file):
+def rmsd(atoms_num, pre_base_block, end_base_block, pre_base, each, atom_id, start_frame_id, ref_frame, comp_frame_list, traj_coord_file):
 
   #Reference literature: J. Comput. Chem. 2004, 25, 1849-1857.
 
@@ -21,8 +21,8 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
   Args:
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     each: int
@@ -47,7 +47,8 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
   coord_comp = np.asfortranarray(np.zeros((len(atom_id),3)),dtype='float32')
 
   for i in range(len(atom_id)):
-    line_i = linecache.getline(traj_coord_file, int((ref_frame-start_frame_id)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
+    line_i_num = int((ref_frame-start_frame_id)/each)*(pre_base_block+atoms_num+end_base_block)+atom_id[i]+pre_base_block+pre_base
+    line_i = linecache.getline(traj_coord_file, line_i_num)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
     coord_ref[i,0] = float(line_i_split[1])
     coord_ref[i,1] = float(line_i_split[2])
@@ -62,7 +63,8 @@ def rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, co
 
   for m in range(len(comp_frame_list)):
     for i in range(len(atom_id)):
-      line_mi = linecache.getline(traj_coord_file, int((comp_frame_list[m]-start_frame_id)/each)*(atoms_num+base)+atom_id[i]+base+pre_base)
+      line_mi_num = int((comp_frame_list[m]-start_frame_id)/each)*(pre_base_block+atoms_num+end_base_block)+atom_id[i]+pre_base_block+pre_base
+      line_mi = linecache.getline(traj_coord_file, line_mi_num)
       line_mi_split = data_op.split_str(line_mi, ' ', '\n')
       coord_comp[i,0] = float(line_mi_split[1])
       coord_comp[i,1] = float(line_mi_split[2])
@@ -111,8 +113,8 @@ def rmsd_run(rmsd_param, work_dir):
   rmsd_param = check_analyze.check_rmsd_inp(rmsd_param)
 
   traj_coord_file = rmsd_param['traj_coord_file']
-  atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-  traj_info.get_traj_info(traj_coord_file, 'coord')
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+  traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
 
   log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
@@ -123,7 +125,7 @@ def rmsd_run(rmsd_param, work_dir):
   print ('RMSD'.center(80, '*'), flush=True)
   print ('Calculate root mean square deviation based on reference frame %d' %(ref_frame), flush=True)
 
-  rmsd_value = rmsd(atoms_num, base, pre_base, each, atom_id, start_frame_id, ref_frame, compare_frame, traj_coord_file)
+  rmsd_value = rmsd(atoms_num, pre_base_block, end_base_block, pre_base, each, atom_id, start_frame_id, ref_frame, compare_frame, traj_coord_file)
 
   rmsd_file = ''.join((work_dir, '/rmsd.csv'))
   with open(rmsd_file, 'w') as csvfile:

@@ -10,6 +10,8 @@ from CP2K_kit.tools import numeric
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import log_info
+from CP2K_kit.tools import get_cell
+from CP2K_kit.tools import file_tools
 
 hartree_to_ev = 2.72113838565563E+01
 ang_to_bohr = 1.0/5.29177208590000E-01
@@ -99,7 +101,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
 
           linecache.clearcache()
 
-          vol = np.linalg.det(vec)
+          vol = np.linalg.det(np.array(vec))
           frame_str = ''.join((frame_str, '\n'))
           box_file.write(frame_str)
 
@@ -209,8 +211,14 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
   cmd = "mkdir %s" % (save_dir)
   call.call_simple_shell(work_dir, cmd)
 
-  atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-  traj_info.get_traj_info(traj_coord_file_name, 'coord')
+  line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file_name, work_dir)
+  if ( line_num == 0 ):
+    coord_file_type = 'coord_xyz'
+  else:
+    coord_file_type = 'coord_pdb'
+
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
+  traj_info.get_traj_info(traj_coord_file_name, coord_file_type)
 
   if ( start < start_id ):
     log_info.log_error('Input error: start is less than the starting frame id in trajectory, please check or reset deepff/deepmd/training/system/start')
@@ -239,39 +247,53 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
   box_file = open(''.join((save_dir, '/box.raw')),'w')
   #vol is volume, it will be used in virial. The unit of vol is A^3.
   vol = []
-  for i in range(len(choosed_index)):
-    line_i = linecache.getline(traj_cell_file_name, int((choosed_index[i]-start_id)/each)+2)
-    line_i_split = data_op.split_str(line_i, ' ', '\n')
-    vol.append(float(line_i_split[len(line_i_split)-1]))
-    for j in range(9):
-      if ( j == 0 ):
-        frame_str = ''.join((line_i_split[j+2]))
-      else:
-        frame_str = ' '.join((frame_str, line_i_split[j+2]))
-    frame_str = ''.join((frame_str, '\n'))
-    box_file.write(frame_str)
-
-  linecache.clearcache()
+  if ( coord_file_type == 'coord_xyz' ):
+    for i in range(len(choosed_index)):
+      line_i = linecache.getline(traj_cell_file_name, int((choosed_index[i]-start_id)/each)+2)
+      line_i_split = data_op.split_str(line_i, ' ', '\n')
+      vol.append(float(line_i_split[len(line_i_split)-1]))
+      for j in range(9):
+        if ( j == 0 ):
+          frame_str = ''.join((line_i_split[j+2]))
+        else:
+          frame_str = ' '.join((frame_str, line_i_split[j+2]))
+      frame_str = ''.join((frame_str, '\n'))
+      box_file.write(frame_str)
+    linecache.clearcache()
+  else:
+    for i in range(len(choosed_index)):
+      line_i_num = int((choosed_index[i]-start_id)/each)*(pre_base_block+atoms_num+end_base_block)+pre_base+2
+      line_i = linecache.getline(traj_coord_file_name, line_i_num)
+      line_i_split = data_op.split_str(line_i, ' ', '\n')
+      a = float(line_i_split[1])
+      b = float(line_i_split[2])
+      c = float(line_i_split[3])
+      alpha = float(line_i_split[4])/180.0*np.pi
+      beta = float(line_i_split[4])/180.0*np.pi
+      gamma = float(line_i_split[4])/180.0*np.pi
+      cell_a, cell_b, cell_c = get_cell.get_triclinic_cell(a, b, c, alpha, beta, gamma)
+      vol.append(np.linalg.det(np.array([cell_a, cell_b, cell_c])))
+      frame_str = ''
+      for cell in [cell_a, cell_b, cell_c]:
+        for i in cell:
+          frame_str = ' '.join((frame_str, str(i)))
+      frame_str = frame_str.strip(' ')
+      frame_str = ''.join((frame_str, '\n'))
+      box_file.write(frame_str)
+    linecache.clearcache()
 
   box_file.close()
-
-  #Dump energy information
-  energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
-  for i in range(len(choosed_index)):
-    line_i = linecache.getline(traj_coord_file_name, int((choosed_index[i]-start_id)/each)*(atoms_num+2) + 2)
-    line_i_split = data_op.split_str(line_i, ' ', '\n')
-    energy = float(line_i_split[len(line_i_split)-1])*hartree_to_ev
-    energy_file.write(''.join((str(energy),'\n')))
-
-  linecache.clearcache()
 
   #Dump element information
   type_file = open(''.join((save_dir, '/type.raw')), 'w')
   atoms = []
   for i in range(atoms_num):
-    line_i = linecache.getline(traj_coord_file_name, 2+i+1)
-    line_i_split = data_op.split_str(line_i, ' ')
-    atoms.append(line_i_split[0])
+    line_i = linecache.getline(traj_coord_file_name, pre_base_block+pre_base+i+1)
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    if ( coord_file_type == 'coord_xyz' ):
+      atoms.append(line_i_split[0])
+    elif ( coord_file_type == 'coord_pdb' ):
+      atoms.append(line_i_split[len(line_i_split)-1])
 
   linecache.clearcache()
 
@@ -284,18 +306,39 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
   for i in range(len(choosed_index)):
     frame_str = ''
     for j in range(atoms_num):
-      line_ij = linecache.getline(traj_coord_file_name, int((choosed_index[i]-start_id)/each)*(atoms_num+2)+2+j+1)
+      line_ij_num = int((choosed_index[i]-start_id)/each)*(pre_base_block+atoms_num+end_base_block)+pre_base+pre_base_block+j+1
+      line_ij = linecache.getline(traj_coord_file_name, line_ij_num)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
-      if (j==0):
-        frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
-      else:
-        frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3]))
+      if ( coord_file_type == 'coord_xyz' ):
+        if (j==0):
+          frame_str = ' '.join((line_ij_split[1], line_ij_split[2], line_ij_split[3]))
+        else:
+          frame_str = ' '.join((frame_str, line_ij_split[1], line_ij_split[2], line_ij_split[3]))
+      if ( coord_file_type == 'coord_pdb' ):
+        if (j==0):
+          frame_str = ' '.join((line_ij_split[3], line_ij_split[4], line_ij_split[5]))
+        else:
+          frame_str = ' '.join((frame_str, line_ij_split[3], line_ij_split[4], line_ij_split[5]))
 
     frame_str = ''.join((frame_str, '\n'))
     coord_file.write(frame_str)
 
   linecache.clearcache()
   coord_file.close()
+
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
+  traj_info.get_traj_info(traj_frc_file_name, 'frc')
+
+  #Dump energy information
+  energy_file = open(''.join((save_dir, '/energy.raw')), 'w')
+  for i in range(len(choosed_index)):
+    line_i_num = int((choosed_index[i]-start_id)/each)*(pre_base_block+atoms_num+end_base_block)+2
+    line_i = linecache.getline(traj_frc_file_name, line_i_num)
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    energy = float(line_i_split[len(line_i_split)-1])*hartree_to_ev
+    energy_file.write(''.join((str(energy),'\n')))
+
+  linecache.clearcache()
 
   #Dump force information
   frc_file = open(''.join((save_dir, '/force.raw')), 'w')

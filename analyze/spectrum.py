@@ -15,8 +15,8 @@ from CP2K_kit.lib import statistic_mod
 
 #The unit of velocity is CP2K trajectory is Bohr/au_t
 
-def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr,
-                   lower_wave, upper_wave, increment_wave, atom_id, traj_vel_file, normalize, work_dir):
+def power_spectrum(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, \
+                   max_frame_corr, lower_wave, upper_wave, increment_wave, atom_id, traj_vel_file, normalize, work_dir):
 
   '''
   power_spectrum: calculate power_spectrum of the system
@@ -24,8 +24,8 @@ def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, i
   Args :
     atoms_num: int
       atoms_num is the number of atoms in trajectory file.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     each: int
@@ -65,8 +65,8 @@ def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, i
   '''
 
   print ('Calculate velocity-velocity auto correlation function at first', flush=True)
-  vel_tcf, tcf_file = time_correlation.time_corr_func(atoms_num, base, pre_base, each, start_frame_id, time_step, \
-                      init_step, end_step, max_frame_corr, atom_id, traj_vel_file, work_dir, 'tcf.csv', normalize)
+  vel_tcf, tcf_file = time_correlation.time_corr_func(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, \
+                      time_step, init_step, end_step, max_frame_corr, atom_id, traj_vel_file, work_dir, 'tcf.csv', normalize)
   str_print = 'The velocity-velocity auto correlation function is written in %s' %(tcf_file)
   print (data_op.str_wrap(str_print, 80), flush=True)
 
@@ -90,8 +90,8 @@ def power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, i
 
   return wave_num, intensity, intensity_fit
 
-def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, cluster_group_id,
-                        lower_wave, upper_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir):
+def power_spectrum_mode(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
+                        cluster_group_id, lower_wave, upper_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir):
 
   #Reference literature: Chem. Phys. 1986, 106, 205-212.
 
@@ -101,8 +101,8 @@ def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_st
   Args :
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     each: int
@@ -162,8 +162,8 @@ def power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_st
 
   print ('Calculate velocity-velocity auto correlation function at first', flush=True)
   Q1_vel_tcf, Q2_vel_tcf, Q3_vel_tcf, tcf_q1_file, tcf_q2_file, tcf_q3_file = \
-  time_correlation.time_corr_mode_func(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
-                                       cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize)
+  time_correlation.time_corr_mode_func(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, \
+                                       max_frame_corr, cluster_group_id, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, work_dir, normalize)
 
   str_print = 'The velocity-velocity auto correlation function of mode 1 (symmetric strech) is written in %s' %(tcf_q1_file)
   print (data_op.str_wrap(str_print, 80), flush=True)
@@ -232,15 +232,15 @@ def power_spectrum_run(spectrum_param, work_dir):
   if ( spec_type == 'general' ):
     atom_id = spectrum_param['atom_id']
 
-    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
     traj_info.get_traj_info(traj_vel_file, 'vel')
 
     log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
     print ('POWER_SPECTRUM'.center(80, '*'), flush=True)
     print ('Analyze the power spectrum for the choosed system', flush=True)
-    wave_num, intensity, intensity_fit = power_spectrum(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, \
-                                         max_frame_corr, start_wave, end_wave, increment_wave, atom_id, traj_vel_file, normalize, work_dir)
+    wave_num, intensity, intensity_fit = power_spectrum(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, \
+                                         end_step, max_frame_corr, start_wave, end_wave, increment_wave, atom_id, traj_vel_file, normalize, work_dir)
 
     freq_int_file = ''.join((work_dir, '/freq_intensity.csv'))
     with open(freq_int_file, 'w') as csvfile:
@@ -255,9 +255,9 @@ def power_spectrum_run(spectrum_param, work_dir):
     print (data_op.str_wrap(str_tmp, 80), flush=True)
 
   else:
-    atoms_num_p, base_p, pre_base_p, frames_num_p, each_p, start_frame_id_p, end_frame_id_p, time_step_p = \
-    traj_info.get_traj_info(traj_coord_file, 'coord')
-    atoms_num_v, base_v, pre_base_v, frames_num_v, each_v, start_frame_id_v, end_frame_id_v, time_step_v = \
+    atoms_num_p, pre_base_block_p, end_base_block_p, pre_base_p, frames_num_p, each_p, start_frame_id_p, end_frame_id_p, time_step_p = \
+    traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
+    atoms_num_v, pre_base_block_v, end_base_block_v, pre_base_v, frames_num_v, each_v, start_frame_id_v, end_frame_id_v, time_step_v = \
     traj_info.get_traj_info(traj_vel_file, 'vel')
 
     a_vec = spectrum_param['box']['A']
@@ -267,30 +267,30 @@ def power_spectrum_run(spectrum_param, work_dir):
     if ( spec_type == 'water_mode' ):
       atom_id = spectrum_param['atom_id']
       if (start_frame_id_v > start_frame_id_p):
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+        atoms_num, pre_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_vel_file, 'vel')
       else:
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(traj_coord_file, 'coord')
+        atoms_num, pre_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+        traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
 
       log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
       if ( len(atom_id) != atoms_num ):
-        choose_coord_file = traj_tools.choose_str(atoms_num, pre_base, base, each, start_frame_id, \
+        choose_coord_file = traj_tools.choose_str(atoms_num, pre_base, pre_base_block, end_base_block, each, start_frame_id, \
                             end_frame_id, start_frame_id, traj_coord_file, atom_id, work_dir, 'choose_coord.xyz')
-        choose_vel_file = traj_tools.choose_str(atoms_num, pre_base, base, each, start_frame_id, \
+        choose_vel_file = traj_tools.choose_str(atoms_num, pre_base, pre_base_block, end_base_block, each, start_frame_id, \
                             end_frame_id, start_frame_id, traj_vel_file, atom_id, work_dir, 'choose_coord.xyz')
         atoms_num = len(atom_id)
         atom_id = list(range(1,atoms_num+1,1))
         coord_order_file, order_list = \
-        geometry.order_struct(atoms_num, frames_num, base, pre_base, [['O','H','H']], [atom_id], \
-                              choose_coord_file, a_vec, b_vec, c_vec, work_dir, 'coord_order.xyz')
+        geometry.order_struct(atoms_num, frames_num, pre_base_block, end_base_block, pre_base, [['O','H','H']], \
+                              [atom_id], choose_coord_file, a_vec, b_vec, c_vec, work_dir, 'coord_order.xyz')
         vel_order_file = traj_tools.order_traj_file(atoms_num, frames_num, each, start_frame_id, \
                          choosed_vel_file, 'vel', order_list, work_dir, 'vel_order.xyz')
       else:
         coord_order_file, order_list = \
-        geometry.order_struct(atoms_num, frames_num, base, pre_base, [['O','H','H']], [atom_id], \
-                              traj_coord_file, a_vec, b_vec, c_vec, work_dir, 'coord_order.xyz')
+        geometry.order_struct(atoms_num, frames_num, pre_base_block, end_base_block, pre_base, [['O','H','H']], \
+                              [atom_id], traj_coord_file, a_vec, b_vec, c_vec, work_dir, 'coord_order.xyz')
         vel_order_file = traj_tools.order_traj_file(atoms_num, frames_num, each, start_frame_id, \
                          traj_vel_file, 'vel',  order_list, work_dir, 'vel_order.xyz')
 
@@ -298,13 +298,13 @@ def power_spectrum_run(spectrum_param, work_dir):
       traj_vel_file = vel_order_file
 
       if (start_frame_id_v > start_frame_id_p):
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, \
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, \
         time_step, group_atom_1_id, group_atoms_mass = \
         traj_info.get_traj_info(traj_vel_file, 'vel', [['O','H','H']], [atom_id], True)
       else:
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, \
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, \
         time_step, group_atom_1_id, group_atoms_mass = \
-        traj_info.get_traj_info(traj_coord_file, 'coord', [['O','H','H']], [atom_id], True)
+        traj_info.get_traj_info(traj_coord_file, 'coord_xyz', [['O','H','H']], [atom_id], True)
 
       cluster_id = []
       for i in range(int(end_step)-int(init_step)+1):
@@ -316,16 +316,16 @@ def power_spectrum_run(spectrum_param, work_dir):
       print ('POWER_SPECTRUM'.center(80, '*'), flush=True)
       print ('Analyze power spectrum of water with three modes of water', flush=True)
       wave_num, q1_int, q1_int_fit, q2_int, q2_int_fit, q3_int, q3_int_fit = \
-      power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, cluster_id, \
-                          start_wave, end_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)
+      power_spectrum_mode(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
+                          cluster_id, start_wave, end_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)
 
     elif ( spec_type == 'hydration_mode' ):
       if (start_frame_id_v > start_frame_id_p):
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_id, time_step = \
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_id, time_step = \
         traj_info.get_traj_info(traj_vel_file, 'vel')
       else:
-        atoms_num, base, pre_base, frames_num, each, start_frame_id, end_id, time_step = \
-        traj_info.get_traj_info(traj_coord_file, 'coord')
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_id, time_step = \
+        traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
 
       log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_id, time_step)
 
@@ -335,8 +335,8 @@ def power_spectrum_run(spectrum_param, work_dir):
       atom_1 = atom_type_pair[0]
       atom_2 = atom_type_pair[1]
 
-      first_shell_id, dist = geometry.first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
-                             atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, hyd_shell_dist, dist_conv, work_dir)
+      first_shell_id, dist = geometry.first_shell(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, each, \
+                             init_step, end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, hyd_shell_dist, dist_conv, work_dir)
 
       cluster_id = []
       frame_num_stat = int((end_step-init_step)/each+1)
@@ -358,8 +358,8 @@ def power_spectrum_run(spectrum_param, work_dir):
       print ('Analyze power spectrum for metal ion and its first shell water', flush=True)
 
       wave_num, q1_int, q1_int_fit, q2_int, q2_int_fit, q3_int, q3_int_fit = \
-      power_spectrum_mode(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, cluster_id, \
-                          start_wave, end_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)
+      power_spectrum_mode(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, end_step, max_frame_corr, \
+                          cluster_id, start_wave, end_wave, increment_wave, traj_coord_file, traj_vel_file, a_vec, b_vec, c_vec, normalize, work_dir)
 
     freq_int_q1_file = ''.join((work_dir, '/freq_intensity_q1.csv'))
     with open(freq_int_q1_file, 'w') as csvfile:

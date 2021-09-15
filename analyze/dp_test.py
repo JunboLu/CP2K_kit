@@ -137,7 +137,8 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     none
   '''
 
-  atoms_num, base, pre_base, frames_num, each, start, end, time_step = traj_info.get_traj_info(cp2k_pos_file, 'coord')
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start, end, time_step = \
+  traj_info.get_traj_info(cp2k_pos_file, 'coord_xyz')
 
   tri_cell_tot = []
   atom_type_tot = []
@@ -161,7 +162,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     y_i = []
     z_i = []
     for j in range(atoms_num):
-      line_ij = linecache.getline(cp2k_pos_file, (atoms_num+base)*i+j+pre_base+base+1)
+      line_ij = linecache.getline(cp2k_pos_file, (pre_base_block+atoms_num+end_base_block)*i+j+pre_base+pre_base_block+1)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       atom_type_i.append(data_op.get_dic_keys(atom_label, line_ij_split[0])[0])
       x_i.append(line_ij_split[1])
@@ -258,7 +259,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_y_lmp.append(frc_y_lmp_i_asc)
     frc_z_lmp.append(frc_z_lmp_i_asc)
 
-    line_cp2k = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+2)
+    line_cp2k = linecache.getline(cp2k_frc_file, i*(pre_base_block+atoms_num+end_base_block)+2+pre_base)
     line_cp2k_split = data_op.split_str(line_cp2k, ' ', '\n')
     energy_cp2k.append(float(line_cp2k_split[len(line_cp2k_split)-1])*hartree_to_ev/atoms_num)
 
@@ -267,7 +268,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     frc_y_cp2k_i = []
     frc_z_cp2k_i = []
     for j in range(atoms_num):
-      line_cp2k_ij = linecache.getline(cp2k_frc_file, i*(atoms_num+base)+j+1+pre_base+base)
+      line_cp2k_ij = linecache.getline(cp2k_frc_file, i*(pre_base_block+atoms_num+end_base_block)+j+1+pre_base+pre_base_block)
       line_cp2k_ij_split = data_op.split_str(line_cp2k_ij, ' ', '\n')
       fx = float(line_cp2k_ij_split[1])*hartree_to_ev*ang_to_bohr
       fy = float(line_cp2k_ij_split[2])*hartree_to_ev*ang_to_bohr

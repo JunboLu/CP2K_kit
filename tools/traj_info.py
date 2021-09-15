@@ -29,8 +29,8 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
   Returns:
     blocks_num: int
       blocks_num is the number of lines in one block in trajectory file.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of trajectory file.
     frames_num: int
@@ -49,19 +49,22 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
       group_atoms_mass contains the atoms mass for each group.
   '''
 
-  blocks_num, pre_base, base, frame_start = traj_tools.get_block_base(file_name, file_type)
+  blocks_num, pre_base, pre_base_block, end_base_block, frame_start = traj_tools.get_block_base(file_name, file_type)
 
   whole_line_num_1 = len(open(file_name).readlines())
 
-  if ((whole_line_num_1-pre_base)%(blocks_num+base) != 0):
+  if ((whole_line_num_1-pre_base)%(pre_base_block+blocks_num+end_base_block) != 0):
     break_frame = traj_tools.find_breakpoint(file_name, file_type)
     log_info.log_error('There is incomplete frame in %s. The incomplete frame id is %d.' %(file_name, break_frame))
     exit()
   else:
-    frames_num_1 = int((whole_line_num_1-pre_base)/(blocks_num+base))
+    frames_num_1 = int((whole_line_num_1-pre_base)/(pre_base_block+blocks_num+end_base_block))
 
-  if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
-    a = linecache.getline(file_name, pre_base+2)
+  if ( file_type == 'coord_xyz' or file_type == 'coord_pdb' or file_type == 'vel' or file_type == 'frc' ):
+    if ( file_type == 'coord_pdb' ):
+      a = linecache.getline(file_name, pre_base+1)
+    else:
+      a = linecache.getline(file_name, pre_base+2)
     b = data_op.split_str(a, ' ')
     if ( len(b) > 5 ):
       start_frame_id = int(b[2].strip(','))
@@ -70,8 +73,11 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
       start_frame_id = 0
       start_frame_time = 0.0
 
-    if ( whole_line_num_1 > blocks_num+base+pre_base ):
-      a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+2)
+    if ( whole_line_num_1 > pre_base_block+blocks_num+end_base_block+pre_base ):
+      if ( file_type == 'coord_pdb' ):
+        a = linecache.getline(file_name, (pre_base_block+blocks_num+end_base_block)*1+pre_base+1)
+      else:
+        a = linecache.getline(file_name, (pre_base_block+blocks_num+end_base_block)*1+pre_base+2)
       b = data_op.split_str(a, ' ')
       if ( len(b) > 5 ):
         second_frame_id = int(b[2].strip(','))
@@ -80,7 +86,10 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
         second_frame_id = 0
         second_time = 0.0
 
-      a = linecache.getline(file_name, (frames_num_1-1)*(blocks_num+base)+pre_base+2)
+      if ( file_type == 'coord_pdb' ):
+        a = linecache.getline(file_name, (frames_num_1-1)*(pre_base_block+blocks_num+end_base_block)+pre_base+1)
+      else:
+        a = linecache.getline(file_name, (frames_num_1-1)*(pre_base_block+blocks_num+end_base_block)+pre_base+2)
       b = data_op.split_str(a, ' ')
       if ( len(b) > 5 ):
         end_frame_id = int(b[2].strip(','))
@@ -95,8 +104,8 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
     start_frame_id = int(b[0])
     start_time = float(b[1])
 
-    if ( whole_line_num_1 > blocks_num+base+pre_base ):
-      a = linecache.getline(file_name, (blocks_num+base)*1+pre_base+1)
+    if ( whole_line_num_1 > pre_base_block+blocks_num+end_base_block+pre_base+1 ):
+      a = linecache.getline(file_name, (pre_base_block+blocks_num+end_base_block)*1+pre_base+1)
       b = data_op.split_str(a, ' ')
       second_frame_id = int(b[0])
       second_time = float(b[1])
@@ -107,7 +116,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
     else:
       end_frame_id = start_frame_id
 
-  if ( whole_line_num_1 > blocks_num+base+pre_base ):
+  if ( whole_line_num_1 > pre_base_block+blocks_num+end_base_block+pre_base+1 ):
     each = second_frame_id-start_frame_id
     time_step = (second_time-start_time)/each
     frames_num_2 = (end_frame_id-start_frame_id)/each+1
@@ -120,15 +129,15 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
     traj_tools.delete_duplicate(file_name, file_type)
 
   whole_line_num = len(open(file_name).readlines())
-  frames_num = int((whole_line_num-pre_base)/(blocks_num+base))
+  frames_num = int((whole_line_num-pre_base)/(pre_base_block+blocks_num+end_base_block))
 
   #For groups, we will consider the connectivity.
   if return_group:
-    if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
+    if ( file_type == 'coord_xyz' or file_type == 'vel' or file_type == 'frc' ):
 
       element = []
       for i in range(blocks_num):
-        line_i = linecache.getline(file_name, i+pre_base+base+1)
+        line_i = linecache.getline(file_name, i+pre_base+pre_base_block+1)
         line_i_split = data_op.split_str(line_i, ' ')
         element.append(line_i_split[0])
 
@@ -151,16 +160,16 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
 
   linecache.clearcache()
 
-  if ( file_type == 'coord' or file_type == 'vel' or file_type == 'frc' ):
+  if ( file_type == 'coord_xyz' or file_type == 'coord_pdb' or file_type == 'vel' or file_type == 'frc' ):
     if return_group:
-      return blocks_num, base, pre_base, frames_num, each, start_frame_id, \
+      return blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, \
              end_frame_id, time_step, group_atom_1_id, group_atoms_mass
     else:
-      return blocks_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step
+      return blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step
   if ( file_type == 'ener' or file_type == 'mix_ener' ):
-    return blocks_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step
+    return blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step
   if ( file_type == 'lagrange' ):
-    return blocks_num, base, pre_base, frames_num
+    return blocks_num, pre_base_block, end_base_block, pre_base, frames_num
 
 if __name__ == '__main__':
   from CP2K_kit.tools import traj_info
@@ -170,7 +179,7 @@ if __name__ == '__main__':
   groups = [['O','H','H']]
   blocks_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, \
   time_step, group_atom_1_id, group_atoms_mass = \
-  traj_info.get_traj_info(file_name, 'coord', groups, atom_id, True)
+  traj_info.get_traj_info(file_name, 'coord_xyz', groups, atom_id, True)
 
   print (group_atom_1_id, group_atoms_mass)
 

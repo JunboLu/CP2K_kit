@@ -11,8 +11,8 @@ from CP2K_kit.tools import traj_info
 from CP2K_kit.lib import dynamic_mod
 from CP2K_kit.analyze import check_analyze
 
-def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, end_step, \
-                  max_frame_corr, atom_id, traj_coord_file, remove_com, work_dir, file_name):
+def diffusion_msd(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, \
+                  init_step, end_step, max_frame_corr, atom_id, traj_coord_file, remove_com, work_dir, file_name):
 
   '''
   diffusion_msd: calculate diffusion coefficient for choosed atoms via mean square displacement.
@@ -20,8 +20,8 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
   Args:
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of trajectory.
     each: int
@@ -57,7 +57,8 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
   #Dump coordinate
   for i in range(frames_num_stat):
     for j in range(len(atom_id)):
-      line_ij = linecache.getline(traj_coord_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+pre_base+base+atom_id[j])
+      line_ij_num = (pre_base_block+atoms_num+end_base_block)*(int((init_step-start_frame_id)/each)+i)+pre_base+pre_base_block++atom_id[j]
+      line_ij = linecache.getline(traj_coord_file, line_ij_num)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       coord[i,j,0] = float(line_ij_split[1])
       coord[i,j,1] = float(line_ij_split[2])
@@ -67,7 +68,7 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
     #Dump atom mass
     atom_mass = []
     for i in range(len(atom_id)):
-      line_i = linecache.getline(traj_coord_file, atom_id[i]+pre_base+base)
+      line_i = linecache.getline(traj_coord_file, atom_id[i]+pre_base+pre_base_block)
       line_i_split = data_op.split_str(line_i, ' ')
       atom_mass.append(atom.get_atom_mass(line_i_split[0])[1])
     atom_mass_array = np.asfortranarray(atom_mass, dtype='float32')
@@ -86,8 +87,8 @@ def diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, in
 
   return msd_file
 
-def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
-                  init_step, end_step, max_frame_corr, atom_id, traj_vel_file):
+def diffusion_tcf(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, \
+                  time_step, init_step, end_step, max_frame_corr, atom_id, traj_vel_file):
 
   '''
   diffusion_tcf: calculate diffusion coefficient for choosed atoms via velocity time correlation function.
@@ -95,8 +96,8 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
   Args:
     atoms_num: int
       atoms_num is the number of atoms in trajectory file.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of trajectory.
     each: int
@@ -127,7 +128,8 @@ def diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, \
   #Dump velocity
   for i in range(frames_num_stat):
     for j in range(len(atom_id)):
-      line_ij = linecache.getline(traj_vel_file, (atoms_num+base)*(int((init_step-start_frame_id)/each)+i)+base+atom_id[j])
+      line_ij_num = (pre_base_block+atoms_num+end_base_block)*(int((init_step-start_frame_id)/each)+i)+pre_base+pre_base_block+atom_id[j]
+      line_ij = linecache.getline(traj_vel_file, line_ij_num)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       vel[i,j,0] = float(line_ij_split[1])
       vel[i,j,1] = float(line_ij_split[2])
@@ -171,8 +173,8 @@ def diffusion_run(diffusion_param, work_dir):
 
   if ( method == 'einstein_sum' ):
     traj_coord_file = diffusion_param['traj_coord_file']
-    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-    traj_info.get_traj_info(traj_coord_file, 'coord')
+    atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
 
     log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
@@ -180,8 +182,8 @@ def diffusion_run(diffusion_param, work_dir):
     print ('Diffusion coefficient is calculated by %s' %(method), flush=True)
 
     remove_com = diffusion_param['remove_com']
-    msd_file = diffusion_msd(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, \
-               end_step, max_frame_corr, atom_id, traj_coord_file, remove_com, work_dir, 'msd.csv')
+    msd_file = diffusion_msd(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, \
+                             end_step, max_frame_corr, atom_id, traj_coord_file, remove_com, work_dir, 'msd.csv')
 
     str_tmp = 'The mean square displacement file is written in %s' %(msd_file)
     print (data_op.str_wrap(str_tmp, 80), flush=True)
@@ -191,7 +193,7 @@ def diffusion_run(diffusion_param, work_dir):
 
   elif ( method == 'green_kubo' ):
     traj_vel_file = diffusion_param['traj_vel_file']
-    atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
     traj_info.get_traj_info(traj_vel_file, 'vel')
 
     log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
@@ -199,7 +201,7 @@ def diffusion_run(diffusion_param, work_dir):
     print ('DIFFUSION'.center(80, '*'), flush=True)
     print ('Diffusion coefficient is calculated by %s' %(method), flush=True)
 
-    diff_coeff = diffusion_tcf(atoms_num, base, pre_base, each, start_frame_id, time_step, init_step, \
+    diff_coeff = diffusion_tcf(atoms_num, pre_base_block, end_base_block, pre_base, each, start_frame_id, time_step, init_step, \
                  end_step, max_frame_corr, atom_id, traj_vel_file)
 
     print ("The diffusion coefficient calculated by vel_tcf is %f cm^2/s" %diff_coeff, flush=True)

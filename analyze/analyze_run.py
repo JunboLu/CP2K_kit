@@ -36,8 +36,8 @@ job_type_param = read_input.dump_info(work_dir, inp_file, [analyze_job])
 #basis information of the trajectory.
 if ( analyze_job == 'traj_info' ):
   traj_info_param = job_type_param[0]
-  atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-  traj_info.get_traj_info(traj_info_param['traj_file'])
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+  traj_info.get_traj_info(traj_info_param['traj_coord_file'], 'coord_xyz')
   print ('The number of atoms is %d' % (atoms_num), flush=True)
   print ('The number of frames is %d' % (frames_num), flush=True)
   print ('The printing frequency is %d' % (each), flush=True)

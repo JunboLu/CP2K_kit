@@ -307,15 +307,15 @@ def arrange_ti_force(stat_num, lagrange_file):
   '''
 
   #Get trajectory information of lagrange file.
-  blocks_num, pre_base, base, frame_start = traj_tools.get_block_base(lagrange_file, 'lagrange')
+  blocks_num, pre_base, pre_base_block, end_base_block, frame_start = traj_tools.get_block_base(lagrange_file, 'lagrange')
   whole_line_num = len(open(lagrange_file).readlines())
-  frames_num = int((whole_line_num-pre_base)/(blocks_num+base))
+  frames_num = int((whole_line_num-pre_base)/(pre_base_block+blocks_num+end_base_block))
 
   s_sum = 0.0
   sq_sum = 0.0
 
   for i in range(stat_num):
-    line_i = linecache.getline(lagrange_file, (frames_num-stat_num+i)*(blocks_num+base)+1)
+    line_i = linecache.getline(lagrange_file, (frames_num-stat_num+i)*(pre_base_block+blocks_num+end_base_block)+1)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
     s_sum = s_sum+float(line_i_split[3])
 
@@ -349,7 +349,7 @@ def arrange_data_run(arrange_data_param, work_dir):
   if ( 'temperature' in arrange_data_param ):
     temp_param = arrange_data_param['temperature']
     traj_ener_file = temp_param['traj_ener_file']
-    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
     traj_info.get_traj_info(traj_ener_file, 'ener')
 
     str_print = 'Analyze temperature vs time from %s' %(traj_ener_file)
@@ -364,7 +364,7 @@ def arrange_data_run(arrange_data_param, work_dir):
   elif ( 'potential' in arrange_data_param ):
     pot_param = arrange_data_param['potential']
     traj_ener_file = pot_param['traj_ener_file']
-    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
     traj_info.get_traj_info(traj_ener_file, 'ener')
 
     str_print = 'Analyze potential energy vs time from %s' %(traj_ener_file)
@@ -411,7 +411,7 @@ def arrange_data_run(arrange_data_param, work_dir):
     vert_ene_param = arrange_data_param['vertical_energy']
 
     traj_mix_ener_file = vert_ene_param['traj_mix_ener_file']
-    blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
+    blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
     traj_info.get_traj_info(traj_mix_ener_file, 'mix_ener')
     row_ox = vert_ene_param['row_ox']
     row_red = vert_ene_param['row_red']

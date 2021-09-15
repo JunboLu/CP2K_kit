@@ -13,8 +13,8 @@ from CP2K_kit.lib import geometry_mod
 from CP2K_kit.analyze import center
 from CP2K_kit.analyze import check_analyze
 
-def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
-             atom_type_1, atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir):
+def distance(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, each, \
+             init_step, end_step, atom_type_1, atom_type_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir):
 
   '''
   distance: calculate distance between atom type 1 and atom type 2 over different frame.
@@ -22,8 +22,8 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
   Args:
     atoms_num: int
       atoms_num is the number of atoms in the system.
-    base: int
-      base is the number of lines before structure in a structure block.
+    pre_base_block: int
+      pre_base_block is the number of lines before structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     start_frame_id: int
@@ -62,13 +62,13 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
       atom_id_2 contains atom id of atom_type_2
   '''
 
-  center_file = center.center(atoms_num, base, pre_base, frames_num, a_vec,  b_vec, \
-                c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
+  center_file = center.center(atoms_num, pre_base_block, end_base_block, pre_base, frames_num, a_vec, \
+                              b_vec, c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
 
   atom_id_1 = []
   atom_id_2 = []
   for i in range(atoms_num):
-    line_i = linecache.getline(center_file, base+i+1)
+    line_i = linecache.getline(center_file, pre_base_block+pre_base+i+1)
     line_i_split = data_op.split_str(line_i, ' ')
     if ( line_i_split[0] == atom_type_1 ):
       atom_id_1.append(i+1)
@@ -81,13 +81,15 @@ def distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_s
   for i in range(frame_num_stat):
     distance_i = []
     for j in range(atoms_num):
-      line_j = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+j+base+1)
+      line_j_num = (int((init_step-start_frame_id)/each)+i)*(pre_base_block+atoms_num+end_base_block)+j+pre_base_block+pre_base+1
+      line_j = linecache.getline(center_file, line_j_num)
       line_j_split = data_op.split_str(line_j, ' ', '\n')
       if ( line_j_split[0] == atom_type_1 ):
         coord_1 = []
         coord_2 = []
         for k in range(atoms_num):
-          line_k = linecache.getline(center_file, (int((init_step-start_frame_id)/each)+i)*(atoms_num+base)+k+base+1)
+          line_k_num = (int((init_step-start_frame_id)/each)+i)*(pre_base_block+atoms_num+end_base_block)+k+pre_base_block+pre_base+1
+          line_k = linecache.getline(center_file, line_k_num)
           line_k_split = data_op.split_str(line_k, ' ', '\n')
           if ( line_k_split[0] == atom_type_2 and j != k ):
             coord_1.append([float(line_j_split[1]),float(line_j_split[2]),float(line_j_split[3])])
@@ -167,8 +169,8 @@ def rdf_run(rdf_param, work_dir):
   rdf_param = check_analyze.check_rdf_inp(rdf_param)
 
   traj_coord_file = rdf_param['traj_coord_file']
-  atoms_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-  traj_info.get_traj_info(traj_coord_file, 'coord')
+  atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+  traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
 
   log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
@@ -186,8 +188,8 @@ def rdf_run(rdf_param, work_dir):
 
   print ('RDF'.center(80, '*'), flush=True)
   print ('Analyze radial distribution function between %s and %s' %(atom_1, atom_2), flush=True)
-  dist, atom_id_1, atom_id_2 = distance(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, \
-                                        end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir)
+  dist, atom_id_1, atom_id_2 = distance(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, each, \
+                                        init_step, end_step, atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, work_dir)
 
   rdf_file = rdf(dist, a_vec, b_vec, c_vec, r_increment, work_dir)
   str_print = 'The rdf file is written in %s' %(rdf_file)

@@ -70,8 +70,9 @@ def get_box_coord(box_file_name, coord_file_name):
   #Triclinic cell: Lx, Ly, Lz, xy, xz, yz
 
   if ( len(cell_vec_a) != 0 and len(cell_vec_b) != 0 and len(cell_vec_c) != 0 ):
+    a, b, c, alpha, beta, gamma = get_cell.get_cell_const(np.array(cell_vec_a), np.array(cell_vec_b), np.array(cell_vec_c))
     tri_cell_a, tri_cell_b, tri_cell_c = \
-    get_cell.get_triclinic_cell(np.array(cell_vec_a), np.array(cell_vec_b), np.array(cell_vec_c))
+    get_cell.get_triclinic_cell(a, b, c, alpha, beta, gamma)
     tri_cell_vec = []
     a_0_str = numeric.get_as_num_string(tri_cell_a[0])
     b_1_str = numeric.get_as_num_string(tri_cell_b[1])

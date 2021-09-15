@@ -245,16 +245,24 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         else:
           log_info.log_error('Input error: no force trajectory file, please check deepff/deepmd/training/system/traj_frc_file')
           exit()
-        if ( 'traj_cell_file' in deepmd_dic['training'][i] ):
-          traj_cell_file = deepmd_dic['training'][i]['traj_cell_file']
-          if ( os.path.exists(os.path.abspath(traj_cell_file)) ):
-            deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(traj_cell_file)
+        line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file, os.getcwd())
+        if ( line_num == 0 ):
+          coord_file_type = 'coord_xyz'
+        else:
+          coord_file_type = 'coord_pdb'
+        if ( coord_file_type == 'coord_xyz' ):
+          if ( 'traj_cell_file' in deepmd_dic['training'][i] ):
+            traj_cell_file = deepmd_dic['training'][i]['traj_cell_file']
+            if ( os.path.exists(os.path.abspath(traj_cell_file)) ):
+              deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(traj_cell_file)
+            else:
+              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_cell_file' %(traj_cell_file))
+              exit()
           else:
-            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_cell_file' %(traj_cell_file))
+            log_info.log_error('Input error: no cell trajectory file, please check deepff/deepmd/training/system/traj_cell_file')
             exit()
         else:
-          log_info.log_error('Input error: no cell trajectory file, please check deepff/deepmd/training/system/traj_cell_file')
-          exit()
+          deepmd_dic['training'][i]['traj_cell_file'] = 'none'
         if ( 'traj_stress_file' in deepmd_dic['training'][i] ):
           traj_stress_file = deepmd_dic['training'][i]['traj_stress_file']
           if ( os.path.exists(os.path.abspath(traj_stress_file)) ):
@@ -264,8 +272,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             exit()
         else:
           deepmd_dic['training'][i]['traj_stress_file'] = 'none'
-        atoms_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(traj_coord_file, 'coord')
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
+        traj_info.get_traj_info(traj_coord_file, coord_file_type)
         if ( 'start_frame' in deepmd_dic['training'][i] ):
           start_frame = deepmd_dic['training'][i]['start_frame']
           if ( data_op.eval_str(start_frame) == 1 ):
