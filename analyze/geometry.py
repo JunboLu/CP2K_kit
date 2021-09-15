@@ -760,14 +760,50 @@ def geometry_run(geometry_param, work_dir):
     first_shell_id, dist = first_shell(atoms_num, base, pre_base, start_frame_id, frames_num, each, init_step, end_step, \
                                        atom_1, atom_2, a_vec, b_vec, c_vec, traj_coord_file, first_shell_dist, dist_conv, work_dir)
 
-    first_shell_file = ''.join((work_dir, '/first_shell'))
-    with open(first_shell_file, 'w') as csvfile:
+    #Write coordination number file
+    coord_num_file_name = ''.join((work_dir, '/coord_num.csv'))
+    with open(coord_num_file_name, 'w') as csvfile:
       writer = csv.writer(csvfile)
-      writer.writerow(['time', 'coord_num', 'distance', 'first_shell_id'])
+      writer.writerow(['time', 'coord_num'])
       for i in range(len(first_shell_id)):
-        writer.writerow([time_step*i*each, len(dist[i][0]), dist[i][0], first_shell_id[i][0]])
+        writer.writerow([time_step*i*each, len(dist[i][0])])
+    str_print = 'The file of coordination number vs time is written in %s' %(coord_num_file_name)
+    print (data_op.str_wrap(str_print, 80), flush=True)
 
-    str_print = 'The file containing first shell information is written in %s' %(first_shell_file)
+    #Write first-shell distance
+    dist_file_name = ''.join((work_dir, '/distance.csv'))
+    with open(dist_file_name, 'w') as csvfile:
+      writer = csv.writer(csvfile)
+      write_line_head = ['time']
+      for i in range(len(dist[i][0])):
+        write_line_head.append(''.join(('dist_', str(i+1))))
+      write_line_head.append('dist_avg')
+      writer.writerow(write_line_head)
+      for i in range(len(first_shell_id)):
+        write_line = [time_step*i*each]
+        sum_value = 0.0
+        for j in range(len(dist[i][0])):
+          sum_value = sum_value+dist[i][0][j]
+          write_line.append(dist[i][0][j])
+        write_line.append(sum_value/len(dist[i][0]))
+        writer.writerow(write_line)
+    str_print = 'The file of first-shell distance vs time is written in %s' %(dist_file_name)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+    #Write first-shell id
+    first_shell_id_file_name = ''.join((work_dir, '/first_shell_id.csv'))
+    with open(first_shell_id_file_name, 'w') as csvfile:
+      writer = csv.writer(csvfile)
+      write_line_head = ['time','id_center']
+      for i in range(len(first_shell_id[i][0])):
+        write_line_head.append(''.join(('id_sur_', str(i+1))))
+      writer.writerow(write_line_head)
+      for i in range(len(first_shell_id)):
+        write_line = [time_step*i*each]
+        for j in range(len(first_shell_id[i][0])):
+          write_line.append(first_shell_id[i][0][j])
+        writer.writerow(write_line)
+    str_print = 'The file of first-shell atom id vs time is written in %s' %(first_shell_id_file_name)
     print (data_op.str_wrap(str_print, 80), flush=True)
 
   elif ( 'choose_structure' in geometry_param ):

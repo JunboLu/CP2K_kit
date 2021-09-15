@@ -1,13 +1,13 @@
 &Global
   PRINT_LEVEL LOW
-  PROJECT_NAME cp2k
+  PROJECT_NAME test
   RUN_TYPE MD
 &END Global
 
 &MOTION
   &MD
     ENSEMBLE NVT
-    STEPS 200
+    STEPS 1000
     TIMESTEP 0.5
     TEMPERATURE 50.0
     &THERMOSTAT
@@ -15,7 +15,7 @@
       REGION GLOBAL
       &NOSE
         LENGTH 3
-        TIMECON [wavenumber_t] 1000
+        TIMECON [fs] 100
       &END NOSE
     &END THERMOSTAT
   &END MD
@@ -47,7 +47,7 @@
     &END STRESS
     &RESTART_HISTORY
       &EACH
-        MD 50
+        MD 100
       &END EACH
     &END RESTART_HISTORY
   &END PRINT
@@ -57,13 +57,13 @@
   METHOD Quickstep
   STRESS_TENSOR ANALYTICAL
   &DFT
-    BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k/cp2k-6.1.0/data/BASIS_MOLOPT
-    POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k/cp2k-6.1.0/data/POTENTIAL
+    BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+    POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
     WFN_RESTART_FILE_NAME ./cp2k-RESTART.wfn
     CHARGE 0
     MULTIPLICITY 1
     &MGRID
-      CUTOFF 280
+      CUTOFF 400
       NGRIDS 4
       REL_CUTOFF 50
     &END MGRID
@@ -91,15 +91,6 @@
     &XC
       &XC_FUNCTIONAL PBE
       &END XC_FUNCTIONAL
-      &VDW_POTENTIAL
-        POTENTIAL_TYPE PAIR_POTENTIAL
-        &PAIR_POTENTIAL
-          R_CUTOFF 5.0
-          TYPE DFTD3
-          PARAMETER_FILE_NAME /home/lujunbo/bin/cp2k/cp2k-6.1.0/data/dftd3.dat
-          REFERENCE_FUNCTIONAL PBE
-        &END PAIR_POTENTIAL
-      &END VDW_POTENTIAL
     &END XC
   &END DFT
   &SUBSYS

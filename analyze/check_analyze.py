@@ -1340,13 +1340,13 @@ def check_arrange_data_inp(arrange_data_dic):
       traj_mix_ener_file = vert_ene_dic['traj_mix_ener_file']
       if ( os.path.exists(os.path.abspath(traj_mix_ener_file)) ):
         arrange_data_dic['vertical_energy']['traj_mix_ener_file'] = os.path.abspath(traj_mix_ener_file)
-        blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_mix_ener_file))
+        blocks_num, base, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+        traj_info.get_traj_info(os.path.abspath(traj_mix_ener_file), 'mix_ener')
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_mix_ener_file))
         exit()
     else:
-      log_info.log_error('Input error: no mix energy trajectory file, please set analyze/arranage_data/vertical_energy/traj_mix_ene_file')
+      log_info.log_error('Input error: no mix energy trajectory file, please set analyze/arranage_data/vertical_energy/traj_mix_ener_file')
       exit()
 
     if ( 'row_ox' in vert_ene_dic.keys() ):

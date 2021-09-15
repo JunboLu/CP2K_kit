@@ -45,22 +45,24 @@ def get_box_coord(box_file_name, coord_file_name):
   for i in range(whole_line_num):
     line_i = linecache.getline(box_file_name, i+1)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
-    if ( len(line_i_split) == 4 and all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
-      if ( line_i_split[0] == 'a' ):
-        cell_vec_a.append(float(line_i_split[1]))
-        cell_vec_a.append(float(line_i_split[2]))
-        cell_vec_a.append(float(line_i_split[3]))
-      elif ( line_i_split[0] == 'b' ):
-        cell_vec_b.append(float(line_i_split[1]))
-        cell_vec_b.append(float(line_i_split[2]))
-        cell_vec_b.append(float(line_i_split[3]))
-      elif ( line_i_split[0] == 'c' ):
-        cell_vec_c.append(float(line_i_split[1]))
-        cell_vec_c.append(float(line_i_split[2]))
-        cell_vec_c.append(float(line_i_split[3]))
-    else:
-      log_info.log_error('Input error: box setting error, please check or reset deepff/lammps/system/box')
-      exit()
+    if ( len(line_i_split) != 0 ):
+      if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 \
+           and all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
+        if ( line_i_split[0] == 'a' ):
+          cell_vec_a.append(float(line_i_split[1]))
+          cell_vec_a.append(float(line_i_split[2]))
+          cell_vec_a.append(float(line_i_split[3]))
+        elif ( line_i_split[0] == 'b' ):
+          cell_vec_b.append(float(line_i_split[1]))
+          cell_vec_b.append(float(line_i_split[2]))
+          cell_vec_b.append(float(line_i_split[3]))
+        elif ( line_i_split[0] == 'c' ):
+          cell_vec_c.append(float(line_i_split[1]))
+          cell_vec_c.append(float(line_i_split[2]))
+          cell_vec_c.append(float(line_i_split[3]))
+      else:
+        log_info.log_error('Input error: box setting error, please check or reset deepff/lammps/system/box')
+        exit()
 
   linecache.clearcache()
 
@@ -94,21 +96,22 @@ def get_box_coord(box_file_name, coord_file_name):
   for i in range(whole_line_num):
     line_i = linecache.getline(coord_file_name, i+1)
     line_i_split = data_op.split_str(line_i, ' ', '\n')
-    if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 and \
-         all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
-      atoms.append(line_i_split[0])
-      x_float = float(line_i_split[1])
-      y_float = float(line_i_split[2])
-      z_float = float(line_i_split[3])
-      x_float_str = numeric.get_as_num_string(x_float)
-      y_float_str = numeric.get_as_num_string(y_float)
-      z_float_str = numeric.get_as_num_string(z_float)
-      x.append(x_float_str)
-      y.append(y_float_str)
-      z.append(z_float_str)
-    else:
-      log_info.log_error('Input error: coordination setting error, please check or reset deepff/lammps/system/coord')
-      exit()
+    if ( len(line_i_split) != 0 ):
+      if ( len(line_i_split) == 4 and data_op.eval_str(line_i_split[0]) == 0 and \
+           all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in line_i_split[1:4]) ):
+        atoms.append(line_i_split[0])
+        x_float = float(line_i_split[1])
+        y_float = float(line_i_split[2])
+        z_float = float(line_i_split[3])
+        x_float_str = numeric.get_as_num_string(x_float)
+        y_float_str = numeric.get_as_num_string(y_float)
+        z_float_str = numeric.get_as_num_string(z_float)
+        x.append(x_float_str)
+        y.append(y_float_str)
+        z.append(z_float_str)
+      else:
+        log_info.log_error('Input error: coordination setting error, please check or reset deepff/lammps/system/coord')
+        exit()
 
   linecache.clearcache()
 

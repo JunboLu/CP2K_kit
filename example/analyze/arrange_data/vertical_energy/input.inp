@@ -6,7 +6,7 @@
 &analyze
   &arrange_data
     &vertical_energy
-      traj_file ./UO2_REDOX_aimd-mix-1.ener
+      traj_mix_ene_file ./UO2_REDOX_aimd-mix-1.ener
       row_ox 5
       row_red 4
       redox_type oxidation

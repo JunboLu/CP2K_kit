@@ -412,7 +412,7 @@ def arrange_data_run(arrange_data_param, work_dir):
 
     traj_mix_ener_file = vert_ene_param['traj_mix_ener_file']
     blocks_num, base, pre_base, frames_num, each, start_id, end_id, time_step = \
-    traj_info.get_traj_info(traj_mix_ene_file, 'ener')
+    traj_info.get_traj_info(traj_mix_ener_file, 'mix_ener')
     row_ox = vert_ene_param['row_ox']
     row_red = vert_ene_param['row_red']
     redox_type = vert_ene_param['redox_type']
