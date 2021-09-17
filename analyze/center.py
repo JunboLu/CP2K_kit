@@ -24,6 +24,8 @@ def center(atoms_num, pre_base_block, end_base_block, pre_base, frames_num, a_ve
       atoms_num is the number of atoms in the system.
     pre_base_block: int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of trajectory.
     frames_num: int

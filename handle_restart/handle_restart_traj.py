@@ -8,6 +8,7 @@ mulliken_pop_file_pre_num = 5
 mulliken_pop_file_late_num = 3
 
 def restart_history(restart_id, proj_name, QMMM, QM_num, data_dir):
+
   pos_file = ''.join((data_dir, '/', proj_name, '-pos-1.xyz'))
   if os.path.exists(pos_file):
     atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \

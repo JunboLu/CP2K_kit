@@ -596,7 +596,7 @@ fi
       failure_task_id = [index for (index,value) in enumerate(check_cp2k_run[j]) if value==1]
       if ( len(failure_task_id) != 0 ):
         failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
-        str_print = '  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id, i)
+        str_print = '  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id_str, i)
         str_print = data_op.str_wrap(str_print, 80, '  ')
         print (str_print, flush=True)
 

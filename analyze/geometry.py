@@ -87,6 +87,8 @@ def expand_cell(atoms_num, pre_base_block, end_base_block, pre_base, file_name, 
       atoms_num is the number of atoms of the system.
     pre_base_block : int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base : int
       pre_base is the number of lines before block of trajectory file.
     file_name : string
@@ -148,6 +150,8 @@ def bond_length_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_
       atoms_num is the number of atoms in the system.
     pre_base_block: int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     start_frame_id: int
@@ -239,6 +243,8 @@ def bond_angle_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_f
       atoms_num is the number of atoms in the system.
     pre_base_block: int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     start_frame_id: int
@@ -333,6 +339,8 @@ def order_struct(atoms_num, frames_num, pre_base_block, end_base_block, pre_base
       frames_num is the number of frames in the trajectory file.
     pre_base_block: int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     group_atom: 2-d string list
@@ -449,6 +457,8 @@ def first_shell(atoms_num, pre_base_block, end_base_block, pre_base, start_frame
       atoms_num is the number of atoms in the system.
     pre_base_block: int
       pre_base_block is the number of lines before structure in a structure block.
+    end_base_block: int
+      end_base_block is the number of lines after structure in a structure block.
     pre_base: int
       pre_base is the number of lines before block of the trajectory.
     start_frame_id: int

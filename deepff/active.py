@@ -377,7 +377,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
     iter_0_dir = ''.join((work_dir, '/iter_0'))
     dir_num = len(call.call_returns_shell(iter_0_dir, "ls -ll |awk '/^d/ {print $NF}'"))
     if ( dir_num > 1 ):
-      log_info.log_error('There are iteration directories in %s, please use CP2K_kit.restart as input.' %(work_dir), 'Warning')
+      log_info.log_error('There are iteration directories in %s, please use CP2K_KIT.restart file in %s as input.' \
+                          %(work_dir, work_dir), 'Warning')
       exit()
 
   numb_test = deepmd_dic['training']['numb_test']
