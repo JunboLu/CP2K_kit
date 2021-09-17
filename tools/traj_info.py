@@ -78,7 +78,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
         a = linecache.getline(file_name, (pre_base_block+blocks_num+end_base_block)*1+pre_base+1)
       else:
         a = linecache.getline(file_name, (pre_base_block+blocks_num+end_base_block)*1+pre_base+2)
-      b = data_op.split_str(a, ' ')
+      b = data_op.split_str(a, ' ', '\n')
       if ( len(b) > 5 ):
         second_frame_id = int(b[2].strip(','))
         second_time = float(b[5].strip(','))
@@ -90,7 +90,7 @@ def get_traj_info(file_name, file_type, group=[[]], atom_id=[[]], return_group=F
         a = linecache.getline(file_name, (frames_num_1-1)*(pre_base_block+blocks_num+end_base_block)+pre_base+1)
       else:
         a = linecache.getline(file_name, (frames_num_1-1)*(pre_base_block+blocks_num+end_base_block)+pre_base+2)
-      b = data_op.split_str(a, ' ')
+      b = data_op.split_str(a, ' ', '\n')
       if ( len(b) > 5 ):
         end_frame_id = int(b[2].strip(','))
     else:

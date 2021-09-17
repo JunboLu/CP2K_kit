@@ -95,7 +95,7 @@ def get_atoms_type(deepmd_dic):
 
   return final_atoms_type
 
-def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic):
+def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
 
   '''
   dump_init_data: load initial training data.
@@ -105,8 +105,6 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
       work_dir is working directory of CP2K_kit.
     deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
-    restart_iter: int
-      restart_iter is the iteration number of restart.
     train_stress: bool
       train_stress is whether we need to dump stress.
     tot_atoms_type_dic: dictionary
@@ -118,23 +116,47 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
       init_data_num is the number of data for initial training.
   '''
 
-  if ( restart_iter == 0 ):
-    cmd = 'rm -rf init_train_data'
+  init_train_data_dir = ''.join((work_dir, '/init_train_data'))
+  if ( not os.path.exists(init_train_data_dir) ):
+    cmd = "mkdir %s" % ('init_train_data')
     call.call_simple_shell(work_dir, cmd)
 
   i = 0
   init_train_data = []
   init_data_num = 0
-  cmd = "mkdir %s" % ('init_train_data')
-  if ( restart_iter == 0 ):
-    call.call_simple_shell(work_dir, cmd)
   train_dic = deepmd_dic['training']
   shuffle_data = train_dic['shuffle_data']
   for key in train_dic:
     if ( 'system' in key):
       save_dir = ''.join((work_dir, '/init_train_data/data_', str(i)))
+      if ( not os.path.exists(save_dir) ):
+        cmd = "mkdir %s" % (save_dir)
+        call.call_simple_shell(work_dir, cmd)
       init_train_data.append(save_dir)
-      if ( restart_iter == 0 ):
+      cmd = "ls | grep %s" %("'set.'")
+      set_dir_name = call.call_returns_shell(save_dir, cmd)
+      choosed_num = train_dic[key]['choosed_frame_num']
+      data_num = []
+      for set_dir in set_dir_name:
+        data_num_part = []
+        set_dir_abs = ''.join((save_dir, '/', set_dir))
+        coord_npy_file = ''.join((set_dir_abs, '/coord.npy'))
+        force_npy_file = ''.join((set_dir_abs, '/force.npy'))
+        box_npy_file = ''.join((set_dir_abs, '/box.npy'))
+        energy_npy_file = ''.join((set_dir_abs, '/energy.npy'))
+        if ( all(os.path.exists(npy_file) for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]) ):
+          for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]:
+            data_num_part.append(len(np.load(npy_file)))
+        else:
+          data_num_part = [0,0,0,0]
+        virial_npy_file = ''.join((set_dir_abs, '/virial.npy'))
+        if ( os.path.exists(virial_npy_file) ):
+          data_num_part.append(len(np.load(virial_npy_file)))
+        data_num.append(data_num_part)
+      data_num = data_op.add_2d_list(data_num)
+      if ( all(j == choosed_num for j in data_num) ):
+        init_data_num = 0
+      else:
         traj_coord_file = train_dic[key]['traj_coord_file']
         traj_frc_file = train_dic[key]['traj_frc_file']
         traj_cell_file = train_dic[key]['traj_cell_file']
@@ -148,12 +170,6 @@ def dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_t
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         data_num = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, coord_array, frc_array, box_array, virial_array)
         init_data_num = init_data_num+data_num
-      else:
-        if ( os.path.exists(save_dir) ):
-          init_data_num = 0
-        else:
-          log_info.log_error('%s does not exist for training system %d' %(save_dir, i))
-          exit()
       i = i+1
 
   if ( 'set_data_dir' in train_dic.keys() ):
@@ -353,6 +369,15 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
     restart_data_num = model_devi_dic['restart_data_num']
   restart_stage = model_devi_dic['restart_stage']
 
+  cmd = "ls | grep %s" %("'iter_'")
+  iter_info = call.call_returns_shell(work_dir, cmd)
+  if ( restart_iter == 0 and restart_stage == 0 and len(iter_info) > 0 ):
+    iter_0_dir = ''.join((work_dir, '/iter_0'))
+    dir_num = len(call.call_returns_shell(iter_0_dir, "ls -ll |awk '/^d/ {print $NF}'"))
+    if ( dir_num > 1 ):
+      log_info.log_error('There are iteration directories in %s, please use CP2K_kit.restart as input.' %(work_dir), 'Warning')
+      exit()
+
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
   neuron = deepmd_dic['training']['neuron']
@@ -396,6 +421,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
 
     if ( restart_stage == 0 ):
       #Perform deepmd calculation
+      check_deepff.write_restart_inp(inp_file, i, 0, sum(data_num), work_dir)
       print ('Step 1: deepmd-kit tasks', flush=True)
 
       #For different model_type, seed and neuron are different.
@@ -453,8 +479,10 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
 
-      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%% %.2f%%' \
-             %(sys_num, i, success_ratio*100, success_devi_ratio*100), flush=True)
+      print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%%' \
+             %(sys_num, i, success_ratio*100), flush=True)
+      print ('  The accurate deviation ratio for whole %d systems in iteration %d is %.2f%%' \
+             %(sys_num, i, success_devi_ratio*100), flush=True)
 
       if ( min(success_ratio_sys) >= 0.98 and success_ratio+success_devi_ratio >= 0.999 ):
         print (''.center(80,'*'), flush=True)
@@ -480,7 +508,6 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
           data_num.append(train_data_num)
 
       print ('  Success: dump new raw data of cp2k', flush=True)
-      check_deepff.write_restart_inp(inp_file, i+1, 0, sum(data_num), work_dir)
       restart_stage = 0
 
     if ( i == max_iter-1 ):
@@ -510,7 +537,6 @@ def kernel(work_dir, inp_file):
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
 
-  restart_iter = model_devi_dic['restart_iter']
   train_stress = deepmd_dic['training']['train_stress']
 
   tot_atoms_type = get_atoms_type(deepmd_dic)
@@ -527,7 +553,7 @@ def kernel(work_dir, inp_file):
     log_info.log_error('Input error: sel should be %d integers, please reset deepff/deepmd/model/descriptor/sel' %(len(tot_atoms_type)))
     exit()
 
-  init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, restart_iter, train_stress, tot_atoms_type_dic)
+  init_train_data, init_data_num = dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic)
 
   print ('Check input file: no error in %s' %(inp_file), flush=True)
   print ('Initial training data:', flush=True)

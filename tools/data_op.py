@@ -248,6 +248,28 @@ def expand_2d_list(list_tmp, n, element):
 
   return new_list
 
+def add_2d_list(list_tmp):
+
+  '''
+  add_2d_list : add two dimensional list to one dimensional list
+
+  Args :
+    list_tmp : 2-d list
+      list_tmp is the list needed to be expanded.
+  Returns :
+    new_list : 1-d list
+      new_list is the expanded list.
+  '''
+
+  new_list = []
+  for i in range(len(list_tmp[0])):
+    sum_value = 0
+    for j in range(len(list_tmp)):
+      sum_value = sum_value + list_tmp[j][i]
+    new_list.append(sum_value)
+
+  return new_list
+
 #Functions for string
 def eval_str(str_tmp):
 
@@ -366,7 +388,7 @@ def get_id_list(id_str):
   if ( isinstance(id_str, list) ):
     a = copy.deepcopy(id_str)
   elif ( isinstance(id_str, str) ):
-    a = split_split(id_str, ' ')
+    a = split_str(id_str, ' ')
 
   id_list = []
   for i in range(len(a)):

@@ -327,7 +327,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         while True:
           dump_file_name = ''.join(('atom', str(file_label), '.dump'))
           dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
-          if ( os.path.exists(dump_file_name_abs) ):
+          if ( os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
             file_label = file_label+1
           else:
             break
@@ -432,21 +432,32 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
         call.call_simple_shell(lmp_sys_task_dir, cmd)
 
       #Get the number of frames.
-      a_int = file_tools.grep_line_num("'Step '", log_file_name_abs, lmp_sys_task_dir)[0]
-      b_int = file_tools.grep_line_num("'Loop time'", log_file_name_abs, lmp_sys_task_dir)[0]
-      tot_frame = b_int-a_int-1
+      line_num = file_tools.grep_line_num("'Step '", log_file_name_abs, work_dir)
+      if ( line_num == 0 ):
+        log_info.log_error('File error: %s file error, please check' %(log_file_name_abs))
+        exit()
+      else:
+        a_int = line_num[0]
+      line_num = file_tools.grep_line_num("'Loop time'", log_file_name_abs, work_dir)
+      if ( line_num == 0 ):
+        whole_line_num = len(open(log_file_name_abs, 'r').readlines())
+        frames_num = whole_line_num-a_int
+      else:
+        frames_num = line_num[0]-a_int-1
 
-      box_tot = []
-      for k in range(tot_frame):
+      tot_box = []
+      frames_num_true = 0
+      for k in range(frames_num):
         box_vec = []
         line_k = linecache.getline(log_file_name_abs, a_int+k+1)
         line_k_split = data_op.split_str(line_k, ' ')
         if ( data_op.eval_str(line_k_split[0]) == 1 ):
+          frames_num_true = frames_num_true+1
           for l in range(6):
             box_param_float = float(line_k_split[l+7])
             box_param_float_str = numeric.get_as_num_string(box_param_float)
             box_vec.append(box_param_float_str)
-        box_tot.append(box_vec)
+          tot_box.append(box_vec)
 
       #Get atom number
       atoms_num = atoms_num_tot[i]
@@ -455,7 +466,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
       y_tot = []
       z_tot = []
       type_index_tot = []
-      for k in range(tot_frame):
+      for k in range(frames_num_true):
         x_k = []
         y_k = []
         z_k = []
@@ -484,9 +495,9 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
         y_tot.append(data_op.reorder_list(y_k, asc_index))
         z_tot.append(data_op.reorder_list(z_k, asc_index))
 
-      for k in range(tot_frame):
+      for k in range(frames_num_true):
         data_file_name = 'data_' + str(k) + '.lmp'
-        gen_data_file(box_tot[k], type_index_tot[k], x_tot[k], y_tot[k], z_tot[k], model_data_dir, data_file_name)
+        gen_data_file(tot_box[k], type_index_tot[k], x_tot[k], y_tot[k], z_tot[k], model_data_dir, data_file_name)
 
       #We run md for the first model, so force calculations are for other models.
       for k in range(model_num):
@@ -494,7 +505,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
         if ( not os.path.exists(model_dir) ):
           cmd = "mkdir %s" % (''.join(('model_', str(k))))
           call.call_simple_shell(lmp_sys_task_dir, cmd)
-        for l in range(tot_frame):
+        for l in range(frames_num_true):
           model_traj_dir = ''.join((model_dir, '/traj_', str(l)))
           if ( not os.path.exists(model_traj_dir) ):
             cmd = "mkdir %s" % (''.join(('traj_', str(l))))
@@ -571,7 +582,12 @@ def combine_frag_traj_file(lmp_task_dir):
     tot_dump_file = open(tot_dump_file_name_abs, 'w')
     tot_log_file = open(tot_log_file_name_abs, 'w')
     log_file_0_name_abs = ''.join((lmp_task_dir, '/lammps0.out'))
-    step_line_num = file_tools.grep_line_num("'Step '", log_file_0_name_abs, lmp_task_dir)[0]
+    line_num = file_tools.grep_line_num("'Step '", log_file_0_name_abs, lmp_task_dir)
+    if ( line_num == 0 ):
+      log_info.log_error('File error: %s file error, lammps md task does not succeed' %(log_file_0_name_abs))
+      exit()
+    else:
+      step_line_num = line_num[0]
 
     for i in range(step_line_num):
       line = linecache.getline(log_file_0_name_abs, i+1)
@@ -580,20 +596,29 @@ def combine_frag_traj_file(lmp_task_dir):
     for i in range(frag_traj_num):
       dump_file_name_abs = ''.join((lmp_task_dir, '/atom', str(i), '.dump'))
       log_file_name_abs = ''.join((lmp_task_dir, '/lammps', str(i), '.out'))
-      atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file_name_abs, log_file_name_abs)
-      step_line_num = file_tools.grep_line_num("'Step '", log_file_name_abs, lmp_task_dir)[0]
-      for j in range(frames_num):
+      atoms_num, frames_num, frames_num_fic, start_id, end_id, each = \
+      read_lmp.lmp_traj_info(dump_file_name_abs, log_file_name_abs, True)
+      line_num = file_tools.grep_line_num("'Step '", log_file_name_abs, lmp_task_dir)
+      if ( line_num == 0 ):
+        log_info.log_error('File error: %s file error, lammps md task does not succeed' %(log_file_name_abs))
+        exit()
+      else:
+        step_line_num = line_num[0]
+      for j in range(frames_num_fic):
         line = linecache.getline(log_file_name_abs, step_line_num+j+1)
         tot_log_file.write(line)
+      for j in range(frames_num):
         for k in range(atoms_num+9):
           line = linecache.getline(dump_file_name_abs, (atoms_num+9)*j+k+1)
           tot_dump_file.write(line)
       if ( i == frag_traj_num-1 ):
-        loop_line_num = file_tools.grep_line_num("'Loop time'", log_file_name_abs, lmp_task_dir)[0]
+        line_num = file_tools.grep_line_num("'Loop time'", log_file_name_abs, lmp_task_dir)
         whole_line_num = len(open(log_file_name_abs, 'r').readlines())
-        for j in range(loop_line_num, whole_line_num+1, 1):
-          line = linecache.getline(log_file_name_abs, j)
-          tot_log_file.write(line)
+        if ( line_num != 0 ):
+          loop_line_num = line_num[0]
+          for j in range(loop_line_num, whole_line_num+1, 1):
+            line = linecache.getline(log_file_name_abs, j)
+            tot_log_file.write(line)
       call.call_simple_shell(lmp_task_dir, 'rm %s' %(dump_file_name_abs))
       call.call_simple_shell(lmp_task_dir, 'rm %s' %(log_file_name_abs))
       linecache.clearcache()
@@ -664,8 +689,9 @@ def run_lmpmd(work_dir, iter_id, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num
       file_label = 0
       while True:
         log_file_name = ''.join(('lammps', str(file_label), '.out'))
-        log_file_name_abs = ''.join((lmp_sys_task_dir, '/', log_file_name))
-        if ( os.path.exists(log_file_name_abs) ):
+        dump_file_name = ''.join(('atom', str(file_label), '.dump'))
+        dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
+        if ( os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
           file_label = file_label+1
         else:
           break
@@ -921,7 +947,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num,
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
-            lmpfrc_parallel(model_dir, 1, traj_num-1, traj_num-1, parallel_exe)
+            lmpfrc_parallel(model_dir, 1, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []

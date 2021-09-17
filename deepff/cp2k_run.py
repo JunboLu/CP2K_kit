@@ -198,6 +198,10 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
     std_inp_file.write('    &END COORD\n')
 
     if ( cp2k_inp_file != 'none' ):
+      for i in range(len(coord[0])):
+        atoms.append(coord[0][i][0])
+      coord_atoms_type = data_op.list_replicate(atoms)
+      kind_atoms_type = []
       kind_line_num = file_tools.grep_line_num("'&KIND'", cp2k_inp_file_space, cp2k_sys_dir)
       end_kind_line_num = file_tools.grep_line_num("'&END KIND'", cp2k_inp_file_space, cp2k_sys_dir)
       if ( len(kind_line_num) != len(end_kind_line_num) ):
@@ -205,11 +209,18 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
         eixt()
       else:
         for i in range(len(kind_line_num)):
+          kind_line = linecache.getline(cp2k_inp_bak_file_name_abs, kind_line_num[i])
+          kind_line_split = data_op.split_str(kind_line, ' ', '\n')
+          kind_atoms_type.append(kind_line_split[len(kind_line_split)-1])
           for j in range(end_kind_line_num[i]-kind_line_num[i]+1):
             line = linecache.getline(cp2k_inp_bak_file_name_abs, kind_line_num[i]+j)
             std_inp_file.write(line)
-
       linecache.clearcache()
+      for atoms_type in coord_atoms_type:
+        if ( atoms_type not in kind_atoms_type ):
+          log_info.log_error('Input error: no kind setting for %s atom in cp2k input file, please check cp2k input file' %(atoms_type))
+          exit()
+
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_bak_file_name_abs))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
       call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_space))
@@ -268,6 +279,7 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
         if ( i != 0 ):
           cmd = "sed -i '%d s/^/    WFN_RESTART_FILE_NAME ..\/task_%d\/cp2k-RESTART.wfn\\n/' input.inp" %(pot_line_num+1, i-1)
           call.call_simple_shell(cp2k_task_dir, cmd)
+    call.call_simple_shell(cp2k_task_dir, 'rm %s' %(std_inp_file_name_abs))
 
 def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, \
                   struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress):
@@ -584,7 +596,9 @@ fi
       failure_task_id = [index for (index,value) in enumerate(check_cp2k_run[j]) if value==1]
       if ( len(failure_task_id) != 0 ):
         failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
-        print ('  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id, i), flush=True)
+        str_print = '  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id, i)
+        str_print = data_op.str_wrap(str_print, 80, '  ')
+        print (str_print, flush=True)
 
 if __name__ == '__main__':
   from collections import OrderedDict

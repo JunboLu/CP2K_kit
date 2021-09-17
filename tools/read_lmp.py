@@ -5,8 +5,9 @@ import linecache
 from CP2K_kit.tools import call
 from CP2K_kit.tools import get_cell
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import file_tools
 
-def lmp_traj_info(lmp_traj_file, lmp_log_file):
+def lmp_traj_info(lmp_traj_file, lmp_log_file, return_frames_num_fic=False):
 
   '''
   lmp_traj_info: Dump information from lammps trajectory file and output file.
@@ -30,12 +31,24 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   '''
 
   line = linecache.getline(lmp_traj_file, 4)
-  atoms_num = int(line.strip('\n'))
-  traj_frames_num = int(len(open(lmp_traj_file).readlines())/(atoms_num+9))
+  if ( data_op.eval_str(line.strip('\n')) == 1 ):
+    atoms_num = int(line.strip('\n'))
+  else:
+    log_info.log_error('File error: %s file error, please check' %(lmp_traj_file))
+    exit()
 
-  cmd_a = "grep -n %s %s" % ("'Step'", os.path.abspath(lmp_log_file))
-  a = call.call_returns_shell(os.getcwd(), cmd_a)
-  a_int = int(a[0].split(':')[0])
+  line_num = file_tools.grep_line_num("'Step '", os.path.abspath(lmp_log_file), os.getcwd())
+  if ( line_num == 0 ):
+    log_info.log_error('File error: %s file error, please check' %(os.path.abspath(lmp_log_file)))
+    exit()
+  else:
+    a_int = line_num[0]
+  line_num = file_tools.grep_line_num("'Loop time'", os.path.abspath(lmp_log_file), os.getcwd())
+  if ( line_num == 0 ):
+    whole_line_num = len(open(os.path.abspath(lmp_log_file), 'r').readlines())
+    traj_frames_num = whole_line_num-a_int
+  else:
+    traj_frames_num = line_num[0]-a_int-1
 
   line = linecache.getline(lmp_log_file, a_int)
   line_split = data_op.split_str(line, ' ', '\n')
@@ -57,7 +70,7 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   while True:
     line = linecache.getline(lmp_log_file, line_num)
     line_split = data_op.split_str(line, ' ', '\n')
-    if ( len(line_split) != log_id_num ):
+    if ( len(line_split) != log_id_num or data_op.eval_str(line_split[0]) != 1 ):
       line_num = line_num-1
     else:
       break
@@ -65,14 +78,20 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file):
   line = linecache.getline(lmp_log_file, line_num)
   line_split = data_op.split_str(line, ' ', '\n')
   end_id = int(line_split[step_id])
-  if ( each != 0 ):
-    frames_num = int((end_id-start_id)/each)+1
-  else:
-    frames_num = 1
+
+  frames_num = 0
+  for i in range(traj_frames_num):
+    line = linecache.getline(lmp_log_file, a_int+i+1)
+    line_split = data_op.split_str(line, ' ', '\n')
+    if ( len(line_split) == log_id_num and data_op.eval_str(line_split[0]) == 1 ):
+      frames_num = frames_num+1
 
   linecache.clearcache()
 
-  return atoms_num, frames_num, start_id, end_id, each
+  if return_frames_num_fic:
+    return atoms_num, frames_num, traj_frames_num, start_id, end_id, each
+  else:
+    return atoms_num, frames_num, start_id, end_id, each
 
 def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene_return=False, \
                       coord_return=False, vel_return=False, frc_return=False, cell_return=False):

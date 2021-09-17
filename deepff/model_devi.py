@@ -54,8 +54,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
 
       log_file = ''.join((lammps_sys_task_dir, '/lammps.out'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
-      atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file)
-
+      atoms_num, frames_num, frames_num_fic, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file, True)
       tot_frames_i.append(frames_num)
 
       force_corr_dist_file_name = ''.join((lammps_sys_task_dir, '/force_corr_devi.out'))
@@ -67,18 +66,21 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
       #Get box parameter, we will calculate distance later.
       success_frames_ij = 0
       success_devi_frames_ij = 0
-      for k in range(frames_num):
+      tot_box = []
+      for k in range(frames_num_fic):
         box = []
         a_int = file_tools.grep_line_num("'Lx Ly Lz Xy Xz Yz'", log_file, lammps_sys_task_dir)[0]
         line_k = linecache.getline(log_file, a_int+k+1)
         line_k_split = data_op.split_str(line_k, ' ')
-        for l in range(6):
-          box.append(float(line_k_split[l+7]))
+        if ( data_op.eval_str(line_k_split[0]) == 1 ):
+          for l in range(6):
+            box.append(float(line_k_split[l+7]))
+          tot_box.append(box)
 
+      for k in range(frames_num):
         frc_model = []
         atoms = []
         coord = []
-
         for l in range(atoms_num):
           line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
           line_kl_split = data_op.split_str(line_kl, ' ')
@@ -120,7 +122,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
         max_force = max(force_devi_avg)
         force_corr_dist_file.write('%-10d%-10.6f\n' %(k*each, max_force))
 
-        vec_a, vec_b, vec_c = get_cell.get_triclinic_cell_six(box)
+        vec_a, vec_b, vec_c = get_cell.get_triclinic_cell_six(tot_box[k])
         atoms_type_dist = calc_dist(atoms, coord, vec_a, vec_b, vec_c)
         dist = []
         atom_type_pair_tot = []

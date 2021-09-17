@@ -208,9 +208,6 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
     none
   '''
 
-  cmd = "mkdir %s" % (save_dir)
-  call.call_simple_shell(work_dir, cmd)
-
   line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file_name, work_dir)
   if ( line_num == 0 ):
     coord_file_type = 'coord_xyz'
