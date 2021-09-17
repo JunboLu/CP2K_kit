@@ -137,22 +137,25 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
       set_dir_name = call.call_returns_shell(save_dir, cmd)
       choosed_num = train_dic[key]['choosed_frame_num']
       data_num = []
-      for set_dir in set_dir_name:
-        data_num_part = []
-        set_dir_abs = ''.join((save_dir, '/', set_dir))
-        coord_npy_file = ''.join((set_dir_abs, '/coord.npy'))
-        force_npy_file = ''.join((set_dir_abs, '/force.npy'))
-        box_npy_file = ''.join((set_dir_abs, '/box.npy'))
-        energy_npy_file = ''.join((set_dir_abs, '/energy.npy'))
-        if ( all(os.path.exists(npy_file) for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]) ):
-          for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]:
-            data_num_part.append(len(np.load(npy_file)))
-        else:
-          data_num_part = [0,0,0,0]
-        virial_npy_file = ''.join((set_dir_abs, '/virial.npy'))
-        if ( os.path.exists(virial_npy_file) ):
-          data_num_part.append(len(np.load(virial_npy_file)))
-        data_num.append(data_num_part)
+      if ( len(set_dir_name) > 0 ):
+        for set_dir in set_dir_name:
+          data_num_part = []
+          set_dir_abs = ''.join((save_dir, '/', set_dir))
+          coord_npy_file = ''.join((set_dir_abs, '/coord.npy'))
+          force_npy_file = ''.join((set_dir_abs, '/force.npy'))
+          box_npy_file = ''.join((set_dir_abs, '/box.npy'))
+          energy_npy_file = ''.join((set_dir_abs, '/energy.npy'))
+          if ( all(os.path.exists(npy_file) for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]) ):
+            for npy_file in [coord_npy_file, force_npy_file, box_npy_file, energy_npy_file]:
+              data_num_part.append(len(np.load(npy_file)))
+          else:
+            data_num_part = [0,0,0,0]
+          virial_npy_file = ''.join((set_dir_abs, '/virial.npy'))
+          if ( os.path.exists(virial_npy_file) ):
+            data_num_part.append(len(np.load(virial_npy_file)))
+          data_num.append(data_num_part)
+      else:
+        data_num = [[0,0,0,0]]
       data_num = data_op.add_2d_list(data_num)
       if ( all(j == choosed_num for j in data_num) ):
         init_data_num = 0
@@ -163,7 +166,6 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
         traj_stress_file = train_dic[key]['traj_stress_file']
         start = train_dic[key]['start_frame']
         end = train_dic[key]['end_frame']
-        choosed_num = train_dic[key]['choosed_frame_num']
         parts = train_dic[key]['set_parts']
         load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
                                      train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
