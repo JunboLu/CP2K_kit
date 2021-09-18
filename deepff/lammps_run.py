@@ -768,7 +768,7 @@ mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
     log_info.log_error('lammps molecular dynamics error, please check iteration %d' %(iter_id))
     exit()
 
-def lmpfrc_parallel(model_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh):
+def lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh):
 
   '''
   lmpfrc_parallel : run lammps force calculation in parallel.
@@ -808,8 +808,19 @@ direc=%s
 run_start=%d
 run_end=%d
 parallel_exe=%s
+''' %(model_dir, start, end, parallel_exe)
 
-produce() {
+  if ssh:
+    run_2 ='''
+seq $run_start $run_end | $parallel_exe -j %d -S %s $direc/produce.sh {} $direc
+''' %(lmp_job_per_node, host_name)
+  else:
+    run_2 ='''
+seq $run_start $run_end | $parallel_exe -j %d $direc/produce.sh {} $direc
+''' %(lmp_job_per_node)
+
+  produce = '''
+#! /bin/bash
 
 lmp_path=%s
 mpi_path=%s
@@ -821,27 +832,20 @@ export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
 export OMP_NUM_THREADS=1
 x=$1
 direc=$2
-cd $direc/traj_$x
-lmp < ./frc_in.lammps 1> lammps.out 2> lammps.err
-}
+new_direc=$direc/traj_$x
+cd $new_direc
+lmp < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
+cd %s
+''' %(lmp_path, mpi_path, work_dir)
 
-export -f produce
-''' %(model_dir, start, end, parallel_exe, lmp_path, mpi_path)
-
-  if ssh:
-    run_2 ='''
-seq $run_start $run_end | $parallel_exe -j %d -S %s produce {} $direc
-''' %(lmp_job_per_node, host_name)
-  else:
-    run_2 ='''
-seq $run_start $run_end | $parallel_exe -j %d produce {} $direc
-''' %(lmp_job_per_node)
-
-
+  produce_file_name_abs = ''.join((model_dir, '/produce.sh'))
+  with open(produce_file_name_abs, 'w') as f:
+    f.write(produce)
   run_file_name_abs = ''.join((model_dir, '/run.sh'))
   with open(run_file_name_abs, 'w') as f:
     f.write(run_1+run_2)
 
+  subprocess.run('chmod +x produce.sh', cwd=model_dir, shell=True)
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
   try:
     subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
@@ -976,14 +980,14 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
-              lmpfrc_parallel(model_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
+              lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
             start = start+proc_num
             end = end+proc_num
             if ( end > traj_num-1 ):
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
-            lmpfrc_parallel(model_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
+            lmpfrc_parallel(model_dir, work_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []

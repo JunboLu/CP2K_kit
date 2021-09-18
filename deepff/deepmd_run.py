@@ -123,7 +123,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((model_dir, '/input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
+def deepmd_parallel(deepmd_train_dir, work_dir, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
   deepmd_parallel: run deepmd calculation in parallel.
@@ -131,6 +131,8 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, dp_path, host, d
   Args:
     deepmd_train_dir: string
       deepmd_train_dir is the directory of deepmd training for each iteration.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
     start: int
       start is the starting model id.
     end: int
@@ -164,9 +166,6 @@ def deepmd_parallel(deepmd_train_dir, start, end, parallel_exe, dp_path, host, d
     run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 direc=%s
 parallel_num=%d
 run_start=%d
@@ -179,6 +178,9 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num $direc/produce.sh {} $d
     produce = '''
 #! /bin/bash
 
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+
 dp_path=%s
 
 export PATH=$dp_path/bin:$PATH
@@ -189,7 +191,8 @@ direc=$2
 cd $direc/$x
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, dp_cmd)
+cd %s
+''' %(dp_path, dp_cmd, work_dir)
 
     run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
     with open(run_file_name_abs, 'w') as f:
@@ -219,9 +222,6 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
     run = '''
 #! /bin/bash
 
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
-
 direc=%s
 parallel_num=%d
 run_start=%d
@@ -229,10 +229,13 @@ run_end=%d
 parallel_exe=%s
 
 seq $run_start $run_end | $parallel_exe -j $parallel_num %s $direc/produce.sh {} $direc
-''' %(deepmd_train_dir, model_num, start, end, parallel_exe, host_comb)
+''' %(deepmd_train_dir, math.ceil(model_num/len(host)), start, end, parallel_exe, host_comb)
 
     produce = '''
 #! /bin/bash
+
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 
 dp_path=%s
 
@@ -244,7 +247,8 @@ direc=$2
 cd $direc/$x
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, dp_cmd)
+cd %s
+''' %(dp_path, dp_cmd, work_dir)
 
     run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
     with open(run_file_name_abs, 'w') as f:
@@ -347,7 +351,8 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, cuda_dir, dp_cmd)
+cd $s
+''' %(dp_path, cuda_dir, dp_cmd, work_dir)
 
       run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file_name_abs, 'w') as f:
@@ -418,7 +423,8 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, cuda_dir, dp_cmd)
+cd %s
+''' %(dp_path, cuda_dir, dp_cmd, work_dir)
 
         run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file_name_abs, 'w') as f:
@@ -504,7 +510,8 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, cuda_dir, dp_cmd)
+cd %s
+''' %(dp_path, cuda_dir, dp_cmd, work_dir)
 
       run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file_name_abs, 'w') as f:
@@ -580,7 +587,8 @@ export CUDA_VISIBLE_DEVICES=${x_arr[1]}
 cd $direc/${x_arr[0]}
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(dp_path, cuda_dir, dp_cmd)
+cd %s
+''' %(dp_path, cuda_dir, dp_cmd, work_dir)
 
         run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file_name_abs, 'w') as f:
@@ -642,7 +650,8 @@ direc=$2
 cd $direc/$x
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(cuda_dir, dp_path, dp_cmd)
+cd %s
+''' %(cuda_dir, dp_path, dp_cmd, work_dir)
 
       run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
       with open(run_file_name_abs, 'w') as f:
@@ -696,7 +705,8 @@ direc=$2
 cd $direc/$x
 %s
 dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
-''' %(cuda_dir, dp_path, dp_cmd)
+cd %s
+''' %(cuda_dir, dp_path, dp_cmd, work_dir)
 
         run_file_name_abs = ''.join((deepmd_train_dir, '/run.sh'))
         with open(run_file_name_abs, 'w') as f:
@@ -768,7 +778,7 @@ def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cu
     log_info.log_error('Input error: there are gpu devices in nodes, but cuda_dir is none, please set cuda directory in deepff/environ/cuda_dir')
     exit()
   #Run deepmd-kit tasks
-  deepmd_parallel(train_dir, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
+  deepmd_parallel(train_dir, work_dir, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
 
   #Check the deepmd tasks.
   check_deepmd_run = []

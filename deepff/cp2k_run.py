@@ -499,8 +499,9 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
           for k in range(len(mpi_num_list)):
             if ( mpi_num_list[k]%2 != 0 and mpi_num_list[k]>1 ):
               mpi_num_list[k] = mpi_num_list[k]-1
-        tot_mpi_num_list.append(mpi_num_list)
-        mpi_num_str = data_op.comb_list_2_str(data_op.list_reshape(tot_mpi_num_list), ' ')
+          tot_mpi_num_list.append(mpi_num_list)
+        tot_mpi_num_list = data_op.list_reshape(tot_mpi_num_list)[0:(run_end-run_start+1)]
+        mpi_num_str = data_op.comb_list_2_str(tot_mpi_num_list, ' ')
         task_job_list = data_op.gen_list(run_start, run_end, 1)
         task_job_str = data_op.comb_list_2_str(task_job_list, ' ')
 
@@ -541,12 +542,13 @@ direc=$2
 
 x_arr=(${x///})
 
-cd $direc/task_${x_arr[0]}
+new_direc=$direc/task_${x_arr[0]}
 
+cd $new_direc
 if [ -f "cp2k-1_0.xyz" ]; then
 rm cp2k-1_0.xyz
 fi
-mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
+mpirun -np ${x_arr[1]} %s $new_direc/input.inp 1> $new_direc/cp2k.out 2> $new_direc/cp2k.err
 
 converge_info=`grep "SCF run NOT converged" cp2k.out`
 if [ $? -eq 0 ]; then
@@ -561,9 +563,10 @@ fi
 if [ -f "cp2k-1_0.xyz" ]; then
 rm cp2k-1_0.xyz
 fi
-mpirun -np ${x_arr[1]} %s input.inp 1> cp2k.out 2> cp2k.err
+mpirun -np ${x_arr[1]} %s $new_direc/input.inp 1> $new_direc/cp2k.out 2> $new_direc/cp2k.err
 fi
-''' %(cp2k_env_file, cp2k_exe, cp2k_exe)
+cd %s
+''' %(cp2k_env_file, cp2k_exe, cp2k_exe, work_dir)
 
         run_file_name_abs = ''.join((cp2k_sys_dir, '/run.sh'))
         with open(run_file_name_abs, 'w') as f:
