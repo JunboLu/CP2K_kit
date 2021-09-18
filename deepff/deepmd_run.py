@@ -201,7 +201,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
     subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
     subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-    subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+    try:
+      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+    except subprocess.CalledProcessError as err:
+      log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
 
   #Case 2
   if ( len(host) > 1 and all(len(i) == 0 for i in device) ):
@@ -253,7 +256,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
     subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
     subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-    subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+    try:
+      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+    except subprocess.CalledProcessError as err:
+      log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
 
   #Case 3
   #If there is just 1 gpu device in the node, we prefer to run deepmd in serial.
@@ -282,7 +288,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       with open(run_file_name_abs, 'w') as f:
         f.write(run)
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_i_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_i_dir, shell=True)
+      try:
+        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_i_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_i_dir))
 
   #Case 4
   if ( len(host) == 1 and len(device[0]) > 1 ):
@@ -350,7 +359,11 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
       subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      try:
+        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
+
     else:
       run_start = 0
       run_end = run_start+len(device[0])-1
@@ -417,7 +430,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
         subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        try:
+          subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        except subprocess.CalledProcessError as err:
+          log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
 
         run_start = run_start + len(device[0])
         run_end = run_end + len(device[0])
@@ -500,7 +516,11 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
       subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      try:
+        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
+
     else:
       run_start = 0
       run_end = run_start+len(device_exp)-1
@@ -572,7 +592,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
         subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        try:
+          subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        except subprocess.CalledProcessError as err:
+          log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
 
         run_start = run_start + len(device[0])
         run_end = run_end + len(device[0])
@@ -631,7 +654,11 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
       subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
       subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      try:
+        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
+
     else:
       run_start = 0
       run_end = run_start+len(host_true)-1
@@ -681,7 +708,10 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
 
         subprocess.run('chmod +x run.sh', cwd=deepmd_train_dir, shell=True)
         subprocess.run('chmod +x produce.sh', cwd=deepmd_train_dir, shell=True)
-        subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        try:
+          subprocess.run("bash -c './run.sh'", cwd=deepmd_train_dir, shell=True)
+        except subprocess.CalledProcessError as err:
+          log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
 
         run_start = run_start + len(host_true)
         run_end = run_end + len(host_true)
@@ -734,6 +764,9 @@ def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cu
     log_info.log_error('Generating deepmd-kit tasks error, please check iteration %d' %(iter_id))
     exit()
 
+  if ( not all(len(i) == 0 for i in device) and cuda_dir == 'none' ):
+    log_info.log_error('Input error: there are gpu devices in nodes, but cuda_dir is none, please set cuda directory in deepff/environ/cuda_dir')
+    exit()
   #Run deepmd-kit tasks
   deepmd_parallel(train_dir, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
 

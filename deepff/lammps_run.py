@@ -735,7 +735,10 @@ mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
         f.write(run)
 
       subprocess.run('chmod +x run.sh', cwd=lmp_sys_task_dir, shell=True)
-      subprocess.run("bash -c './run.sh'", cwd=lmp_sys_task_dir, shell=True)
+      try:
+        subprocess.run("bash -c './run.sh'", cwd=lmp_sys_task_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, lmp_sys_task_dir))
 
       combine_frag_traj_file(lmp_sys_task_dir)
 
@@ -821,7 +824,11 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
     f.write(run)
 
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
-  subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
+  try:
+    subprocess.run("bash -c './run.sh'", cwd=model_dir, shell=True)
+  except subprocess.CalledProcessError as err:
+    log_info.log_error('Running error: %s command running error in %s' %(err.cmd, model_dir))
+
 
 def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num, atoms_num_tot):
 
@@ -841,7 +848,6 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num,
     none
   '''
 
-  import subprocess
   lmp_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
 
   cmd = 'ls | grep %s' % ('sys_')

@@ -271,6 +271,25 @@ def add_2d_list(list_tmp):
   return new_list
 
 #Functions for string
+def str_2_list(str_tmp):
+
+  '''
+  list_2_str: convert string to list
+
+  Args:
+    str_tmp: string
+      str_tmp is the string needed to be evaluated.
+  Returns:
+    list_tmp: 1-d list
+      list_tmp is the generated list.
+  '''
+
+  list_tmp = []
+  for i in str_tmp:
+    list_tmp.append(i)
+
+  return list_tmp
+
 def eval_str(str_tmp):
 
   '''

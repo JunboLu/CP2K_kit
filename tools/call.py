@@ -2,6 +2,7 @@
 
 import psutil
 import subprocess
+from CP2K_kit.tools import log_info
 from subprocess import check_call, Popen, STDOUT, CalledProcessError
 
 def call_simple_shell(exe_dir, cmd):
@@ -25,9 +26,7 @@ def call_simple_shell(exe_dir, cmd):
   try:
     check_call(cmd, cwd=exe_dir, shell=True)
   except CalledProcessError as err:
-    print ('returncode:', err.returncode)
-    print ('cmd:', err.cmd)
-    print ('output:', err.output)
+    log_info.log_error('Running error: %s command running error in %s' %(err.cmd, exe_dir))
 
 def call_returns_shell(exe_dir, cmd):
 

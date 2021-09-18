@@ -559,20 +559,27 @@ fi
 
         subprocess.run('chmod +x run.sh', cwd=cp2k_sys_dir, shell=True)
         subprocess.run('chmod +x produce.sh', cwd=cp2k_sys_dir, shell=True)
-        subprocess.run("bash -c './run.sh'", cwd=cp2k_sys_dir, shell=True)
+        try:
+          subprocess.run("bash -c './run.sh'", cwd=cp2k_sys_dir, shell=True)
+        except subprocess.CalledProcessError as err:
+          log_info.log_error('Running error: %s command running error in %s' %(err.cmd, cp2k_sys_dir))
 
         run_start = run_start + cp2k_job_num
         run_end = run_end + cp2k_job_num
         if ( run_end > task_num-1):
           run_end = task_num-1
     else:
-      cmd = "mpirun -np %d cp2k.popt input.inp 1> cp2k.out 2> cp2k.err" %(proc_num)
+      cmd = "mpirun -np %d %s input.inp 1> cp2k.out 2> cp2k.err" %(proc_num, cp2k_exe)
       task_dir = ''.join((cp2k_sys_dir, '/task_', str(task_num-1)))
       frc_file_name_abs = ''.join((task_dir, '/cp2k-1_0.xyz'))
       if ( os.path.exists(frc_file_name_abs) ):
         cmd = "rm %s" %(frc_file_name_abs)
         call.call_simple_shell(task_dir, cmd)
-      subprocess.run(cmd, cwd=task_dir, shell=True)
+      try:
+        subprocess.run(cmd, cwd=task_dir, shell=True)
+      except subprocess.CalledProcessError as err:
+        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, task_dir))
+
 
   #check running cp2k tasks
   check_cp2k_run = []

@@ -28,16 +28,11 @@ def get_host(work_dir):
 
   env_dist = os.environ
 
-  if 'PBS_NODEFILE' in env_dist:
-    node_info_file = env_dist['PBS_NODEFILE']
-  elif 'LSB_DJOB_HOSTFILE' in env_dist:
-    node_info_file = env_dist['LSB_DJOB_HOSTFILE']
-  elif 'SLURM_NODEFILE' in env_dist:
-    node_info_file = env_dist['SLURM_NODEFILE']
-  else:
-    node_info_file = 'none'
-
-  if ( node_info_file != 'none' ):
+  if 'PBS_NODEFILE' in env_dist or 'LSB_DJOB_HOSTFILE' in env_dist:
+    if 'PBS_NODEFILE' in env_dist:
+      node_info_file = env_dist['PBS_NODEFILE']
+    elif 'LSB_DJOB_HOSTFILE' in env_dist:
+      node_info_file = env_dist['LSB_DJOB_HOSTFILE']
     #Get proc_num
     cmd = "cat %s | wc -l" %(node_info_file)
     proc_num = int(call.call_returns_shell(work_dir, cmd)[0])
@@ -49,6 +44,13 @@ def get_host(work_dir):
       node_split = data_op.split_str(node, ' ')
       host.append(node_split[1])
     #Get ssh
+    ssh = True
+
+  elif 'SLURM_JOB_NODELIST' in env_dist:
+    node_list = env_dist['SLURM_JOB_NODELIST']
+    cmd = "scontrol show hostnames $SLURM_JOB_NODELIST"
+    host = call.call_returns_shell(work_dir, cmd)
+    proc_num = int(env_dist['SLURM_NPROCS'])
     ssh = True
   else:
     proc_num = int(multiprocessing.cpu_count()/2)
@@ -151,7 +153,10 @@ fi
       f.write(check_gpu)
 
     subprocess.run('chmod +x check_gpu.sh', cwd=work_dir, shell=True)
-    subprocess.run("bash -c './check_gpu.sh'", cwd=work_dir, shell=True)
+    try:
+      subprocess.run("bash -c './check_gpu.sh'", cwd=work_dir, shell=True)
+    except subprocess.CalledProcessError as err:
+      log_info.log_error('Running error: %s command running error in %s' %(err.cmd, work_dir))
 
     device_i, usage_i = read_gpuinfo(work_dir, gpuinfo_file)
     device.append(device_i)
