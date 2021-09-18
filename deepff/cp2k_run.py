@@ -412,7 +412,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_t
 
     gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, key, coord, box, train_stress)
 
-def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num, atoms_num_tot):
+def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot):
 
   '''
   run_force: perform cp2k force calculation
@@ -428,10 +428,14 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
       parallel_exe is the parallel executable file.
     cp2k_env_file: string
       cp2k_env_file is the environment setting file of cp2k.
-    cp2k_job_num: int
-      cp2k_job_num the the job number of cp2k.
-    proc_num: int
-      proc_num is the number of processors for cp2k.
+    cp2k_job_per_node: int
+      cp2k_job_per_node is the job number of cp2k in each node.
+    host: 1-d string list
+      host is the name of computational nodes.
+    ssh: bool
+      ssh is whether we need to ssh.
+    atoms_num_tot: 1-d dictionary, dim = num of lammps systems
+      example: {1:192,2:90}
   Returns:
     none
   '''
@@ -468,6 +472,7 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
     cp2k_sys_dir = ''.join((cp2k_calc_dir, '/sys_', str(i)))
     cmd = "ls | grep %s" %('task_')
     task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
+    host_name = data_op.comb_list_2_str(host, ',')
 
     calculated_id = 0
     for j in range(task_num):
@@ -482,24 +487,29 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
         run_start = calculated_id-1
       else:
         run_start = 0
-      run_end = run_start+cp2k_job_num-1
+      run_end = run_start+cp2k_job_per_node*len(host)-1
       if ( run_end > task_num-1 ):
         run_end=task_num-1
-      cycle = math.ceil((task_num-run_start)/cp2k_job_num)
+      cycle = math.ceil((task_num-run_start)/(cp2k_job_per_node*len(host)))
 
       for j in range(cycle):
-        mpi_num_list = data_op.int_split(proc_num, run_end-run_start+1)
-        mpi_num_str = data_op.comb_list_2_str(mpi_num_list, ' ')
+        tot_mpi_num_list = []
+        for proc_num in proc_num_per_node:
+          mpi_num_list = data_op.int_split(proc_num, cp2k_job_per_node)
+          for k in range(len(mpi_num_list)):
+            if ( mpi_num_list[k]%2 != 0 and mpi_num_list[k]>1 ):
+              mpi_num_list[k] = mpi_num_list[k]-1
+        tot_mpi_num_list.append(mpi_num_list)
+        mpi_num_str = data_op.comb_list_2_str(data_op.list_reshape(tot_mpi_num_list), ' ')
         task_job_list = data_op.gen_list(run_start, run_end, 1)
         task_job_str = data_op.comb_list_2_str(task_job_list, ' ')
 
-        run = '''
+        run_1 = '''
 #! /bin/bash
 
 task_job="%s"
 mpi_num="%s"
 direc=%s
-parallel_num=%d
 parallel_exe=%s
 
 task_job_arr=(${task_job///})
@@ -511,9 +521,15 @@ for ((i=0;i<=num-1;i++));
 do
 task_job_mpi_num_arr[i]="${task_job_arr[i]} ${mpi_num_arr[i]}"
 done
-
-for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j $parallel_num $direc/produce.sh {} $direc
-''' %(task_job_str, mpi_num_str, cp2k_sys_dir, run_end-run_start+1, parallel_exe)
+''' %(task_job_str, mpi_num_str, cp2k_sys_dir, parallel_exe)
+        if ssh:
+          run_2 = '''
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s $direc/produce.sh {} $direc
+''' %( cp2k_job_per_node, host_name)
+        else:
+          run_2 = '''
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d $direc/produce.sh {} $direc
+''' %( cp2k_job_per_node)
 
         produce = '''
 #! /bin/bash
@@ -551,7 +567,7 @@ fi
 
         run_file_name_abs = ''.join((cp2k_sys_dir, '/run.sh'))
         with open(run_file_name_abs, 'w') as f:
-          f.write(run)
+          f.write(run_1+run_2)
 
         produce_file_name_abs = ''.join((cp2k_sys_dir, '/produce.sh'))
         with open(produce_file_name_abs, 'w') as f:
@@ -564,12 +580,12 @@ fi
         except subprocess.CalledProcessError as err:
           log_info.log_error('Running error: %s command running error in %s' %(err.cmd, cp2k_sys_dir))
 
-        run_start = run_start + cp2k_job_num
-        run_end = run_end + cp2k_job_num
+        run_start = run_start + cp2k_job_per_node*len(host)
+        run_end = run_end + cp2k_job_per_node*len(host)
         if ( run_end > task_num-1):
           run_end = task_num-1
     else:
-      cmd = "mpirun -np %d %s input.inp 1> cp2k.out 2> cp2k.err" %(proc_num, cp2k_exe)
+      cmd = "mpirun -np %d %s input.inp 1> cp2k.out 2> cp2k.err" %(sum(proc_num_per_node), cp2k_exe)
       task_dir = ''.join((cp2k_sys_dir, '/task_', str(task_num-1)))
       frc_file_name_abs = ''.join((task_dir, '/cp2k-1_0.xyz'))
       if ( os.path.exists(frc_file_name_abs) ):
@@ -579,7 +595,6 @@ fi
         subprocess.run(cmd, cwd=task_dir, shell=True)
       except subprocess.CalledProcessError as err:
         log_info.log_error('Running error: %s command running error in %s' %(err.cmd, task_dir))
-
 
   #check running cp2k tasks
   check_cp2k_run = []

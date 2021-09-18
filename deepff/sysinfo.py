@@ -38,10 +38,12 @@ def get_host(work_dir):
     proc_num = int(call.call_returns_shell(work_dir, cmd)[0])
     #Get host name
     host = []
+    proc_num_per_node = []
     cmd = "cat %s | sort | uniq -c" %(node_info_file)
     node_info = call.call_returns_shell(work_dir, cmd)
     for node in node_info:
       node_split = data_op.split_str(node, ' ')
+      proc_num_per_node.append(int(node_split[0]))
       host.append(node_split[1])
     #Get ssh
     ssh = True
@@ -50,14 +52,21 @@ def get_host(work_dir):
     node_list = env_dist['SLURM_JOB_NODELIST']
     cmd = "scontrol show hostnames $SLURM_JOB_NODELIST"
     host = call.call_returns_shell(work_dir, cmd)
+    cmd = "scontrol show node $SLURM_JOB_NODELIST"
+    proc_num_per_node
+    host_info = call.call_returns_shell(work_dir, cmd)
+    for host_info_i in host_info:
+      host_info_i_split = host_info_i_split('=')
+      proc_num_per_node.append(int(host_info_i_split[1].split(' ')[0]))
     proc_num = int(env_dist['SLURM_NPROCS'])
     ssh = True
   else:
     proc_num = int(multiprocessing.cpu_count()/2)
+    proc_num_per_node = [proc_num]
     host = [platform.node()]
     ssh = False
 
-  return proc_num, host, ssh
+  return proc_num, proc_num_per_node, host, ssh
 
 def read_gpuinfo(work_dir, gpuinfo_file):
 

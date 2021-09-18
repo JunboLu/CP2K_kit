@@ -323,8 +323,8 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
   str_print = 'Active data is written in %s' %(active_data_dir)
   print (data_op.str_wrap(str_print, 80), flush=True)
 
-def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, init_train_data, \
-             init_data_num, work_dir, tot_atoms_type_dic, proc_num, host, device, usage):
+def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, \
+             init_train_data, init_data_num, work_dir, tot_atoms_type_dic):
 
   '''
   run_iter: run active learning iterations.
@@ -350,17 +350,17 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       work_dir is working directory of CP2K_kit.
     tot_atoms_type_dic: dictionary
       tot_atoms_type_dic is the atoms type dictionary.
-    proc_num: int
-      proc_num is the number of processors.
-    host: 1-d string list
-      host is the name of host of computational nodes.
-    device: 2-d string list
-      device is the gpu device name for each computational node.
-    usage: 2-d float list
-      usage is the memory usage of gpu devices for each computational node.
   Returns:
     none
   '''
+
+  proc_num, proc_num_per_node, host, ssh = sysinfo.get_host(work_dir)
+  if ( len(data_op.list_replicate(proc_num_per_node)) != 1 ):
+    host_str = data_op.comb_list_2_str(host, ' ')
+    log_info.log_error('Resource error: the number of cores in %s are not equal, please submit your jobs to nodes with same number of cores' %(host_str))
+    exit()
+
+  device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 
   max_iter = model_devi_dic['max_iter']
   restart_iter = model_devi_dic['restart_iter']
@@ -397,7 +397,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   cp2k_env_file = environ_dic['cp2k_env_file']
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
-  cp2k_job_num = environ_dic['cp2k_job_num']
+  cp2k_job_per_node = environ_dic['cp2k_job_per_node']
   lmp_mpi_num = environ_dic['lmp_mpi_num']
   lmp_openmp_num = environ_dic['lmp_openmp_num']
 
@@ -470,7 +470,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
         print ('Step 2: lammps tasks', flush=True)
       sys_num, atoms_type_multi_sys, atoms_num_tot = lammps_run.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_multi_sys)
-      lammps_run.run_lmpfrc(work_dir, i, lmp_path, mpi_path, parallel_exe, proc_num, atoms_num_tot)
+      lammps_run.run_lmpfrc(work_dir, i, lmp_path, mpi_path, parallel_exe, \
+                            proc_num_per_node[0], host, proc_num, ssh, atoms_num_tot)
       check_deepff.write_restart_inp(inp_file, i, 3, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
@@ -498,7 +499,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       #Perform cp2k calculation
       cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, \
                              struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
-      cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_job_num, proc_num, atoms_num_tot)
+      cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
+                           cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
 
       #Dump new data of cp2k
       for j in range(sys_num):
@@ -507,7 +509,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
         cp2k_data_dir = ''.join((file_dir, '/data'))
         if ( os.path.exists(cp2k_data_dir) ):
           energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
-          train_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, coord_array, frc_array, box_array, virial_array)
+          train_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, \
+                                                     coord_array, frc_array, box_array, virial_array)
           data_num.append(train_data_num)
 
       print ('  Success: dump new raw data of cp2k', flush=True)
@@ -529,16 +532,13 @@ def kernel(work_dir, inp_file):
       inp_file is the deepff input file
   '''
 
-  proc_num, host, ssh = sysinfo.get_host(work_dir)
-  device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
-
   deepff_key = ['deepmd', 'lammps', 'cp2k', 'model_devi', 'environ']
 
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   dump_input(work_dir, inp_file, deepff_key)
 
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num)
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic)
 
   train_stress = deepmd_dic['training']['train_stress']
 
@@ -563,8 +563,8 @@ def kernel(work_dir, inp_file):
   for i in range(len(init_train_data)):
     print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
-  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, init_train_data, \
-           init_data_num, work_dir, tot_atoms_type_dic, proc_num, host, device, usage)
+  run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, \
+           init_train_data, init_data_num, work_dir, tot_atoms_type_dic)
 
 if __name__ == '__main__':
 

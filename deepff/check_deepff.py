@@ -2,6 +2,7 @@
 
 import os
 import linecache
+import multiprocessing
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
@@ -9,7 +10,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
 
-def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num):
+def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
 
   '''
   check_inp: check the deepff input file
@@ -887,25 +888,15 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
     log_info.log_error('Input error: no cp2k parallel file, please set deepff/environ/parallel_exe')
     exit()
 
-  if ( 'cp2k_job_num' in environ_dic.keys() ):
-    cp2k_job_num = environ_dic['cp2k_job_num']
-    if ( data_op.eval_str(cp2k_job_num) == 1 ):
-      environ_dic['cp2k_job_num'] = int(cp2k_job_num)
+  if ( 'cp2k_job_per_node' in environ_dic.keys() ):
+    cp2k_job_per_node = environ_dic['cp2k_job_per_node']
+    if ( data_op.eval_str(cp2k_job_per_node) == 1 ):
+      environ_dic['cp2k_job_per_node'] = int(cp2k_job_per_node)
     else:
-      log_info.log_error('Input error: cp2k_job_num should be integer, please check or reset deepff/environ/cp2k_job_num')
+      log_info.log_error('Input error: cp2k_job_per_node should be integer, please check or reset deepff/environ/cp2k_job_per_node')
       exit()
   else:
-    environ_dic['cp2k_job_num'] = 1
-
-  if ( 'cp2k_mpi_num' in environ_dic.keys() ):
-    cp2k_mpi_num = environ_dic['cp2k_mpi_num']
-    if ( data_op.eval_str(cp2k_mpi_num) == 1 ):
-      environ_dic['cp2k_mpi_num'] = int(cp2k_mpi_num)
-    else:
-      log_info.log_error('Input error: cp2k_mpi_num should be integer, please check or reset deepff/environ/cp2k_mpi_num')
-      exit()
-  else:
-    environ_dic['cp2k_mpi_num'] = proc_num
+    environ_dic['cp2k_job_per_node'] = 1
 
   if ( 'lmp_mpi_num' in environ_dic.keys() ):
     lmp_mpi_num = environ_dic['lmp_mpi_num']
@@ -915,7 +906,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       log_info.log_error('Input error: lmp_mpi_num should be integer, please check or reset deepff/environ/lmp_mpi_num')
       exit()
   else:
-    environ_dic['lmp_mpi_num'] = proc_num
+    environ_dic['lmp_mpi_num'] = multiprocessing.cpu_count()
 
   if ( 'lmp_openmp_num' in environ_dic ):
     lmp_openmp_num = environ_dic['lmp_openmp_num']
@@ -925,7 +916,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       log_info.log_error('Input error: lmp_openmp_num should be integer, please check or reset deepff/environ/lmp_openmp_num')
       exit()
   else:
-    environ_dic['lmp_openmp_num'] = 2
+    environ_dic['lmp_openmp_num'] = 1
 
   return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
 

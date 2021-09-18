@@ -636,6 +636,10 @@ def run_lmpmd(work_dir, iter_id, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num
       work_dir is working directory of CP2K_kit.
     iter_id: int
       iter_id is the iteration id.
+    lmp_path: string
+      lmp_path is the path of lammps.
+    mpi_path: string
+      mpi_path is the path of mpi.
     lmp_mpi_num: int
       lmp_mpi_num is the number of mpi ranks for lammps.
     lmp_openmp_num: int
@@ -764,7 +768,7 @@ mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
     log_info.log_error('lammps molecular dynamics error, please check iteration %d' %(iter_id))
     exit()
 
-def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe, lmp_path, mpi_path):
+def lmpfrc_parallel(model_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh):
 
   '''
   lmpfrc_parallel : run lammps force calculation in parallel.
@@ -772,14 +776,22 @@ def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe, lmp_path,
   Args :
     model_dir : string
       model_dir is directory for any model.
-    parallel_num : int
-      parallel_num is the number of thread in parallel.
     start : int
       start is the starting number.
     end : int
       end is the endding number.
     parallel_exe : string
       parallel_exe is the parallel exacutable file.
+    lmp_path: string
+      lmp_path is the path of lammps.
+    mpi_path: string
+      mpi_path is the path of mpi.
+    lmp_job_per_node: int
+      lmp_job_per_node is the number lammps job in each node.
+    host_name: string
+      host_name is the string host name.
+    ssh: bool
+      ssh is whether we need to ssh.
   Returns:
     none
   '''
@@ -789,11 +801,10 @@ def lmpfrc_parallel(model_dir, parallel_num, start, end, parallel_exe, lmp_path,
   #run lammps in 1 thread. Here we just run force, it is a single
   #point calculation.
 
-  run = '''
+  run_1 = '''
 #! /bin/bash
 
 direc=%s
-parallel_num=%d
 run_start=%d
 run_end=%d
 parallel_exe=%s
@@ -815,13 +826,21 @@ lmp < ./frc_in.lammps 1> lammps.out 2> lammps.err
 }
 
 export -f produce
+''' %(model_dir, start, end, parallel_exe, lmp_path, mpi_path)
 
-seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
-''' %(model_dir, parallel_num, start, end, parallel_exe, lmp_path, mpi_path)
+  if ssh:
+    run_2 ='''
+seq $run_start $run_end | $parallel_exe -j %d -S %s produce {} $direc
+''' %(lmp_job_per_node, host_name)
+  else:
+    run_2 ='''
+seq $run_start $run_end | $parallel_exe -j %d produce {} $direc
+''' %(lmp_job_per_node)
+
 
   run_file_name_abs = ''.join((model_dir, '/run.sh'))
   with open(run_file_name_abs, 'w') as f:
-    f.write(run)
+    f.write(run_1+run_2)
 
   subprocess.run('chmod +x run.sh', cwd=model_dir, shell=True)
   try:
@@ -829,8 +848,7 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
   except subprocess.CalledProcessError as err:
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, model_dir))
 
-
-def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num, atoms_num_tot):
+def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_node, host, proc_num, ssh, atoms_num_tot):
 
   '''
   rum_lmpfrc: kernel function to run lammps force calculation.
@@ -840,10 +858,22 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num,
       work_dir is working directory of CP2K_kit.
     iter_id: int
       iter_id is the iteration id.
+    lmp_path: string
+      lmp_path is the path of lammps.
+    mpi_path: string
+      mpi_path is the path of mpi.
     parallel_exe: string
       parallel_exe is parallel exacutable file.
-    lmp_mpi_num: int
-      lmp_mpi_num is the number of mpi ranks for lammps.
+    lmp_job_per_node: int
+      lmp_job_per_node is the number of lammps jobs in each node.
+    host: 1-d string list
+      host is the name of computational nodes.
+    proc_num: int
+      proc_num is the total number of processors.
+    ssh: bool
+      ssh is whether we need to ssh.
+    atoms_num_tot: 1-d dictionary, dim = num of lammps systems
+      example: {1:192,2:90}
   Returns :
     none
   '''
@@ -921,7 +951,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num,
 
       for k in range(model_num):
         model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
-
+        host_name = data_op.comb_list_2_str(host, ',')
         cmd = "ls | grep %s" % ('traj_')
         traj_num = len(call.call_returns_shell(model_dir, cmd))
 
@@ -938,22 +968,22 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_mpi_num,
             start = calculated_id-1
           else:
             start = 0
-          end = start+lmp_mpi_num-1
+          end = start+proc_num-1
           if ( end > traj_num-1 ):
             end = traj_num-1
           else:
-            cycle = math.ceil((traj_num-start)/lmp_mpi_num)
+            cycle = math.ceil((traj_num-start)/proc_num)
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
-              lmpfrc_parallel(model_dir, end-start+1, start, end, parallel_exe, lmp_path, mpi_path)
-            start = start+lmp_mpi_num
-            end = end+lmp_mpi_num
+              lmpfrc_parallel(model_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
+            start = start+proc_num
+            end = end+proc_num
             if ( end > traj_num-1 ):
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
-            lmpfrc_parallel(model_dir, 1, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path)
+            lmpfrc_parallel(model_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []
