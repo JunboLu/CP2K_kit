@@ -223,7 +223,7 @@ def get_mpi_path(work_dir):
     mpi_exe_split = data_op.split_str(mpi_exe[0], '/')
     mpi_path = data_op.comb_list_2_str(mpi_exe_split[:-2], '/', True)
 
-  return lmp_exe, mpi_path
+  return mpi_path
 
 def get_dp_path(work_dir):
 
