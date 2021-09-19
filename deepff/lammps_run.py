@@ -157,7 +157,7 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
       if j in tot_atoms_type_dic.keys():
         atoms_type_dic[j] = tot_atoms_type_dic[j]+1
       else:
-        log_info.log_error('Input error: %s atom type in system %d is not trained, please check deepff/lammps/system' %(j, i+1))
+        log_info.log_error('Input error: %s atom type in system %d is not trained, please check deepff/lammps/system' %(j, i))
         exit()
     atoms_type_multi_sys[i] = atoms_type_dic
     atoms_num_tot[i] = len(atoms)
@@ -843,7 +843,7 @@ x=$1
 direc=$2
 new_direc=$direc/traj_$x
 cd $new_direc
-mpirun -np 2 %s < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
+%s < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
 cd %s
 ''' %(lmp_path, mpi_path, lmp_exe, work_dir)
 
@@ -915,7 +915,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
       else:
         use_metad = False
 
-      cmd = "ls | grep %s" % ('model_')
+      cmd = "ls | grep %s" % ("'model_[0-9]'")
       model_num = len(call.call_returns_shell(lmp_sys_task_dir, cmd))
 
       for k in range(model_num):
@@ -960,7 +960,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
       else:
         use_metad = False
 
-      cmd = "ls | grep %s" % ('model_')
+      cmd = "ls | grep %s" % ("'model_[0-9]'")
       model_num = len(call.call_returns_shell(lmp_sys_task_dir, cmd))
 
       for k in range(model_num):
@@ -985,24 +985,23 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
             start = calculated_id-1
           else:
             start = 0
-          end = start+int(sum(proc_num_per_node)/2)-1
+          end = start+sum(proc_num_per_node)-1
           if ( end > traj_num-1 ):
             end = traj_num-1
-          else:
-            cycle = math.ceil((traj_num-start)/int(sum(proc_num_per_node)/2))
+          cycle = math.ceil((traj_num-start)/sum(proc_num_per_node))
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
               lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, lmp_exe, \
-                              mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
-            start = start+int(sum(proc_num_per_node)/2)
-            end = end+int(sum(proc_num_per_node)/2)
+                              mpi_path, proc_num_per_node[0], host_info, ssh)
+            start = start+sum(proc_num_per_node)
+            end = end+sum(proc_num_per_node)
             if ( end > traj_num-1 ):
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
             lmpfrc_parallel(model_dir, work_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, \
-                            lmp_exe, mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+                            lmp_exe, mpi_path, proc_num_per_node[0], host_info, ssh)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []
@@ -1013,7 +1012,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
     check_lmp_frc_run_i = []
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-      cmd = "ls | grep %s" % ('model_')
+      cmd = "ls | grep %s" % ("'model_[0-9]'")
       model_num = len(call.call_returns_shell(lmp_sys_task_dir, cmd))
       check_lmp_frc_run_ij = []
       for k in range(model_num):
@@ -1024,8 +1023,18 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
           dump_file_name_abs = ''.join((traj_dir, '/atom.dump'))
-          if ( os.path.exists(dump_file_name_abs) and len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
-            check_lmp_frc_run_ijk.append(0)
+          log_file_name_abs = ''.join((traj_dir, '/lammps.out'))
+          if ( os.path.exists(dump_file_name_abs) and \
+               len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
+            if ( use_metad or k != 0 ):
+              if ( os.path.exists(log_file_name_abs) and \
+                   file_tools.grep_line_num("'Step'", log_file_name_abs, traj_dir) != 0 and \
+                   file_tools.grep_line_num("'Loop time'", log_file_name_abs, traj_dir) != 0 ):
+                check_lmp_frc_run_ijk.append(0)
+              else:
+                check_lmp_frc_run_ijk.append(1)
+            else:
+              check_lmp_frc_run_ijk.append(0)
           else:
             check_lmp_frc_run_ijk.append(1)
         check_lmp_frc_run_ij.append(check_lmp_frc_run_ijk)
@@ -1040,7 +1049,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
         else:
           failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
           failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
-          log_info.log_error('Warning: lammps force calculations fail for traj %s in %d model in task %d in %d system' \
+          log_info.log_error('Warning: lammps force calculations fail for traj %s in model %d in task %d in system %d' \
           %(failure_task_id_str, k, j, i))
           exit()
 
