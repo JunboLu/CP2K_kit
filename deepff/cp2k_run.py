@@ -21,12 +21,12 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
       iter_id is current iteration number.
     sys_id: int
       sys_id is id of system.
-    box: 3-d string list
-      example: [[['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']],
-                 [['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']]]
     coord: 2-d string list, dim = (num of atoms) * 4
       example: [[['O','-9.64','-0.71','5.80'],['H','-10.39','-1.31','6.15'],['H','-8.89','-35.4','6.37']],
                  [['O','-2.64','-7.14','5.52'],['H','-2.89','-6.23','5.10'],['H','-1.70','-7.36','5.28']]]
+    box: 3-d string list
+      example: [[['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']],
+                 [['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']]]
     train_stress: bool
       train_stress is whether we need to get stress tensor
   Returns:
@@ -310,12 +310,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_t
     train_stress: bool
       train_stress is whether we need to get stress tensor
   Returns:
-    box: 3-d string list
-      example: [[['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']],
-                 [['10.0','0.0','0.0'],['0.0','10.0','0.0'],['0.0','0.0','10.0']]]
-    coord: 3-d string list
-      example: [[['O','-9.64','-0.71','5.80'],['H','-10.39','-1.31','6.15'],['H','-8.89','-35.4','6.37']],
-                 [['O','-2.64','-7.14','5.52'],['H','-2.89','-6.23','5.10'],['H','-1.70','-7.36','5.28']]]
+    none
   '''
 
   #copy should be done at first, because the following operators will change it!
@@ -430,6 +425,8 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
       cp2k_env_file is the environment setting file of cp2k.
     cp2k_job_per_node: int
       cp2k_job_per_node is the job number of cp2k in each node.
+    proc_num_per_node: 1-d int list
+      proc_num_per_node is the numbers of processor in each node.
     host: 1-d string list
       host is the name of computational nodes.
     ssh: bool
@@ -472,7 +469,10 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
     cp2k_sys_dir = ''.join((cp2k_calc_dir, '/sys_', str(i)))
     cmd = "ls | grep %s" %('task_')
     task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
-    host_name = data_op.comb_list_2_str(host, ',')
+    host_name_proc = []
+    for l in range(len(host)):
+      host_name_proc.append(''.join((str(proc_num_per_node[l]), '/', host[l])))
+    host_info = data_op.comb_list_2_str(host_name_proc, ',')
 
     calculated_id = 0
     for j in range(task_num):
@@ -525,8 +525,8 @@ done
 ''' %(task_job_str, mpi_num_str, cp2k_sys_dir, parallel_exe)
         if ssh:
           run_2 = '''
-for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s $direc/produce.sh {} $direc
-''' %( cp2k_job_per_node, host_name)
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s --sshdelay 0.1 $direc/produce.sh {} $direc
+''' %( cp2k_job_per_node, host_info)
         else:
           run_2 = '''
 for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d $direc/produce.sh {} $direc
@@ -619,11 +619,14 @@ cd %s
   else:
     for j in range(sys_num):
       failure_task_id = [index for (index,value) in enumerate(check_cp2k_run[j]) if value==1]
-      if ( len(failure_task_id) != 0 ):
+      if ( len(failure_task_id) != task_num ):
         failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
-        str_print = '  Warning: ab initio force calculations for tasks %s in system %d by cp2k' %(failure_task_id_str, i)
+        str_print = '  Warning: ab initio force calculations fail for tasks %s in system %d by cp2k' %(failure_task_id_str, i)
         str_print = data_op.str_wrap(str_print, 80, '  ')
         print (str_print, flush=True)
+      else:
+        log_info.log_error('Running error: ab initio force calculations running error, please check iteration %d' %(iter_id))
+        exit()
 
 if __name__ == '__main__':
   from collections import OrderedDict

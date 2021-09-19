@@ -239,6 +239,8 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
       work_dir is workding directory.
     iter_id: int
       iter_id is current iteration number.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     none
   '''
@@ -389,11 +391,11 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys):
       work_dir is workding directory.
     iter_id: int
       iter_id is current iteration number.
-    atom_type_dic_tot: dictionary
-      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
     atoms_num_tot: dictionary
       atoms_num_tot contains number of atoms for different systems.
       Example: {0:3, 1:3}
+    atom_type_dic_tot: dictionary
+      Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
   Returns:
     none
   '''
@@ -626,7 +628,7 @@ def combine_frag_traj_file(lmp_task_dir):
     tot_dump_file.close()
     tot_log_file.close()
 
-def run_lmpmd(work_dir, iter_id, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num, device):
+def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, lmp_mpi_num, lmp_openmp_num, device):
 
   '''
   rum_lmpmd: kernel function to run lammps md.
@@ -638,6 +640,8 @@ def run_lmpmd(work_dir, iter_id, lmp_path, mpi_path, lmp_mpi_num, lmp_openmp_num
       iter_id is the iteration id.
     lmp_path: string
       lmp_path is the path of lammps.
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
     mpi_path: string
       mpi_path is the path of mpi.
     lmp_mpi_num: int
@@ -713,8 +717,8 @@ export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
 
 export OMP_NUM_THREADS=%d
 
-mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
-''' %(lmp_path, mpi_path, lmp_openmp_num, lmp_mpi_num, log_file_name)
+mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
+''' %(lmp_path, mpi_path, lmp_openmp_num, lmp_mpi_num, lmp_exe, log_file_name)
 
       else:
         device_str=data_op.comb_list_2_str(device, ',')
@@ -731,8 +735,8 @@ export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
 export CUDA_VISIBLE_DEVICES=%s
 export OMP_NUM_THREADS=%d
 
-mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
-''' %(lmp_path, mpi_path, device_str, lmp_openmp_num, lmp_mpi_num, log_file_name)
+mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
+''' %(lmp_path, mpi_path, device_str, lmp_openmp_num, lmp_mpi_num, lmp_exe, log_file_name)
 
       run_file_name_abs = ''.join((lmp_sys_task_dir, '/run.sh'))
       with open(run_file_name_abs, 'w') as f:
@@ -765,25 +769,30 @@ mpirun -np %d lmp < ./md_in.lammps 1> %s 2> lammps.err
   if ( len(check_lmp_md_run) != 0 and  all(i == 0 for i in check_lmp_md_run) ):
     print ('  Success: molecular dynamics calculations for %d systems by lammps' %(sys_num))
   else:
-    log_info.log_error('lammps molecular dynamics error, please check iteration %d' %(iter_id))
+    log_info.log_error('Running error: lammps molecular dynamics error, please check iteration %d' %(iter_id))
     exit()
 
-def lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh):
+def lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, \
+                    lmp_exe, mpi_path, lmp_job_per_node, host_name, ssh):
 
   '''
-  lmpfrc_parallel : run lammps force calculation in parallel.
+  lmpfrc_parallel: run lammps force calculation in parallel.
 
-  Args :
-    model_dir : string
+  Args:
+    model_dir: string
       model_dir is directory for any model.
-    start : int
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    start: int
       start is the starting number.
-    end : int
+    end: int
       end is the endding number.
-    parallel_exe : string
+    parallel_exe: string
       parallel_exe is the parallel exacutable file.
     lmp_path: string
       lmp_path is the path of lammps.
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
     mpi_path: string
       mpi_path is the path of mpi.
     lmp_job_per_node: int
@@ -812,7 +821,7 @@ parallel_exe=%s
 
   if ssh:
     run_2 ='''
-seq $run_start $run_end | $parallel_exe -j %d -S %s $direc/produce.sh {} $direc
+seq $run_start $run_end | $parallel_exe -j %d -S %s --sshdelay 0.1 $direc/produce.sh {} $direc
 ''' %(lmp_job_per_node, host_name)
   else:
     run_2 ='''
@@ -834,9 +843,9 @@ x=$1
 direc=$2
 new_direc=$direc/traj_$x
 cd $new_direc
-lmp < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
+mpirun -np 2 %s < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
 cd %s
-''' %(lmp_path, mpi_path, work_dir)
+''' %(lmp_path, mpi_path, lmp_exe, work_dir)
 
   produce_file_name_abs = ''.join((model_dir, '/produce.sh'))
   with open(produce_file_name_abs, 'w') as f:
@@ -852,7 +861,8 @@ cd %s
   except subprocess.CalledProcessError as err:
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, model_dir))
 
-def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_node, host, proc_num, ssh, atoms_num_tot):
+def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
+               proc_num_per_node, host, ssh, atoms_num_tot):
 
   '''
   rum_lmpfrc: kernel function to run lammps force calculation.
@@ -864,16 +874,16 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_
       iter_id is the iteration id.
     lmp_path: string
       lmp_path is the path of lammps.
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
     mpi_path: string
       mpi_path is the path of mpi.
     parallel_exe: string
       parallel_exe is parallel exacutable file.
-    lmp_job_per_node: int
-      lmp_job_per_node is the number of lammps jobs in each node.
+    proc_num_per_node: 1-d int list
+      proc_num_per_node is the number of processors in each node.
     host: 1-d string list
       host is the name of computational nodes.
-    proc_num: int
-      proc_num is the total number of processors.
     ssh: bool
       ssh is whether we need to ssh.
     atoms_num_tot: 1-d dictionary, dim = num of lammps systems
@@ -955,7 +965,10 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_
 
       for k in range(model_num):
         model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
-        host_name = data_op.comb_list_2_str(host, ',')
+        host_name_proc = []
+        for l in range(len(host)):
+          host_name_proc.append(''.join((str(proc_num_per_node[l]), '/', host[l])))
+        host_info = data_op.comb_list_2_str(host_name_proc, ',')
         cmd = "ls | grep %s" % ('traj_')
         traj_num = len(call.call_returns_shell(model_dir, cmd))
 
@@ -972,56 +985,66 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, mpi_path, parallel_exe, lmp_job_per_
             start = calculated_id-1
           else:
             start = 0
-          end = start+proc_num-1
+          end = start+int(sum(proc_num_per_node)/2)-1
           if ( end > traj_num-1 ):
             end = traj_num-1
           else:
-            cycle = math.ceil((traj_num-start)/proc_num)
+            cycle = math.ceil((traj_num-start)/int(sum(proc_num_per_node)/2))
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
-              lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
-            start = start+proc_num
-            end = end+proc_num
+              lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, lmp_exe, \
+                              mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+            start = start+int(sum(proc_num_per_node)/2)
+            end = end+int(sum(proc_num_per_node)/2)
             if ( end > traj_num-1 ):
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
-            lmpfrc_parallel(model_dir, work_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, mpi_path, lmp_job_per_node, host_name, ssh)
+            lmpfrc_parallel(model_dir, work_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, \
+                            lmp_exe, mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []
   for i in range(sys_num):
     lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
-
     cmd = "ls | grep %s" % ('task_')
     task_num = len(call.call_returns_shell(lmp_sys_dir, cmd))
-
+    check_lmp_frc_run_i = []
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-
       cmd = "ls | grep %s" % ('model_')
       model_num = len(call.call_returns_shell(lmp_sys_task_dir, cmd))
-
+      check_lmp_frc_run_ij = []
       for k in range(model_num):
         model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
-
         cmd = "ls | grep %s" % ('traj_')
         traj_num = len(call.call_returns_shell(model_dir, cmd))
-
+        check_lmp_frc_run_ijk = []
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
           dump_file_name_abs = ''.join((traj_dir, '/atom.dump'))
           if ( os.path.exists(dump_file_name_abs) and len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
-            check_lmp_frc_run.append(0)
+            check_lmp_frc_run_ijk.append(0)
           else:
-            check_lmp_frc_run.append(1)
+            check_lmp_frc_run_ijk.append(1)
+        check_lmp_frc_run_ij.append(check_lmp_frc_run_ijk)
+      check_lmp_frc_run_i.append(check_lmp_frc_run_ij)
+    check_lmp_frc_run.append(check_lmp_frc_run_i)
 
-  if ( len(check_lmp_frc_run) != 0 and all(i == 0 for i in check_lmp_frc_run)):
-    print ('  Success: model deviation calculations for %d systems by lammps' %(sys_num), flush=True)
-  else:
-    log_info.log_error('lammps model deviation calculations error, please check iteration %d' %(iter_id))
-    exit()
+  for i in range(sys_num):
+    for j in range(task_num):
+      for k in range(model_num):
+        if ( len(check_lmp_frc_run[i][j][k]) != 0 and all(i == 0 for i in check_lmp_frc_run[i][j][k]) ):
+          pass
+        else:
+          failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
+          failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
+          log_info.log_error('Warning: lammps force calculations fail for traj %s in %d model in task %d in %d system' \
+          %(failure_task_id_str, k, j, i))
+          exit()
+
+  print ('  Success: model deviation calculations for %d systems by lammps' %(sys_num), flush=True)
 
 if __name__ == '__main__':
   from CP2K_kit.tools import read_input

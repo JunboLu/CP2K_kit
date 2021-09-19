@@ -52,11 +52,11 @@ def get_host(work_dir):
     node_list = env_dist['SLURM_JOB_NODELIST']
     cmd = "scontrol show hostnames $SLURM_JOB_NODELIST"
     host = call.call_returns_shell(work_dir, cmd)
-    cmd = "scontrol show node $SLURM_JOB_NODELIST"
-    proc_num_per_node
+    cmd = "scontrol show node $SLURM_JOB_NODELIST | grep CPUAlloc"
+    proc_num_per_node = []
     host_info = call.call_returns_shell(work_dir, cmd)
     for host_info_i in host_info:
-      host_info_i_split = host_info_i_split('=')
+      host_info_i_split = host_info_i.split('=')
       proc_num_per_node.append(int(host_info_i_split[1].split(' ')[0]))
     proc_num = int(env_dist['SLURM_NPROCS'])
     ssh = True
@@ -200,7 +200,7 @@ def get_lmp_path(work_dir):
   lmp_exe_split = data_op.split_str(lmp_exe[0], '/')
   lmp_path = data_op.comb_list_2_str(lmp_exe_split[:-2], '/', True)
 
-  return lmp_path
+  return lmp_exe[0], lmp_path
 
 def get_mpi_path(work_dir):
 
@@ -223,7 +223,7 @@ def get_mpi_path(work_dir):
     mpi_exe_split = data_op.split_str(mpi_exe[0], '/')
     mpi_path = data_op.comb_list_2_str(mpi_exe_split[:-2], '/', True)
 
-  return mpi_path
+  return lmp_exe, mpi_path
 
 def get_dp_path(work_dir):
 
