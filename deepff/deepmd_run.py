@@ -53,6 +53,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
     call.call_simple_shell(iter_dir, cmd)
 
   data_dir = copy.deepcopy(init_train_data)
+  final_data_dir = []
   if ( iter_id > 0 ):
     for i in range(iter_id):
       calc_dir = ''.join((work_dir, '/iter_', str(i), '/03.cp2k_calc'))
@@ -66,32 +67,47 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
           prev_data_dir = ''.join((cp2k_sys_dir, '/data'))
           if ( os.path.exists(prev_data_dir) ):
             data_dir.append(prev_data_dir)
+            if ( i == iter_id-1 ):
+              final_data_dir.append(prev_data_dir)
 
+  start_lr = deepmd_param['learning_rate']['start_lr']
   batch_size = deepmd_param['training']['batch_size']
-  epoch_num = deepmd_param['training']['epoch_num']
-  stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
-  decay_steps = math.ceil(int(tot_data_num/batch_size)/1000)*1000
+  fix_stop_batch = deepmd_param['training']['fix_stop_batch']
+  use_prev_model = deepmd_param['training']['use_prev_model']
+  if not fix_stop_batch:
+    epoch_num = deepmd_param['training']['epoch_num']
+    stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
+    decay_steps = math.ceil(int(tot_data_num/batch_size)/1000)*1000
+    if ( stop_batch < decay_steps*200 ):
+      stop_batch = decay_steps*200
+    deepmd_param['learning_rate']['decay_steps'] = decay_steps
+    deepmd_param['training']['stop_batch'] = stop_batch
 
-  if ( stop_batch < decay_steps*200 ):
-    stop_batch = decay_steps*200
+  deepmd_param['training']['systems'] = data_dir
+  deepmd_param['training']['batch_size'] = [batch_size]*len(data_dir)
 
-  deepmd_param['learning_rate']['decay_steps'] = decay_steps
-  deepmd_param['training'].pop('epoch_num')
-  deepmd_param['training']['stop_batch'] = stop_batch
-
-  for key in deepmd_dic['training']:
+  for key in deepmd_dic['training'].keys():
     if ( 'system' in key ):
       deepmd_param['training'].pop(key)
 
   if ( 'seed_num' in deepmd_param['training'].keys() ):
     deepmd_param['training'].pop('seed_num')
-
+  if ( 'epoch_num' in deepmd_param['training'].keys() ):
+    deepmd_param['training'].pop('epoch_num')
   deepmd_param['training'].pop('model_type')
   deepmd_param['training'].pop('neuron')
   deepmd_param['training'].pop('shuffle_data')
   deepmd_param['training'].pop('train_stress')
+  deepmd_param['training'].pop('use_prev_model')
+  deepmd_param['training'].pop('fix_stop_batch')
 
-  deepmd_param['training']['systems'] = data_dir
+  if ( iter_id > 0 and use_prev_model ):
+    deepmd_param['learning_rate']['start_lr'] = start_lr/100
+    deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
+    prob_sys_1 = '0:%d:0.2' %(len(data_dir)-len(final_data_dir))
+    prob_sys_2 = '%d:%d:0.8' %(len(data_dir)-len(final_data_dir), len(data_dir))
+    auto_prob_style = data_op.comb_list_2_str(['prob_sys_size', prob_sys_1, prob_sys_2], ';')
+    deepmd_param['training']['auto_prob_style'] = auto_prob_style
 
   if ( model_type == 'use_seed' ):
     for i in range(len(descr_seed)):
@@ -123,16 +139,18 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       with open(''.join((model_dir, '/input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def deepmd_parallel(deepmd_train_dir, work_dir, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
+def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
   deepmd_parallel: run deepmd calculation in parallel.
 
   Args:
-    deepmd_train_dir: string
-      deepmd_train_dir is the directory of deepmd training for each iteration.
     work_dir: string
       work_dir is the working directory of CP2K_kit.
+    iter_id: int
+      iter_id is the iteration id.
+    use_prev_model: bool
+      use_prev_model is whether we need to use previous model.
     start: int
       start is the starting model id.
     end: int
@@ -156,11 +174,45 @@ def deepmd_parallel(deepmd_train_dir, work_dir, start, end, parallel_exe, dp_pat
 
   model_num = end-start+1
 
-  model_num = end-start+1
-  if ( all(os.path.exists(''.join((deepmd_train_dir, '/', str(i), '/model.ckpt.index'))) for i in range(model_num)) ):
+  deepmd_train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
+  model_ckpt_file_exists = []
+  lcurve_file_exists = []
+  final_batch = []
+  for i in range(model_num):
+    if ( i == 0 ):
+      input_file = ''.join((deepmd_train_dir, '/', str(i), '/input.json'))
+      with open(input_file, 'r') as f:
+        deepmd_dic = json.load(f)
+      save_freq = deepmd_dic['training']['save_freq']
+    model_ckpt_file = ''.join((deepmd_train_dir, '/', str(i), '/model.ckpt.index'))
+    lcurve_file = ''.join((deepmd_train_dir, '/', str(i), '/lcurve.out'))
+    model_ckpt_file_exists.append(os.path.exists(model_ckpt_file))
+    lcurve_file_exists.append(os.path.exists(lcurve_file))
+    if ( os.path.exists(lcurve_file) ):
+      whole_line_num = len(open(lcurve_file, 'r').readlines())
+      line = linecache.getline(lcurve_file, whole_line_num)
+      line_split = data_op.split_str(line, ' ', '\n')
+      if ( len(line_split) > 0 and data_op.eval_str(line_split[0]) == 1 ):
+        final_batch.append(int(line_split[0]))
+      else:
+        final_batch.append(0)
+    else:
+      final_batch.append(0)
+
+  if ( all(file_exist for file_exist in model_ckpt_file_exists) and \
+       all(file_exist for file_exist in lcurve_file_exists) and \
+       all(i > save_freq for i in final_batch) ):
     dp_cmd = 'dp train --restart model.ckpt input.json 1>> log.out 2>> log.err'
   else:
-    dp_cmd = 'dp train input.json 1> log.out 2> log.err'
+    if ( use_prev_model and iter_id>0 ):
+      for i in range(model_num):
+        model_dir = ''.join((deepmd_train_dir, '/', str(i)))
+        prev_model_dir = ''.join((work_dir, '/iter_', str(iter_id-1), '/01.train/', str(i)))
+        cmd = "cp %s %s" %('model.ckpt.*', model_dir)
+        call.call_simple_shell(prev_model_dir, cmd)
+      dp_cmd = 'dp train --init-model model.ckpt input.json 1> log.out 2> log.err'
+    else:
+      dp_cmd = 'dp train input.json 1> log.out 2> log.err'
 
   if ( len(host) == 1 and len(device[0]) == 0 ):
     run = '''
@@ -728,7 +780,7 @@ cd %s
         if ( run_end > end ):
           run_end = end
 
-def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cuda_dir):
+def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
   run_deepmd: kernel function to run deepmd.
@@ -738,6 +790,8 @@ def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cu
       work_dir is working directory of CP2K_kit.
     iter_id: int
       iter_id is the iteration id.
+    use_prev_model: bool
+      use_prev_model is whether we need to use previous model.
     parallel_exe: string
       parallel_exe is the parallel exacutable file.
     host: 1-d string list
@@ -778,7 +832,7 @@ def run_deepmd(work_dir, iter_id, parallel_exe, dp_path, host, device, usage, cu
     log_info.log_error('Input error: there are gpu devices in nodes, but cuda_dir is none, please set cuda directory in deepff/environ/cuda_dir')
     exit()
   #Run deepmd-kit tasks
-  deepmd_parallel(train_dir, work_dir, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
+  deepmd_parallel(work_dir, iter_id, use_prev_model, 0, model_num-1, parallel_exe, dp_path, host, device, usage, cuda_dir)
 
   #Check the deepmd tasks.
   check_deepmd_run = []

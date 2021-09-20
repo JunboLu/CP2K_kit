@@ -395,6 +395,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   neuron = deepmd_dic['training']['neuron']
   shuffle_data = deepmd_dic['training']['shuffle_data']
   train_stress = deepmd_dic['training']['train_stress']
+  use_prev_model = deepmd_dic['training']['use_prev_model']
 
   model_devi_freq = int(model_devi_dic['model_devi_freq'])
   nsteps = int(lammps_dic['nsteps'])
@@ -462,7 +463,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
 
       deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                  descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
-      deepmd_run.run_deepmd(work_dir, i, parallel_exe, dp_path, host, device, usage, cuda_dir)
+      deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir)
       check_deepff.write_restart_inp(inp_file, i, 1, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 ):

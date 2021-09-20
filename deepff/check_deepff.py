@@ -312,6 +312,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
         else:
           deepmd_dic['training'][i]['set_parts'] = 1
 
+    if ( 'use_prev_model' in deepmd_dic['training'].keys() ):
+      use_prev_model = deepmd_dic['training']['use_prev_model']
+      use_prev_model_bool = data_op.str_to_bool(use_prev_model)
+      if ( isinstance(use_prev_model_bool, bool) ):
+        deepmd_dic['training']['use_prev_model'] = use_prev_model_bool
+      else:
+        log_info.log_error('Input error: use_prev_model should be bool, please check or reset deepff/deepmd/training/use_prev_model')
+        exit()
+    else:
+      deepmd_dic['training']['use_prev_model'] = False
+
     if ( 'shuffle_data' in deepmd_dic['training'].keys() ):
       shuffle_data = deepmd_dic['training']['shuffle_data']
       shuffle_data_bool = data_op.str_to_bool(shuffle_data)
@@ -388,15 +399,47 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
       log_info.log_error('Input error: no neuron, please set deepff/deepmd/training/neuron')
       exit()
 
-    if ( 'epoch_num' in deepmd_dic['training'].keys() ):
-      epoch_num = deepmd_dic['training']['epoch_num']
-      if ( data_op.eval_str(epoch_num) == 1 ):
-        deepmd_dic['training']['epoch_num'] = int(epoch_num)
+    if ( 'fix_stop_batch' in deepmd_dic['training'].keys() ):
+      fix_stop_batch = deepmd_dic['training']['fix_stop_batch']
+      fix_stop_batch_bool = data_op.str_to_bool(fix_stop_batch)
+      if ( isinstance(fix_stop_batch_bool, bool) ):
+        deepmd_dic['training']['fix_stop_batch'] = fix_stop_batch_bool
       else:
-        log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd/training/epoch_num')
+        log_info.log_error('Input error: fix_stop_batch should be bool, please check or reset deepff/deepmd/training/fix_stop_batch')
         exit()
     else:
-      deepmd_dic['training']['epoch_num'] = 100
+      deepmd_dic['training']['fix_stop_batch'] = False
+
+    fix_stop_batch = deepmd_dic['training']['fix_stop_batch']
+    if fix_stop_batch:
+      if ( 'decay_steps' in deepmd_dic['learning_rate'].keys() ):
+        decay_steps = deepmd_dic['learning_rate']['decay_steps']
+        if ( data_op.eval_str(decay_steps) == 1 ):
+          deepmd_dic['learning_rate']['decay_steps'] = int(decay_steps)
+        else:
+          log_info.log_error('Input error: the decay_steps should be integer, please check or reset deepff/deepmd/learning_rate/decay_steps')
+          exit()
+      else:
+        deepmd_dic['learning_rate']['decay_steps'] = 5000
+      if ( 'stop_batch' in deepmd_dic['training'].keys() ):
+        stop_batch = deepmd_dic['training']['stop_batch']
+        if ( data_op.eval_str(stop_batch) == 1 ):
+          deepmd_dic['training']['stop_batch'] = int(stop_batch)
+        else:
+          log_info.log_error('Input error: the stop_batch should be integer, please check or reset deepff/deepmd/training/stop_batch')
+          exit()
+      else:
+        deepmd_dic['training']['stop_batch'] = 1000000
+    else:
+      if ( 'epoch_num' in deepmd_dic['training'].keys() ):
+        epoch_num = deepmd_dic['training']['epoch_num']
+        if ( data_op.eval_str(epoch_num) == 1 ):
+          deepmd_dic['training']['epoch_num'] = int(epoch_num)
+        else:
+          log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd/training/epoch_num')
+          exit()
+      else:
+        deepmd_dic['training']['epoch_num'] = 200
 
     if ( 'batch_size' in deepmd_dic['training'].keys() ):
       batch_size = deepmd_dic['training']['batch_size']
