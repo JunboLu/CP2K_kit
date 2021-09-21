@@ -5,6 +5,7 @@ import math
 import json
 import copy
 import subprocess
+import linecache
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
@@ -191,6 +192,7 @@ def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe,
     if ( os.path.exists(lcurve_file) ):
       whole_line_num = len(open(lcurve_file, 'r').readlines())
       line = linecache.getline(lcurve_file, whole_line_num)
+      linecache.clearcache()
       line_split = data_op.split_str(line, ' ', '\n')
       if ( len(line_split) > 0 and data_op.eval_str(line_split[0]) == 1 ):
         final_batch.append(int(line_split[0]))
