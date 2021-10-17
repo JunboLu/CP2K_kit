@@ -55,7 +55,7 @@ contains
 
     integer::i
     integer::m
-    real(kind=4)::sum_value
+    real(kind=4)::s_value, sq_value
     real(kind=4)::average_value, sigma
     real(kind=4),dimension(m)::data_array
 
@@ -63,17 +63,15 @@ contains
     !f2py intent(in)::data_array
     !f2py intent(out)::average_value, sigma
 
-    sum_value = 0.0
+    s_value = 0.0
+    sq_value = 0.0
     do i=1,m
-      sum_value=sum_value+data_array(i)
+      s_value=s_value+data_array(i)
+      sq_value=sq_value+data_array(i)*data_array(i)
     end do
-    average_value=sum_value/m
 
-    sum_value = 0.0
-    do i=1,m
-      sum_value = sum_value+(data_array(i)-average_value)**2
-    end do
-    sigma = sqrt(sum_value/m)
+    average_value=s_value/m
+    sigma = sqrt((sq_value/m-s_value*s_value/(m*m))/m)
 
     return
 

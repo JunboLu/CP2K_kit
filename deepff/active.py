@@ -397,9 +397,11 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   train_stress = deepmd_dic['training']['train_stress']
   use_prev_model = deepmd_dic['training']['use_prev_model']
 
-  model_devi_freq = int(model_devi_dic['model_devi_freq'])
   nsteps = int(lammps_dic['nsteps'])
-  conv_new_data_num = int(nsteps/model_devi_freq*0.02)
+  change_init_str = lammps_dic['change_init_str']
+
+  model_devi_freq = int(model_devi_dic['model_devi_freq'])
+  conv_new_data_num = int(nsteps/model_devi_freq*0.04)
   choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
   force_conv = model_devi_dic['force_conv']
 
@@ -408,8 +410,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
-  lmp_mpi_num = environ_dic['lmp_mpi_num']
-  lmp_openmp_num = environ_dic['lmp_openmp_num']
+  lmp_job_per_node = environ_dic['lmp_job_per_node']
 
   dp_path = sysinfo.get_dp_path(work_dir)
   lmp_exe, lmp_path = sysinfo.get_lmp_path(work_dir)
@@ -418,7 +419,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   data_num = []
   data_num.append(restart_data_num)
 
-  np.random.seed(1234567890)
+  #np.random.seed(1234567890)
 
   for i in range(restart_iter, max_iter, 1):
 
@@ -470,8 +471,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       #Perform lammps calculations
       print ('Step 2: lammps tasks', flush=True)
 
-      lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, tot_atoms_type_dic)
-      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, mpi_path, lmp_mpi_num, lmp_openmp_num, device[0])
+      lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, change_init_str, tot_atoms_type_dic)
+      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, proc_num_per_node, host, ssh, device)
       check_deepff.write_restart_inp(inp_file, i, 2, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
@@ -498,17 +499,27 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       print ('  The accurate deviation ratio for whole %d systems in iteration %d is %.2f%%' \
              %(sys_num, i, success_devi_ratio*100), flush=True)
 
-      if ( min(success_ratio_sys) >= 0.98 and success_ratio+success_devi_ratio >= 0.999 ):
+      if ( min(success_ratio_sys) >= 0.96 and success_ratio+success_devi_ratio >= 0.999 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
           write_active_data(work_dir, i, tot_atoms_type_dic)
         exit()
 
+      total_task_num = 0
+      for sys_id in struct_index:
+        total_task_num_sys = 0
+        for task_id in struct_index[sys_id]:
+          total_task_num_sys = total_task_num_sys+len(struct_index[sys_id][task_id])
+        total_task_num = total_task_num+total_task_num_sys
+      if ( total_task_num == 0 ):
+        log_info.log_error('Warning: No selected structure for cp2k calculations, check the deepmd training.')
+        exit()
+
       print ('Step 3: cp2k tasks', flush=True)
       #Perform cp2k calculation
-      cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, \
-                             struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress)
+      cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, struct_index, \
+                             conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio)
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
                            cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
 
@@ -521,10 +532,11 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
           energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
           train_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, \
                                                      coord_array, frc_array, box_array, virial_array)
-          data_num.append(train_data_num)
-        else:
-          log_info.log_error('Dump new data error as %s file does not exist' %(os.path.exists(cp2k_data_dir)) )
-          exit()
+          if ( train_data_num > numb_test ):
+            data_num.append(train_data_num)
+          if ( train_data_num < numb_test and success_ratio < float(train_data_num*model_devi_freq/nsteps)):
+            log_info.log_error('Warning: little selected structures, check the deepmd training.')
+            exit()
 
       print ('  Success: dump new raw data of cp2k', flush=True)
       restart_stage = 0

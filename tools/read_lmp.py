@@ -61,7 +61,7 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file, return_frames_num_fic=False):
 
   line = linecache.getline(lmp_log_file, a_int+2)
   line_split = data_op.split_str(line, ' ', '\n')
-  if ( len(line_split) == log_id_num ):
+  if ( len(line_split) == log_id_num and data_op.eval_str(line_split[0]) == 1 ):
     each = int(line_split[step_id])-start_id
   else:
     each = 0

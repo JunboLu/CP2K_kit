@@ -162,7 +162,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
             success_devi_frames_ij = success_devi_frames_ij + 1
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
-          if ( min_dist > atom_cov_radii_plus*0.6 ):
+          if ( min_dist > atom_cov_radii_plus*0.7 and max_frc < 0.5 ):
             choosed_index.append(k)
 
       linecache.clearcache()

@@ -1,8 +1,10 @@
 #! /usr/env/bin python
 
 import os
+import copy
 import math
 import linecache
+import subprocess
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import *
@@ -227,7 +229,7 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
   data_file.close()
 
-def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
+def gen_lmpmd_task(lmp_dic, work_dir, iter_id, change_init_str, tot_atoms_type_dic):
 
   '''
   gen_lmpmd_task: generate lammps md paramter file (.in file)
@@ -239,6 +241,8 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
       work_dir is workding directory.
     iter_id: int
       iter_id is current iteration number.
+    change_init_str: bool
+      change_init_str is whether to change initial structure for lammps.
     tot_atoms_type_dic: dictionary
       tot_atoms_type_dic is the atoms type dictionary.
   Returns:
@@ -278,8 +282,6 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
     for j in range(len(atoms)):
       atoms_type_index.append(atoms_type_multi_sys[i][atoms[j]])
 
-    gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, lmp_sys_dir, 'data.lmp')
-
     #If temp and pres have different values, we will set different tasks.
     temp = lmp_dic['temp']
     pres = lmp_dic['pres']
@@ -293,14 +295,26 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
     for j in range(len(temp)):
       for k in range(len(pres)):
-        lmp_dic['temp'] = temp[j]
-        lmp_dic['pres'] = pres[k]
+        new_lmp_dic = copy.deepcopy(lmp_dic)
+        new_lmp_dic['temp'] = temp[j]
+        new_lmp_dic['pres'] = pres[k]
 
         task_dir_name = ''.join(('task_', str(j*len(pres)+k)))
         lmp_sys_task_dir = ''.join((lmp_sys_dir, '/', task_dir_name))
         if ( not os.path.exists(lmp_sys_task_dir) ):
           cmd = "mkdir %s" % (task_dir_name)
           call.call_simple_shell(lmp_sys_dir, cmd)
+        if ( change_init_str and iter_id > 0 ):
+          prev_lmp_sys_task_data_dir = ''.join((work_dir, '/iter_', str(iter_id-1), '/02.lammps_calc/sys_', str(i), '/', task_dir_name, '/data'))
+          prev_data = call.call_returns_shell(prev_lmp_sys_task_data_dir, "ls")
+          data_id = []
+          for data in prev_data:
+            data_id.append(int("".join(list(filter(str.isdigit, data)))))
+          final_prev_data = ''.join((prev_lmp_sys_task_data_dir, '/data_', str(max(data_id)), '.lmp'))
+          cmd = 'cp %s %s' %(final_prev_data, ''.join((lmp_sys_task_dir, '/data.lmp')))
+          call.call_simple_shell(prev_lmp_sys_task_data_dir, cmd)
+        else:
+          gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, lmp_sys_task_dir, 'data.lmp')
 
         md_in_file = open(''.join((lmp_sys_task_dir, '/md_in.lammps')), 'w')
 
@@ -314,12 +328,12 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
           restart_step = max(restart_steps)
 
         if ( 'restart_step' in locals() ):
-          lmp_dic['nsteps'] = nsteps-restart_step
-        for key in lmp_dic:
+          new_lmp_dic['nsteps'] = nsteps-restart_step
+        for key in new_lmp_dic:
           if ( 'system' not in key and key != 'write_restart_freq' ):
             s_1 = 'variable        '
             s_2 = key.upper() + '          '
-            s_3 = 'equal ' + str(lmp_dic[key]) + '\n'
+            s_3 = 'equal ' + str(new_lmp_dic[key]) + '\n'
             line_i = ''.join((s_1, s_2, s_3))
             md_in_file.write(line_i)
 
@@ -329,7 +343,9 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         while True:
           dump_file_name = ''.join(('atom', str(file_label), '.dump'))
           dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
-          if ( os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
+          log_file_name_abs = ''.join((lmp_sys_task_dir, '/lammps', str(file_label), '.out'))
+          if ( os.path.exists(log_file_name_abs) and os.path.exists(dump_file_name_abs) \
+               and os.path.getsize(dump_file_name_abs) != 0 ):
             file_label = file_label+1
           else:
             break
@@ -346,7 +362,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         if ( 'restart_step' in locals() ):
           md_in_file.write('read_restart  %s\n' %(''.join(('tmp.restart.', str(restart_step)))))
         else:
-          md_in_file.write(''.join(('read_data       ', lmp_sys_dir, '/data.lmp\n')))
+          md_in_file.write(''.join(('read_data       ', lmp_sys_task_dir, '/data.lmp\n')))
         md_in_file.write('change_box   all triclinic\n')
 
         for l in range(len(atoms_type)):
@@ -628,7 +644,231 @@ def combine_frag_traj_file(lmp_task_dir):
     tot_dump_file.close()
     tot_log_file.close()
 
-def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, lmp_mpi_num, lmp_openmp_num, device):
+def lmpmd_single(lmp_dir, sys_index, task_index, lmp_exe, lmp_path, mpi_path, proc_num_per_node, device):
+
+  '''
+  lmpmd_single: run single lammps molecular dynamics calculation.
+
+  Args:
+    lmp_dir: string
+      lmp_dir is the directory of lammps calculation.
+    sys_index: int
+      sys_index is the index of system.
+    task_index: int
+      task_index is the index of task.
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
+    lmp_path: string
+      lmp_path is the path of lammps.
+    mpi_path: string
+      mpi_path is the path of mpi.
+    proc_num_per_node: 1-d int list
+      proc_num_per_node is the number of processors in each node.
+    device: 2-d int list
+      device is the name of gpu devices for all nodes.
+  Returns:
+    none
+  '''
+
+  lmp_sys_task_dir = ''.join((lmp_dir, '/sys_', str(sys_index), '/task_', str(task_index)))
+  file_label = 0
+  while True:
+    log_file_name = ''.join(('lammps', str(file_label), '.out'))
+    dump_file_name = ''.join(('atom', str(file_label), '.dump'))
+    dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
+    if ( os.path.exists(log_file_name) and os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
+      file_label = file_label+1
+    else:
+      break
+
+  if ( len(device[0]) == 0 ):
+    run = '''
+#! /bin/bash
+
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
+mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
+''' %(lmp_path, mpi_path, sum(proc_num_per_node), lmp_exe, log_file_name)
+
+  else:
+    device_str=data_op.comb_list_2_str(device[0], ',')
+    run = '''
+#! /bin/bash
+
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
+export CUDA_VISIBLE_DEVICES=%s
+
+mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
+''' %(lmp_path, mpi_path, device_str, sum(proc_num_per_node), lmp_exe, log_file_name)
+
+  run_file_name_abs = ''.join((lmp_sys_task_dir, '/run.sh'))
+  with open(run_file_name_abs, 'w') as f:
+    f.write(run)
+
+  subprocess.run('chmod +x run.sh', cwd=lmp_sys_task_dir, shell=True)
+  try:
+    subprocess.run("bash -c './run.sh'", cwd=lmp_sys_task_dir, shell=True)
+  except subprocess.CalledProcessError as err:
+    log_info.log_error('Running error: %s command running error in %s' %(err.cmd, lmp_sys_task_dir))
+    exit()
+
+  combine_frag_traj_file(lmp_sys_task_dir)
+
+def lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index_str, task_index_str, \
+                   mpi_num_str, device_num_str, device_id_start_str, lmp_job_per_node, proc_num_per_node, ssh, host):
+
+  '''
+  lmpmd_parallel: run lammps molecular dynamics calculation in parallel.
+
+  Args:
+    lmp_dir: string
+      lmp_dir is the directory of lammps calculation.
+    lmp_path: string
+      lmp_path is the path of lammps.
+    mpi_path: string
+      mpi_path is the path of mpi.
+    lmp_exe: string
+      lmp_exe is the lammps executable file.
+    parallel_exe: string
+      parallel_exe is the parallel executable file.
+    sys_index_str: string
+      sys_index_str is the string containing systems index.
+    task_index_str: string
+      task_index_str is the string containing tasks index.
+    mpi_num_str: string
+      mpi_num_str is the string containing mpi number.
+    device_num_str: string
+      device_num_str is the string containing gpu devices number.
+    device_id_start_str: string
+      device_id_start_str is the string containing staring gpu device id.
+    lmp_job_per_node: int
+      lmp_job_per_node is the number of lammps job in one node.
+    proc_num_per_node: 1-d int list
+      proc_num_per_node is the number of processors in each node.
+    ssh: bool
+      ssh is whether to ssh to computational node.
+    host: 1-d string list
+      host is the name of computational nodes.
+  Returns:
+    none
+  '''
+
+  host_name_proc = []
+  for l in range(len(host)):
+    host_name_proc.append(''.join((str(proc_num_per_node[l]), '/', host[l])))
+  host_info = data_op.comb_list_2_str(host_name_proc, ',')
+
+  run_1 = '''
+#! /bin/bash
+
+sys_job="%s"
+task_job="%s"
+mpi_num="%s"
+device_num="%s"
+device_start="%s"
+direc=%s
+parallel_exe=%s
+
+sys_job_arr=(${sys_job///})
+task_job_arr=(${task_job///})
+mpi_num_arr=(${mpi_num///})
+device_num_arr=(${device_num///})
+device_start_arr=(${device_start///})
+
+num=${#sys_job_arr[*]}
+
+for ((i=0;i<=num-1;i++));
+do
+sys_task_mpi_num_arr[i]="${sys_job_arr[i]} ${task_job_arr[i]} ${mpi_num_arr[i]} ${device_num_arr[i]} ${device_start_arr[i]}"
+done
+''' %(sys_index_str, task_index_str, mpi_num_str, device_num_str, device_id_start_str, lmp_dir, parallel_exe)
+  if ssh:
+    run_2 = '''
+for i in "${sys_task_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s --sshdelay 0.1 $direc/produce.sh {} $direc
+''' %(lmp_job_per_node, host_info)
+  else:
+    run_2 = '''
+for i in "${sys_task_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d $direc/produce.sh {} $direc
+''' %(lmp_job_per_node)
+
+  produce = '''
+#! /bin/bash
+
+x=$1
+direc=$2
+
+x_arr=(${x///})
+
+new_direc=$direc/sys_${x_arr[0]}/task_${x_arr[1]}
+
+lmp_path=%s
+mpi_path=%s
+
+export PATH=$lmp_path/bin:$PATH
+export PATH=$mpi_path/bin:$PATH
+export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
+
+device_num=${x_arr[3]}
+if [ $device_num != 0 ]; then
+device_id_start=${x_arr[4]}
+for ((i=0;i<=device_num-1;i++));
+do
+((m[i]=$i+device_id_start))
+done
+
+for ((i=0;i<device_num;i++));
+do
+str=$str${m[i]}","
+done
+
+export CUDA_VISIBLE_DEVICES=${str:0:(2*$device_num-1)}
+fi
+
+a=0
+
+while true
+do
+if [[ -f $new_direc/atom$a.dump && -f $new_direc/lammps$a.out ]]
+then
+((a=$a+1))
+else
+break
+fi
+done
+
+cd $new_direc
+mpirun -np ${x_arr[2]} %s < ./md_in.lammps 1> lammps$a.out 2> lammps.err
+cd $direc
+''' %(lmp_path, mpi_path, lmp_exe)
+
+  run_file_name_abs = ''.join((lmp_dir, '/run.sh'))
+  with open(run_file_name_abs, 'w') as f:
+    f.write(run_1+run_2)
+
+  produce_file_name_abs = ''.join((lmp_dir, '/produce.sh'))
+  with open(produce_file_name_abs, 'w') as f:
+    f.write(produce)
+
+  subprocess.run('chmod +x run.sh', cwd=lmp_dir, shell=True)
+  subprocess.run('chmod +x produce.sh', cwd=lmp_dir, shell=True)
+  try:
+    subprocess.run("bash -c './run.sh'", cwd=lmp_dir, shell=True)
+  except subprocess.CalledProcessError as err:
+    log_info.log_error('Running error: %s command running error in %s' %(err.cmd, lmp_dir))
+    exit()
+
+def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, proc_num_per_node, host, ssh, device):
 
   '''
   rum_lmpmd: kernel function to run lammps md.
@@ -642,31 +882,38 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, lmp_mpi_num, lmp_o
       lmp_path is the path of lammps.
     lmp_exe: string
       lmp_exe is the lammps executable file.
+    parallel_exe: string
+      parallel_exe is the parallel executable file.
     mpi_path: string
       mpi_path is the path of mpi.
-    lmp_mpi_num: int
-      lmp_mpi_num is the number of mpi ranks for lammps.
-    lmp_openmp_num: int
-      lmp_openmp_num is the number of openmp for lammps.
-    device: 1-d int list
-      device is the name of gpu devices for first node.
+    lmp_job_per_node: int
+      lmp_job_per_node is the number of lammps job in one node.
+    proc_num_per_node: 1-d int list
+      proc_num_per_node is the number of processors in each node.
+    host: 1-d string list
+      host is the name of computational nodes.
+    ssh: bool
+      ssh is whether we need to ssh.
+    device: 2-d int list
+      device is the name of gpu devices for all nodes.
   Returns:
     none
   '''
 
-  import subprocess
   lmp_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
 
   cmd = "ls | grep %s" % ('sys_')
   sys_num = len(call.call_returns_shell(lmp_dir, cmd))
 
+  #All systems have same number of tasks
+  lmp_sys_0_dir = ''.join((lmp_dir, '/sys_0'))
+  cmd = "ls | grep %s" % ('task_')
+  task_num = len(call.call_returns_shell(lmp_sys_0_dir, cmd))
+
   #check generating lammps tasks
   check_lmp_md_gen = []
   for i in range(sys_num):
     lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
-
-    cmd = "ls | grep %s" % ('task_')
-    task_num = len(call.call_returns_shell(lmp_sys_dir, cmd))
 
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
@@ -685,71 +932,67 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, lmp_mpi_num, lmp_o
     exit()
 
   #run lammps md
-  for i in range(sys_num):
-    lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
 
-    cmd = "ls | grep %s" % ('task_')
-    task_num = len(call.call_returns_shell(lmp_sys_dir, cmd))
-
-    for j in range(task_num):
-      lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-
-      file_label = 0
-      while True:
-        log_file_name = ''.join(('lammps', str(file_label), '.out'))
-        dump_file_name = ''.join(('atom', str(file_label), '.dump'))
-        dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
-        if ( os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
-          file_label = file_label+1
-        else:
-          break
-
-      if ( len(device) == 0 ):
-        run = '''
-#! /bin/bash
-
-lmp_path=%s
-mpi_path=%s
-
-export PATH=$lmp_path/bin:$PATH
-export PATH=$mpi_path/bin:$PATH
-export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
-
-export OMP_NUM_THREADS=%d
-
-mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
-''' %(lmp_path, mpi_path, lmp_openmp_num, lmp_mpi_num, lmp_exe, log_file_name)
-
+  if ( sys_num == 1 and task_num == 1 ):
+    lmpmd_single(lmp_dir, 0, 0, lmp_exe, lmp_path, mpi_path, proc_num_per_node, device)
+  else:
+    total_task_num = sys_num*task_num
+    sys_task_index = []
+    for i in range(sys_num):
+      for j in range(task_num):
+        sys_task_index.append([i,j])
+    calculated_id = 0
+    for i in range(total_task_num):
+      lmp_sys_task_dir = ''.join((lmp_dir, '/sys_', str(sys_task_index[i][0]), '/task_', str(sys_task_index[i][1])))
+      log_file_name = ''.join((lmp_sys_task_dir, '/lammps.out'))
+      dump_file_name = ''.join((lmp_sys_task_dir, '/atom.dump'))
+      if ( os.path.exists(log_file_name) and os.path.exists(dump_file_name) ):
+        calculated_id = i
       else:
-        device_str=data_op.comb_list_2_str(device, ',')
-        run = '''
-#! /bin/bash
+        break
+    if ( calculated_id != total_task_num-1 ):
+      run_start = calculated_id
+      run_end = run_start+lmp_job_per_node*len(host)-1
+      if ( run_end > total_task_num-1 ):
+        run_end=total_task_num-1
+      cycle = math.ceil((total_task_num-run_start)/(lmp_job_per_node*len(host)))
+      for i in range(cycle):
+        tot_mpi_num_list = []
+        for proc_num in proc_num_per_node:
+          mpi_num_list = data_op.int_split(proc_num, lmp_job_per_node)
+          for j in range(len(mpi_num_list)):
+            if ( mpi_num_list[j]%2 != 0 and mpi_num_list[j]>1 ):
+              mpi_num_list[j] = mpi_num_list[j]-1
+          tot_mpi_num_list.append(mpi_num_list)
+        tot_mpi_num_list = data_op.list_reshape(tot_mpi_num_list)[0:(run_end-run_start+1)]
+        mpi_num_str = data_op.comb_list_2_str(tot_mpi_num_list, ' ')
+        sys_task_index_part = sys_task_index[0:(run_end-run_start+1)]
+        sys_index = [sys_task[0] for sys_task in sys_task_index_part]
+        task_index = [sys_task[1] for sys_task in sys_task_index_part]
+        sys_index_str = data_op.comb_list_2_str(sys_index, ' ')
+        task_index_str = data_op.comb_list_2_str(task_index, ' ')
+        device_num_per_node = [len(device_per_node) for device_per_node in device]
+        device_num_min = min(device_num_per_node)
+        device_num_list = data_op.int_split(device_num_min, lmp_job_per_node)
+        device_id_start = [0]
+        for j in range(len(device_num_list)-1):
+          device_id_start.append(device_id_start[j]+device_num_list[j])
+        device_num_str = data_op.comb_list_2_str((device_num_list*len(host))[0:(run_end-run_start+1)], ' ')
+        device_id_start_str = data_op.comb_list_2_str((device_id_start*len(host))[0:(run_end-run_start+1)], ' ')
 
-lmp_path=%s
-mpi_path=%s
+        lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index_str, task_index_str, \
+                       mpi_num_str, device_num_str, device_id_start_str, lmp_job_per_node, proc_num_per_node, ssh, host)
+        for j in range(run_start, run_end+1, 1):
+          lmp_sys_task_dir_j = ''.join((lmp_dir, '/sys_', str(sys_task_index[j][0]), '/task_', str(sys_task_index[j][1])))
+          combine_frag_traj_file(lmp_sys_task_dir_j)
 
-export PATH=$lmp_path/bin:$PATH
-export PATH=$mpi_path/bin:$PATH
-export LD_LIBRARY_PATH=$mpi_path/lib:$LD_LIBRARY_PATH
-
-export CUDA_VISIBLE_DEVICES=%s
-export OMP_NUM_THREADS=%d
-
-mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
-''' %(lmp_path, mpi_path, device_str, lmp_openmp_num, lmp_mpi_num, lmp_exe, log_file_name)
-
-      run_file_name_abs = ''.join((lmp_sys_task_dir, '/run.sh'))
-      with open(run_file_name_abs, 'w') as f:
-        f.write(run)
-
-      subprocess.run('chmod +x run.sh', cwd=lmp_sys_task_dir, shell=True)
-      try:
-        subprocess.run("bash -c './run.sh'", cwd=lmp_sys_task_dir, shell=True)
-      except subprocess.CalledProcessError as err:
-        log_info.log_error('Running error: %s command running error in %s' %(err.cmd, lmp_sys_task_dir))
-
-      combine_frag_traj_file(lmp_sys_task_dir)
-
+        run_start = run_start + lmp_job_per_node*len(host)
+        run_end = run_end + lmp_job_per_node*len(host)
+        if ( run_end > total_task_num-1):
+          run_end = total_task_num-1
+    else:
+      lmpmd_single(lmp_dir, sys_task_index[calculated_id][0], sys_task_index[calculated_id][1], \
+                   lmp_exe, lmp_path, mpi_path, proc_num_per_node, device)
   #check lammps md
   check_lmp_md_run = []
   for i in range(sys_num):
@@ -804,8 +1047,6 @@ def lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, \
   Returns:
     none
   '''
-
-  import subprocess
 
   #run lammps in 1 thread. Here we just run force, it is a single
   #point calculation.
@@ -981,27 +1222,24 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
             break
 
         if ( calculated_id != traj_num-1 ):
-          if ( calculated_id != 0 ):
-            start = calculated_id-1
-          else:
-            start = 0
-          end = start+sum(proc_num_per_node)-1
+          start = calculated_id
+          end = start+int(sum(proc_num_per_node)/2)-1
           if ( end > traj_num-1 ):
             end = traj_num-1
-          cycle = math.ceil((traj_num-start)/sum(proc_num_per_node))
+          cycle = math.ceil((traj_num-start)/int(sum(proc_num_per_node)/2))
 
           for l in range(cycle):
             if ( use_metad or k != 0 ):
               lmpfrc_parallel(model_dir, work_dir, start, end, parallel_exe, lmp_path, lmp_exe, \
-                              mpi_path, proc_num_per_node[0], host_info, ssh)
-            start = start+sum(proc_num_per_node)
-            end = end+sum(proc_num_per_node)
+                              mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+            start = start+int(sum(proc_num_per_node)/2)
+            end = end+int(sum(proc_num_per_node)/2)
             if ( end > traj_num-1 ):
               end = traj_num-1
         else:
           if ( use_metad or k != 0 ):
             lmpfrc_parallel(model_dir, work_dir, traj_num-1, traj_num-1, parallel_exe, lmp_path, \
-                            lmp_exe, mpi_path, proc_num_per_node[0], host_info, ssh)
+                            lmp_exe, mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
 
   #Check lammps force calculations.
   check_lmp_frc_run = []
@@ -1049,8 +1287,8 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
         else:
           failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
           failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
-          log_info.log_error('Warning: lammps force calculations fail for traj %s in model %d in task %d in system %d' \
-          %(failure_task_id_str, k, j, i))
+          log_info.log_error('Warning: lammps force calculations fail for traj %s in model %d in task %d in system %d in iteration %d' \
+          %(failure_task_id_str, k, j, i, iter_id))
           exit()
 
   print ('  Success: model deviation calculations for %d systems by lammps' %(sys_num), flush=True)

@@ -193,8 +193,8 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
   Returns:
     delta_e_avg: float
       delta_e_avg is the averaged value of vertical energy.
-    rmse: float
-      rmse is the statistical error of delta_e_avg
+    sigma: float
+      sigma is the statistical error of delta_e_avg
     vertical_ene_array: 1d float array
       vertical_ene_array is vertical energy along MD.
   '''
@@ -247,9 +247,7 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
     #Get averaged values of square of vertical energy and vertical energy.
     vertical_ene_sqr = np.array(vertical_ene)**2  #vertical_ene_sqr is the squre of vertical_ene
     vertical_ene_sqr_array = np.asfortranarray(vertical_ene_sqr, dtype='float32')
-    delta_e_sqr_avg, sigma_1 = statistic_mod.statistic.numerical_average(vertical_ene_sqr_array, stat_num)
-    delta_e_avg, sigma_2 = statistic_mod.statistic.numerical_average(vertical_ene_array, stat_num)
-    rmse = np.sqrt(delta_e_sqr_avg - delta_e_avg**2)
+    delta_e_avg, sigma = statistic_mod.statistic.numerical_average(vertical_ene_array, stat_num)
 
     #Read csv and get vertical energy for every time
     vertical_ene_avg = []
@@ -285,7 +283,7 @@ def arrange_vertical_energy(time_step, final_time_unit, start, end, file_start, 
       for i in range(len(vertical_freq)):
         writer.writerow([min_vertical_ene+i*increment, vertical_freq[i], vertical_freq_fit[i]])
 
-    return delta_e_avg, rmse
+    return delta_e_avg, sigma
   elif ( slow_growth == 1 ):
     return vertical_ene_array
 
@@ -422,9 +420,9 @@ def arrange_data_run(arrange_data_param, work_dir):
     final_time_unit = vert_ene_param['final_time_unit']
 
     if ( slow_growth == 0 ):
-      delta_ene, rmse = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step,start_id, \
+      delta_ene, sigma = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step,start_id, \
                                                 traj_mix_ener_file, row_ox, row_red, redox_type, slow_growth, work_dir)
-      print ('Average vertical energy is %f eV, and error is %f eV' % (delta_ene, rmse), flush=True)
+      print ('Average vertical energy is %f eV, and error is %f eV' % (delta_ene, sigma), flush=True)
     elif ( slow_growth == 1 ):
       vert_ene = arrange_vertical_energy(time_step, final_time_unit, init_step, end_step, start_id, \
                                          traj_mix_ener_file, row_ox, row_red, redox_type, slow_growth, work_dir)

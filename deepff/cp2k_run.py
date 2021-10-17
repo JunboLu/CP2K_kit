@@ -245,10 +245,10 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
 
     std_inp_file.close()
 
+    revise_cp2k_inp.delete_line("'WFN_RESTART_FILE_NAME'", std_inp_file_name_abs, cp2k_sys_dir)
     cp2k_inp_file_upper = file_tools.upper_file(std_inp_file_name_abs, cp2k_sys_dir)
     pot_line_num = file_tools.grep_line_num("'POTENTIAL_FILE_NAME'", cp2k_inp_file_upper, cp2k_sys_dir)[0]
     call.call_simple_shell(cp2k_sys_dir, 'rm %s' %(cp2k_inp_file_upper))
-    revise_cp2k_inp.delete_line("'WFN_RESTART_FILE_NAME'", std_inp_file_name_abs, cp2k_sys_dir)
     use_prev_wfn = cp2k_param['use_prev_wfn']
 
     for i in range(len(coord)):
@@ -281,8 +281,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
           call.call_simple_shell(cp2k_task_dir, cmd)
     call.call_simple_shell(cp2k_task_dir, 'rm %s' %(std_inp_file_name_abs))
 
-def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, \
-                  struct_index, conv_new_data_num, choose_new_data_num_limit, train_stress):
+def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, struct_index, \
+                  conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio):
 
   '''
   gen_cp2k_task: generate cp2k tasks based on choosed structure index
@@ -334,7 +334,7 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_t
     choosed_index_num = []
     for i in range(task_num):
       choosed_index = struct_index[key][i]
-      if ( len(choosed_index) < conv_new_data_num ):
+      if ( len(choosed_index) < conv_new_data_num and success_ratio >= 0.96 ):
         pass
       else:
         choosed_index_num.append(len(choosed_index))
@@ -483,10 +483,7 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
         break
 
     if ( calculated_id != task_num-1 ):
-      if ( calculated_id != 0 ):
-        run_start = calculated_id-1
-      else:
-        run_start = 0
+      run_start = calculated_id
       run_end = run_start+cp2k_job_per_node*len(host)-1
       if ( run_end > task_num-1 ):
         run_end=task_num-1

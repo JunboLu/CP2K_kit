@@ -103,7 +103,7 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   deepmd_param['training'].pop('fix_stop_batch')
 
   if ( iter_id > 0 and use_prev_model ):
-    deepmd_param['learning_rate']['start_lr'] = start_lr/100
+    deepmd_param['learning_rate']['start_lr'] = start_lr/10
     deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
     prob_sys_1 = '0:%d:0.2' %(len(data_dir)-len(final_data_dir))
     prob_sys_2 = '%d:%d:0.8' %(len(data_dir)-len(final_data_dir), len(data_dir))

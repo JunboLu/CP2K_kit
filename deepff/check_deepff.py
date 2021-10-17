@@ -600,6 +600,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
   else:
     lmp_dic['pres'] = '1.0'
 
+  if ( 'change_init_str' in lmp_dic.keys() ):
+    change_init_str = lmp_dic['change_init_str']
+    change_init_str_bool = data_op.str_to_bool(change_init_str)
+    if ( isinstance(change_init_str_bool, bool) ):
+      lmp_dic['change_init_str'] = change_init_str_bool
+    else:
+      log_info.log_out('Input error: change_init_str should be bool, please check or set deepff/lammps/change_init_str')
+      exit()
+  else:
+    lmp_dic['change_init_str'] = False
+
   sys_num = 0
   for key in lmp_dic.keys():
     if ( 'system' in key ):
@@ -941,25 +952,15 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
   else:
     environ_dic['cp2k_job_per_node'] = 1
 
-  if ( 'lmp_mpi_num' in environ_dic.keys() ):
-    lmp_mpi_num = environ_dic['lmp_mpi_num']
-    if ( data_op.eval_str(lmp_mpi_num) == 1 ):
-      environ_dic['lmp_mpi_num'] = int(lmp_mpi_num)
+  if ( 'lmp_job_per_node' in environ_dic.keys() ):
+    lmp_job_per_node = environ_dic['lmp_job_per_node']
+    if ( data_op.eval_str(lmp_job_per_node) == 1 ):
+      environ_dic['lmp_job_per_node'] = int(lmp_job_per_node)
     else:
-      log_info.log_error('Input error: lmp_mpi_num should be integer, please check or reset deepff/environ/lmp_mpi_num')
+      log_info.log_error('Input error: lmp_job_per_node should be integer, please check or reset deepff/environ/lmp_job_per_node')
       exit()
   else:
-    environ_dic['lmp_mpi_num'] = multiprocessing.cpu_count()
-
-  if ( 'lmp_openmp_num' in environ_dic ):
-    lmp_openmp_num = environ_dic['lmp_openmp_num']
-    if ( data_op.eval_str(lmp_openmp_num) == 1 ):
-      environ_dic['lmp_openmp_num'] = int(lmp_openmp_num)
-    else:
-      log_info.log_error('Input error: lmp_openmp_num should be integer, please check or reset deepff/environ/lmp_openmp_num')
-      exit()
-  else:
-    environ_dic['lmp_openmp_num'] = 1
+    environ_dic['lmp_job_per_node'] = 1
 
   return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
 
