@@ -10,7 +10,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
 
-def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
+def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num_one_node):
 
   '''
   check_inp: check the deepff input file
@@ -26,6 +26,8 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
       model_devi_dic contains keywords used in model_devi.
     environ_dic: dictionary
       environ_dic contains keywords used in environment.
+    proc_num_one_node: int
+      proc_num_one_node is the number of processors for one node.
   Returns:
     deepmd_dic: dictionary
       deepmd_dic is the revised deepmd_dic.
@@ -961,6 +963,29 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic):
       exit()
   else:
     environ_dic['lmp_job_per_node'] = 1
+
+  if ( 'lmp_omp_num_per_job' in environ_dic.keys() ):
+    lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
+    if ( data_op.eval_str(lmp_omp_num_per_job) == 1 ):
+      environ_dic['lmp_omp_num_per_job'] = int(lmp_omp_num_per_job)
+    else:
+      log_info.log_error('Input error: lmp_omp_num_per_job should be integer, please check or reset deepff/environ/lmp_omp_num_per_job')
+      exit()
+  else:
+    environ_dic['lmp_omp_num_per_job'] = 1
+
+  if ( 'lmp_mpi_num_per_job' in environ_dic.keys() ):
+    lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
+    if ( data_op.eval_str(lmp_mpi_num_per_job) == 1 ):
+      environ_dic['lmp_mpi_num_per_job'] = int(lmp_mpi_num_per_job)
+    else:
+      log_info.log_error('Input error: lmp_mpi_num_per_job should be integer, please check or reset deepff/environ/lmp_mpi_num_per_job')
+      exit()
+  else:
+    lmp_mpi_num_per_job = int(proc_num_one_node/lmp_job_per_node)
+    if ( lmp_mpi_num_per_job%2 != 0 ):
+      lmp_mpi_num_per_job = lmp_mpi_num_per_job-1
+    environ_dic['lmp_mpi_num_per_job'] = lmp_mpi_num_per_job
 
   return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
 

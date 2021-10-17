@@ -364,11 +364,6 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   '''
 
   proc_num, proc_num_per_node, host, ssh = sysinfo.get_host(work_dir)
-  if ( len(data_op.list_replicate(proc_num_per_node)) != 1 ):
-    host_str = data_op.comb_list_2_str(host, ' ')
-    log_info.log_error('Resource error: the number of cores in %s are not equal, please submit your jobs to nodes with same number of cores' %(host_str))
-    exit()
-
   device, usage = sysinfo.analyze_gpu(host, ssh, work_dir)
 
   max_iter = model_devi_dic['max_iter']
@@ -411,6 +406,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   cuda_dir = environ_dic['cuda_dir']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
   lmp_job_per_node = environ_dic['lmp_job_per_node']
+  lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
+  lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
 
   dp_path = sysinfo.get_dp_path(work_dir)
   lmp_exe, lmp_path = sysinfo.get_lmp_path(work_dir)
@@ -472,7 +469,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       print ('Step 2: lammps tasks', flush=True)
 
       lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, change_init_str, tot_atoms_type_dic)
-      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, proc_num_per_node, host, ssh, device)
+      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
+                           lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
       check_deepff.write_restart_inp(inp_file, i, 2, sum(data_num), work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
@@ -564,8 +562,14 @@ def kernel(work_dir, inp_file):
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
   dump_input(work_dir, inp_file, deepff_key)
 
+  proc_num, proc_num_per_node, host, ssh = sysinfo.get_host(work_dir)
+  if ( len(data_op.list_replicate(proc_num_per_node)) != 1 ):
+    host_str = data_op.comb_list_2_str(host, ' ')
+    log_info.log_error('Resource error: the number of cores in %s are not equal, please submit your jobs to nodes with same number of cores' %(host_str))
+    exit()
+
   deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic = \
-  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic)
+  check_deepff.check_inp(deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num_per_node[0])
 
   train_stress = deepmd_dic['training']['train_stress']
 
