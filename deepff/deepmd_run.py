@@ -11,6 +11,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
+from CP2K_kit.deepff import check_deepff
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
                     descr_seed, fit_seed, tra_seed, neuron, model_type, data_num):
@@ -80,7 +81,9 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
               final_data_dir.append(prev_data_dir)
 
   if ( iter_id > 1 and len(final_data_dir) == 0 ):
-    log_info.log_error('No cp2k data in iteraction %d, please check' %(iter_id-1))
+    print (''.center(80,'*'), flush=True)
+    print ('Cheers! deepff is converged!', flush=True)
+    check_deepff.write_active_data(work_dir, i, tot_atoms_type_dic)
     exit()
 
   start_lr = deepmd_param['learning_rate']['start_lr']
