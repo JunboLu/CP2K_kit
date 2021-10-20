@@ -6,13 +6,14 @@ import json
 import copy
 import subprocess
 import linecache
+import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
-                    descr_seed, fit_seed, tra_seed, neuron, model_type, tot_data_num):
+                    descr_seed, fit_seed, tra_seed, neuron, model_type, data_num):
 
   '''
   gen_deepmd_task: generate deepmd tasks
@@ -38,8 +39,8 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       neuron is the number of nodes in neural network.
     model_type: string
       model_type has two choices: 'use_seed', 'use_node'
-    tot_data_num: int
-      tot_data_num is the total numbers of training data.
+    data_num: 1-d int list
+      data_num is the numbers of training data for each system.
   Returns:
     none
   '''
@@ -61,15 +62,26 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       cmd = "ls | grep %s" % ('sys_')
       sys_num = len(call.call_returns_shell(calc_dir, cmd))
       for j in range(sys_num):
-        cp2k_sys_dir = ''.join((calc_dir, '/sys_', str(j)))
-        cmd = "ls | grep %s" % ('task_')
-        task_num = len(call.call_returns_shell(cp2k_sys_dir, cmd))
-        if ( task_num > numb_test ):
-          prev_data_dir = ''.join((cp2k_sys_dir, '/data'))
-          if ( os.path.exists(prev_data_dir) ):
+        prev_data_dir = ''.join((calc_dir, '/sys_', str(j), '/data'))
+        if ( os.path.exists(prev_data_dir) ):
+          cmd = "ls | grep %s" % ('set.')
+          set_parts = len(call.call_returns_shell(prev_data_dir, cmd))
+          if ( (set_parts-1) >= 10 ):
+            final_set_dir_name = 'set.0'+str(set_parts-1)
+          elif ( (set_parts-1) < 10 ):
+            final_set_dir_name = 'set.00'+str(set_parts-1)
+          elif ( (set_parts-1) > 100 ):
+            final_set_dir_name = 'set.'+str(set_parts-1)
+          ene_npy_file = ''.join((prev_data_dir, '/', final_set_dir_name, '/energy.npy'))
+          final_set_data_num = len(np.load(ene_npy_file))
+          if ( final_set_data_num > numb_test ):
             data_dir.append(prev_data_dir)
             if ( i == iter_id-1 ):
               final_data_dir.append(prev_data_dir)
+
+  if ( iter_id > 1 and len(final_data_dir) == 0 ):
+    log_info.log_error('No cp2k data in iteraction %d, please check' %(iter_id-1))
+    exit()
 
   start_lr = deepmd_param['learning_rate']['start_lr']
   batch_size = deepmd_param['training']['batch_size']
@@ -77,8 +89,8 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   use_prev_model = deepmd_param['training']['use_prev_model']
   if not fix_stop_batch:
     epoch_num = deepmd_param['training']['epoch_num']
-    stop_batch = math.ceil(epoch_num*int(tot_data_num/batch_size)/10000)*10000
-    decay_steps = math.ceil(int(tot_data_num/batch_size)/1000)*1000
+    stop_batch = math.ceil(epoch_num*int(sum(data_num)/batch_size)/10000)*10000
+    decay_steps = math.ceil(int(sum(data_num)/batch_size)/1000)*1000
     if ( stop_batch < decay_steps*200 ):
       stop_batch = decay_steps*200
     deepmd_param['learning_rate']['decay_steps'] = decay_steps
@@ -103,10 +115,15 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
   deepmd_param['training'].pop('fix_stop_batch')
 
   if ( iter_id > 0 and use_prev_model ):
+    data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
+    prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/iter_id)
+    prob_data_num_2 = 1.0-prob_data_num_1
     deepmd_param['learning_rate']['start_lr'] = start_lr/10
     deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
-    prob_sys_1 = '0:%d:0.2' %(len(data_dir)-len(final_data_dir))
-    prob_sys_2 = '%d:%d:0.8' %(len(data_dir)-len(final_data_dir), len(data_dir))
+    prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
+    prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)
+    #prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), 0.2)
+    #prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), 0.8)
     auto_prob_style = data_op.comb_list_2_str(['prob_sys_size', prob_sys_1, prob_sys_2], ';')
     deepmd_param['training']['auto_prob_style'] = auto_prob_style
 

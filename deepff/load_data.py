@@ -595,7 +595,9 @@ def raw_data_to_set(parts, shuffle_data, data_dir, energy_array, coord_array, fr
       virial_array_i = virial_array[index_parts[i]].astype(np.float32)
       np.save(''.join((data_dir, '/', sub_dir_name, '/virial.npy')), virial_array_i)
 
-  return train_data_num
+  test_data_num = len(index_parts[len(index_parts)-1])
+
+  return train_data_num, test_data_num
 
 if __name__ == '__main__':
   from CP2K_kit.deepff import load_data

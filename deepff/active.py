@@ -175,8 +175,8 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
         load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
                                      train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
-        init_data_num_part = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, \
-                                                       coord_array, frc_array, box_array, virial_array)
+        init_data_num_part, init_test_data_num_part = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, \
+                                                                                      coord_array, frc_array, box_array, virial_array)
       init_data_num = init_data_num+init_data_num_part
       i = i+1
 
@@ -295,7 +295,7 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     cell_file.close()
 
     energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(sys_dir)
-    load_data.raw_data_to_set(1, False, sys_dir, energy_array, coord_array, frc_array, cell_array, virial_array)
+    train_data_num, test_data_num = load_data.raw_data_to_set(1, False, sys_dir, energy_array, coord_array, frc_array, cell_array, virial_array)
 
     atoms = []
     type_raw = open(''.join((sys_dir, '/type.raw')), 'rb').read().split()
@@ -370,9 +370,9 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   restart_iter = model_devi_dic['restart_iter']
 
   if ( restart_iter == 0 ):
-    restart_data_num = init_data_num
+    data_num = [init_data_num]
   else:
-    restart_data_num = model_devi_dic['restart_data_num']
+    data_num = model_devi_dic['data_num']
   restart_stage = model_devi_dic['restart_stage']
 
   cmd = "ls | grep %s" %("'iter_'")
@@ -413,9 +413,6 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   lmp_exe, lmp_path = sysinfo.get_lmp_path(work_dir)
   mpi_path = sysinfo.get_mpi_path(work_dir)
 
-  data_num = []
-  data_num.append(restart_data_num)
-
   #np.random.seed(1234567890)
 
   for i in range(restart_iter, max_iter, 1):
@@ -432,7 +429,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
 
     if ( restart_stage == 0 ):
       #Perform deepmd calculation
-      check_deepff.write_restart_inp(inp_file, i, 0, sum(data_num), work_dir)
+      check_deepff.write_restart_inp(inp_file, i, 0, data_num, work_dir)
       print ('Step 1: deepmd-kit tasks', flush=True)
 
       #For different model_type, seed and neuron are different.
@@ -460,9 +457,9 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
           tra_seed.append(np.random.randint(10000000000))
 
       deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                                 descr_seed, fit_seed, tra_seed, neuron, model_type, sum(data_num))
+                                 descr_seed, fit_seed, tra_seed, neuron, model_type, data_num)
       deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir)
-      check_deepff.write_restart_inp(inp_file, i, 1, sum(data_num), work_dir)
+      check_deepff.write_restart_inp(inp_file, i, 1, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 ):
       #Perform lammps calculations
@@ -471,7 +468,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       lammps_run.gen_lmpmd_task(lammps_dic, work_dir, i, change_init_str, tot_atoms_type_dic)
       lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
                            lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
-      check_deepff.write_restart_inp(inp_file, i, 2, sum(data_num), work_dir)
+      check_deepff.write_restart_inp(inp_file, i, 2, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
       #Perform lammps force calculations
@@ -481,7 +478,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       lammps_run.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_multi_sys)
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, lmp_exe, mpi_path, parallel_exe, \
                             proc_num_per_node, host, ssh, atoms_num_tot)
-      check_deepff.write_restart_inp(inp_file, i, 3, sum(data_num), work_dir)
+      check_deepff.write_restart_inp(inp_file, i, 3, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
       #Get force-force correlation and then choose new structures
@@ -528,18 +525,19 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
         cp2k_data_dir = ''.join((file_dir, '/data'))
         if ( os.path.exists(cp2k_data_dir) ):
           energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(cp2k_data_dir)
-          train_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, \
-                                                     coord_array, frc_array, box_array, virial_array)
-          if ( train_data_num > numb_test ):
+          train_data_num, test_data_num = load_data.raw_data_to_set(1, shuffle_data, cp2k_data_dir, energy_array, \
+                                                                    coord_array, frc_array, box_array, virial_array)
+          if ( test_data_num > numb_test ):
             data_num.append(train_data_num)
-          if ( train_data_num < numb_test and success_ratio < float(train_data_num*model_devi_freq/nsteps)):
+          model_devi_steps = int(nsteps/model_devi_freq)+1
+          if ( test_data_num < numb_test and success_ratio < float((model_devi_steps-train_data_num)/model_devi_steps) ):
             log_info.log_error('Warning: little selected structures, check the deepmd training.')
             exit()
 
       print ('  Success: dump new raw data of cp2k', flush=True)
       restart_stage = 0
 
-    check_deepff.write_restart_inp(inp_file, i+1, 3, sum(data_num), work_dir)
+    check_deepff.write_restart_inp(inp_file, i+1, 0, data_num, work_dir)
 
     if ( i == max_iter-1 ):
       log_info.log_error('Active learning does not converge')

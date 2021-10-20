@@ -713,15 +713,15 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
   else:
     model_devi_dic['restart_iter'] = 0
 
-  if ( 'restart_data_num' in model_devi_dic.keys() ):
-    restart_data_num = model_devi_dic['restart_data_num']
-    if ( data_op.eval_str(restart_data_num) == 1 ):
-      model_devi_dic['restart_data_num'] = int(restart_data_num)
+  if ( 'data_num' in model_devi_dic.keys() ):
+    data_num = model_devi_dic['data_num']
+    if ( all(data_op.eval_str(i) == 1 for i in data_num) ):
+      model_devi_dic['data_num'] = [int(i) for i in data_num]
     else:
-      log_info.log_error('Input error: restart_data_num should be integer, please check or reset deepff/model_devi/restart_data_num')
+      log_info.log_error('Input error: data_num should be integer list, please check or reset deepff/model_devi/data_num')
       exit()
   else:
-    model_devi_dic['restart_data_num'] = 0
+    model_devi_dic['data_num'] = [0]
 
   if ( 'restart_stage' in model_devi_dic.keys() ):
     restart_stage = model_devi_dic['restart_stage']
@@ -982,14 +982,14 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       log_info.log_error('Input error: lmp_mpi_num_per_job should be integer, please check or reset deepff/environ/lmp_mpi_num_per_job')
       exit()
   else:
-    lmp_mpi_num_per_job = int(proc_num_one_node/lmp_job_per_node)
+    lmp_mpi_num_per_job = int(proc_num_one_node/environ_dic['lmp_job_per_node'])
     if ( lmp_mpi_num_per_job%2 != 0 ):
       lmp_mpi_num_per_job = lmp_mpi_num_per_job-1
     environ_dic['lmp_mpi_num_per_job'] = lmp_mpi_num_per_job
 
   return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
 
-def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, work_dir):
+def write_restart_inp(inp_file_name, restart_iter, restart_stage, data_num, work_dir):
 
   '''
   check_inp: write restart input file for deepff
@@ -1001,8 +1001,8 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
       restart_iter is the iteration number of restart.
     restart_stage: int
       restart_stage is the stage of restart.
-    tot_data_num: int
-      tot_data_num is the total data number.
+    data_num: 1-d int list
+      tot_data_num is the data number for each system.
     work_dir: string
       work_dir is working directory of CP2K_kit.
   Returns:
@@ -1029,6 +1029,7 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
   line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)
   line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)
   line_6_num = file_tools.grep_line_num("'&end model_devi'", inp_tmp_file_name, work_dir)[0]
+  data_num_str = data_op.comb_list_2_str(data_num, ' ')
 
   restart_inp_file = open(restart_inp_file_name, 'w')
   for i in range(line_1_num):
@@ -1041,7 +1042,7 @@ def write_restart_inp(inp_file_name, restart_iter, restart_stage, tot_data_num, 
       restart_inp_file.write(line_i)
 
   restart_inp_file.write('    restart_iter %d\n' %(restart_iter))
-  restart_inp_file.write('    restart_data_num %d\n' %(tot_data_num))
+  restart_inp_file.write('    data_num %s\n' %(data_num_str))
   restart_inp_file.write('    restart_stage %d\n' %(restart_stage))
 
   for i in range(line_6_num, whole_line_num+1, 1):

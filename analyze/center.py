@@ -85,7 +85,7 @@ def center(atoms_num, pre_base_block, end_base_block, pre_base, frames_num, a_ve
     atoms = []
     atoms_mass = []
     for j in range(atoms_num):
-      line_ij = linecache.getline(traj_coord_file, i*(pre_base_block+atoms_num+end_base_block)+j+1+pre_base_block+base+pre_base)
+      line_ij = linecache.getline(traj_coord_file, i*(pre_base_block+atoms_num+end_base_block)+j+1+pre_base_block+pre_base)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       atoms.append(line_ij_split[0])
       atoms_mass.append(atom.get_atom_mass(line_ij_split[0])[1])

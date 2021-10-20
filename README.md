@@ -56,4 +56,3 @@ Email: lujunbo15@gmail.com
   The input files are in example directory.  
   Users just need to run:  
   CP2K_kit input.inp  
-  !Caution: Sometimes there is an error of libgomp, please set "ulimit -u 65535"  
