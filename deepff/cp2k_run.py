@@ -282,7 +282,8 @@ def gen_cp2kfrc_file(cp2k_param, work_dir, iter_id, sys_id, coord, box, train_st
     call.call_simple_shell(cp2k_task_dir, 'rm %s' %(std_inp_file_name_abs))
 
 def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_tot, struct_index, \
-                  conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio):
+                  conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio, \
+                  success_ratio_conv, success_devi_ratio):
 
   '''
   gen_cp2k_task: generate cp2k tasks based on choosed structure index
@@ -309,6 +310,12 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_t
       choose_new_data_num_limit is the maximum number of choosed new structures.
     train_stress: bool
       train_stress is whether we need to get stress tensor
+    success_ratio: float
+      success_ratio is the successful ratio for whole systems.
+    success_ratio_conv: float
+      success_ratio_conv is the converge value of successful ratio.
+    success_devi_ratio: float
+      success_devi_conv is the deviation successful ratio for whole systems.
   Returns:
     none
   '''
@@ -334,7 +341,8 @@ def gen_cp2k_task(cp2k_dic, work_dir, iter_id, atoms_type_multi_sys, atoms_num_t
     choosed_index_num = []
     for i in range(task_num):
       choosed_index = struct_index[key][i]
-      if ( len(choosed_index) < conv_new_data_num and success_ratio >= 0.96 ):
+      if ( len(choosed_index) < conv_new_data_num and success_ratio >= success_ratio_conv and \
+           (success_ratio+success_devi_ratio) >= 0.999 ):
         pass
       else:
         choosed_index_num.append(len(choosed_index))

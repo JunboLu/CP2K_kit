@@ -399,6 +399,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   conv_new_data_num = int(nsteps/model_devi_freq*0.04)
   choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
   force_conv = model_devi_dic['force_conv']
+  model_devi_steps = int(nsteps/model_devi_freq)+1
+  success_ratio_conv = min(float(model_devi_steps-numb_test)/float(model_devi_steps), 0.96)
 
   cp2k_exe = environ_dic['cp2k_exe']
   cp2k_env_file = environ_dic['cp2k_env_file']
@@ -494,7 +496,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       print ('  The accurate deviation ratio for whole %d systems in iteration %d is %.2f%%' \
              %(sys_num, i, success_devi_ratio*100), flush=True)
 
-      if ( min(success_ratio_sys) >= 0.96 and success_ratio+success_devi_ratio >= 0.999 ):
+      if ( min(success_ratio_sys) >= success_ratio_conv and success_ratio+success_devi_ratio >= 0.999 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
@@ -514,7 +516,8 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
       print ('Step 3: cp2k tasks', flush=True)
       #Perform cp2k calculation
       cp2k_run.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, struct_index, \
-                             conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio)
+                             conv_new_data_num, choose_new_data_num_limit, train_stress, success_ratio, \
+                             success_ratio_conv, success_devi_ratio)
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
                            cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
 

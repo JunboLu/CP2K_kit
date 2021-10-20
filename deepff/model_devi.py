@@ -27,6 +27,12 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
       example: {0:{0:[2,4,6...], 1:[2,3,4...]}, 1:{0:[3,4,6...], 1:[5,6,7...]}}
                  !                !                    !
                sys_id          task_id              traj_id
+    success_ratio_sys: 1-d float list
+      success_ratio is the successful ratio for different systems.
+    success_ratio: float
+      success_ratio is the successful ratio for whole systems.
+    success_devi_ratio: float
+      success_devi_conv is the deviation successful ratio for whole systems.
   '''
 
   struct_index = OrderedDict()
