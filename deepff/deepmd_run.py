@@ -121,7 +121,10 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
     data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
     prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/iter_id)
     prob_data_num_2 = 1.0-prob_data_num_1
-    deepmd_param['learning_rate']['start_lr'] = start_lr/10
+    if ( 2.0**iter_id > 100.0 ):
+      deepmd_param['learning_rate']['start_lr'] = start_lr/(100.0)
+    else:
+      deepmd_param['learning_rate']['start_lr'] = start_lr/(2.0**iter_id)
     deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
     prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
     prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)

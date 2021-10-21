@@ -3,12 +3,14 @@
 import os
 import linecache
 import multiprocessing
+import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
+from CP2K_kit.deepff import load_data
 
 def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num_one_node):
 
@@ -1073,8 +1075,9 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
 
   active_data_dir = ''.join((work_dir, '/active_data'))
 
-  cmd = "mkdir %s" %('active_data')
-  call.call_simple_shell(work_dir, cmd)
+  if ( not os.path.exists(active_data_dir) ):
+    cmd = "mkdir %s" %('active_data')
+    call.call_simple_shell(work_dir, cmd)
   cmd = "ls | grep %s" % ('sys_')
   sys_num = len(call.call_returns_shell(''.join((work_dir, '/iter_0/02.lammps_calc')), cmd))
 
@@ -1087,8 +1090,9 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     frc_z_cp2k = []
 
     sys_dir = ''.join((active_data_dir, '/sys_', str(i)))
-    cmd = "mkdir %s" %(''.join(('sys_', str(i))))
-    call.call_simple_shell(active_data_dir, cmd)
+    if ( not os.path.exists(sys_dir) ):
+      cmd = "mkdir %s" %(''.join(('sys_', str(i))))
+      call.call_simple_shell(active_data_dir, cmd)
     energy_file_name = ''.join((sys_dir, '/energy.raw'))
     coord_file_name = ''.join((sys_dir, '/coord.raw'))
     frc_file_name = ''.join((sys_dir, '/force.raw'))

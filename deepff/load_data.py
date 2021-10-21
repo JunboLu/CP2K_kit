@@ -38,8 +38,10 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
   task_num = len(call.call_returns_shell(file_dir, cmd))
 
   if ( task_num != 0 ):
-    cmd = "mkdir %s" % ('data')
-    call.call_simple_shell(file_dir, cmd)
+    data_dir = ''.join((file_dir, '/data'))
+    if ( not os.path.exists(data_dir) ):
+      cmd = "mkdir %s" % ('data')
+      call.call_simple_shell(file_dir, cmd)
     save_dir = ''.join((file_dir, '/data'))
     type_file = open(''.join((save_dir, '/type.raw')), 'w')
     box_file = open(''.join((save_dir, '/box.raw')), 'w')
@@ -577,8 +579,10 @@ def raw_data_to_set(parts, shuffle_data, data_dir, energy_array, coord_array, fr
     elif ( i > 100 ):
       sub_dir_name = 'set.'+str(i)
 
-    cmd = "mkdir %s" % (sub_dir_name)
-    call.call_simple_shell(data_dir, cmd)
+    sub_dir = ''.join((data_dir, '/', sub_dir_name))
+    if ( not os.path.exists(sub_dir) ):
+      cmd = "mkdir %s" % (sub_dir_name)
+      call.call_simple_shell(data_dir, cmd)
 
     energy_array_i = energy_array[index_parts[i]].astype(np.float32)
     coord_array_i = coord_array[index_parts[i]].astype(np.float32)

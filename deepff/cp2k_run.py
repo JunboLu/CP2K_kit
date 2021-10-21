@@ -527,11 +527,11 @@ done
 ''' %(task_job_str, mpi_num_str, cp2k_sys_dir, parallel_exe)
         if ssh:
           run_2 = '''
-for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s --sshdelay 0.1 $direc/produce.sh {} $direc
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d -S %s --controlmaster --sshdelay 0.2 $direc/produce.sh {} $direc
 ''' %( cp2k_job_per_node, host_info)
         else:
           run_2 = '''
-for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d $direc/produce.sh {} $direc
+for i in "${task_job_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d --delay 0.2 $direc/produce.sh {} $direc
 ''' %( cp2k_job_per_node)
 
         produce = '''

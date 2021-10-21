@@ -1,4 +1,0 @@
-We provide three input files for co2 molecule:
-(1) input_use_node_init.inp: We use different number of neurons for different models.
-(2) input_use_seed_init.inp: We use different initial values in different models.
-
