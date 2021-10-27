@@ -165,18 +165,27 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
           final_energy_npy_file = ''.join((final_set_dir_abs, '/energy.npy'))
           init_data_num_part = choosed_num-len(np.load(final_energy_npy_file))
       else:
-        traj_coord_file = train_dic[key]['traj_coord_file']
-        traj_frc_file = train_dic[key]['traj_frc_file']
-        traj_cell_file = train_dic[key]['traj_cell_file']
-        traj_stress_file = train_dic[key]['traj_stress_file']
+        traj_type = train_dic[key]['traj_type']
         start = train_dic[key]['start_frame']
         end = train_dic[key]['end_frame']
         parts = train_dic[key]['set_parts']
-        load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
-                                     train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
+        if ( traj_type == 'md' ):
+          traj_coord_file = train_dic[key]['traj_coord_file']
+          traj_frc_file = train_dic[key]['traj_frc_file']
+          traj_cell_file = train_dic[key]['traj_cell_file']
+          traj_stress_file = train_dic[key]['traj_stress_file']
+          load_data.load_data_from_dir(traj_coord_file, traj_frc_file, traj_cell_file, traj_stress_file, \
+                                       train_stress, work_dir, save_dir, start, end, choosed_num, tot_atoms_type_dic)
+        elif ( traj_type == 'mtd' ):
+          data_dir = train_dic[key]['data_dir']
+          task_dir_prefix = train_dic[key]['task_dir_prefix']
+          proj_name = train_dic[key]['proj_name']
+          out_file_name = train_dic[key]['out_file_name']
+          load_data.load_data_from_sepfile(data_dir, task_dir_prefix, proj_name, tot_atoms_type_dic, \
+                                           save_dir, start, end, choosed_num, out_file_name)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         init_data_num_part, init_test_data_num_part = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, \
-                                                                                      coord_array, frc_array, box_array, virial_array)
+                                                                                coord_array, frc_array, box_array, virial_array)
       init_data_num = init_data_num+init_data_num_part
       i = i+1
 
@@ -247,6 +256,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
   shuffle_data = deepmd_dic['training']['shuffle_data']
   train_stress = deepmd_dic['training']['train_stress']
   use_prev_model = deepmd_dic['training']['use_prev_model']
+  lr_scale = deepmd_dic['training']['lr_scale']
 
   nsteps = int(lammps_dic['nsteps'])
   change_init_str = lammps_dic['change_init_str']
@@ -314,7 +324,7 @@ def run_iter(inp_file, deepmd_dic, lammps_dic, cp2k_dic, model_devi_dic, environ
           tra_seed.append(np.random.randint(10000000000))
 
       deepmd_run.gen_deepmd_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                                 descr_seed, fit_seed, tra_seed, neuron, model_type, data_num)
+                                 descr_seed, fit_seed, tra_seed, neuron, model_type, data_num, lr_scale)
       deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir)
       check_deepff.write_restart_inp(inp_file, i, 1, data_num, work_dir)
 

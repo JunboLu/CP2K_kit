@@ -676,9 +676,10 @@ def lmpmd_single(lmp_dir, sys_index, task_index, lmp_exe, lmp_path, mpi_path, \
   file_label = 0
   while True:
     log_file_name = ''.join(('lammps', str(file_label), '.out'))
+    log_file_name_abs = ''.join((lmp_sys_task_dir, '/', log_file_name))
     dump_file_name = ''.join(('atom', str(file_label), '.dump'))
     dump_file_name_abs = ''.join((lmp_sys_task_dir, '/', dump_file_name))
-    if ( os.path.exists(log_file_name) and os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
+    if ( os.path.exists(log_file_name_abs) and os.path.exists(dump_file_name_abs) and os.path.getsize(dump_file_name_abs) != 0 ):
       file_label = file_label+1
     else:
       break

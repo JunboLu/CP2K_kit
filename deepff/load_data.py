@@ -16,7 +16,8 @@ from CP2K_kit.tools import file_tools
 hartree_to_ev = 2.72113838565563E+01
 ang_to_bohr = 1.0/5.29177208590000E-01
 
-def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic):
+def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic, \
+                           save_dir='none', start=0, end=0, choosed_num=0, out_file_name='cp2k.out'):
 
   '''
   load_data_from_sepfile: load training data from separate files.
@@ -30,6 +31,16 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
       proj_name is the cp2k project name.
     tot_atoms_type_dic: dictionary
       tot_atoms_type_dic is the atoms type dictionary.
+    save_dir: string
+      save_dir is the directory where data will be saved.
+    start: int
+      start is the starting id of trajectory.
+    end: int
+      end is the endding id of trajectory.
+    choosed_num: int
+      choosed_num is the number of choosed frames.
+    out_file_name: string
+      out_file_name is the name of cp2k output file.
   Returns:
     none
   '''
@@ -38,11 +49,31 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
   task_num = len(call.call_returns_shell(file_dir, cmd))
 
   if ( task_num != 0 ):
-    data_dir = ''.join((file_dir, '/data'))
-    if ( not os.path.exists(data_dir) ):
-      cmd = "mkdir %s" % ('data')
-      call.call_simple_shell(file_dir, cmd)
-    save_dir = ''.join((file_dir, '/data'))
+    if ( save_dir == 'none' ):
+      data_dir = ''.join((file_dir, '/data'))
+      if ( not os.path.exists(data_dir) ):
+        cmd = "mkdir %s" % ('data')
+        call.call_simple_shell(file_dir, cmd)
+      save_dir = ''.join((file_dir, '/data'))
+    if ( start == 0 and end == 0 and choosed_num == 0 ):
+      start = 0
+      end = task_num-1
+      choosed_num = task_num
+    if ( start < 0 ):
+      log_info.log_error('Input error: start is less than the starting frame id in trajectory, please check or reset deepff/deepmd/training/system/start')
+      exit()
+    if ( end > task_num-1 ):
+      log_info.log_error('Input error: end is larger than the endding frame id in trajectory, please check or reset deepff/deepmd/training/system/end')
+      exit()
+    if ( choosed_num > task_num ):
+      log_info.log_error('Input error: choosed_frame_num is larger than the number of frames in trajectory, please check!')
+      exit()
+    else:
+      total_index = data_op.gen_list(start, end, 1)
+      total_index_array = np.array(total_index)
+      np.random.shuffle(total_index_array)
+      choosed_index = list(total_index_array[0:choosed_num])
+
     type_file = open(''.join((save_dir, '/type.raw')), 'w')
     box_file = open(''.join((save_dir, '/box.raw')), 'w')
     frc_file = open(''.join((save_dir, '/force.raw')), 'w')
@@ -69,12 +100,12 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
 
     type_file.close()
 
-    for i in range(task_num):
+    for i in sorted(choosed_index):
 
       task_dir_i = ''.join((file_dir, '/', file_prefix, str(i)))
       box_file_i = ''.join((task_dir_i, '/box'))
       coord_file_i = ''.join((task_dir_i, '/coord'))
-      out_file_i = ''.join((task_dir_i, '/cp2k.out'))
+      out_file_i = ''.join((task_dir_i, '/', out_file_name))
       frc_file_i = ''.join((task_dir_i, '/', proj_name, '-1_0.xyz'))
       stress_file_i = ''.join((task_dir_i, '/', proj_name, '-1_0.stress_tensor'))
 
@@ -108,7 +139,7 @@ def load_data_from_sepfile(file_dir, file_prefix, proj_name, tot_atoms_type_dic)
           box_file.write(frame_str)
 
           #Dump energy information
-          cmd = "grep %s %s" % ("'ENERGY| Total FORCE_EVAL'", 'cp2k.out')
+          cmd = "grep %s %s" % ("'ENERGY| Total FORCE_EVAL'", out_file_name)
           energy_parse = call.call_returns_shell(task_dir_i, cmd)
           energy = float(energy_parse[0].split(':')[1].strip('\n'))
           energy_ev = energy*hartree_to_ev
@@ -238,9 +269,9 @@ def load_data_from_dir(traj_coord_file_name, traj_frc_file_name, traj_cell_file_
       exit()
     else:
       total_index_array = np.array(total_index)
-      if ( choosed_num < max_choosed_num ):
-        np.random.shuffle(total_index_array)
+      np.random.shuffle(total_index_array)
       choosed_index = list(total_index_array[0:choosed_num])
+      choosed_index = sorted(choosed_index)
 
   #Dump box information
   box_file = open(''.join((save_dir, '/box.raw')),'w')

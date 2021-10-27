@@ -14,7 +14,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.deepff import check_deepff
 
 def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
-                    descr_seed, fit_seed, tra_seed, neuron, model_type, data_num):
+                    descr_seed, fit_seed, tra_seed, neuron, model_type, data_num, lr_scale):
 
   '''
   gen_deepmd_task: generate deepmd tasks
@@ -42,6 +42,8 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
       model_type has two choices: 'use_seed', 'use_node'
     data_num: 1-d int list
       data_num is the numbers of training data for each system.
+    lr_scale: float
+      lr_scale is the scaling factor of starting learning rate.
   Returns:
     none
   '''
@@ -121,10 +123,10 @@ def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
     data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
     prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/iter_id)
     prob_data_num_2 = 1.0-prob_data_num_1
-    if ( 2.0**iter_id > 100.0 ):
+    if ( lr_scale**iter_id > 100.0 ):
       deepmd_param['learning_rate']['start_lr'] = start_lr/(100.0)
     else:
-      deepmd_param['learning_rate']['start_lr'] = start_lr/(2.0**iter_id)
+      deepmd_param['learning_rate']['start_lr'] = start_lr/(lr_scale**iter_id)
     deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
     prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
     prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)
