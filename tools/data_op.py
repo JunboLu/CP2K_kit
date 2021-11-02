@@ -3,6 +3,7 @@
 import re
 import copy
 import numpy as np
+from CP2K_kit.tools import atom
 
 #This module defines several operation functions to list, integer, dictionary and string.
 #These functions are heavilly used.
@@ -269,6 +270,28 @@ def add_2d_list(list_tmp):
     new_list.append(sum_value)
 
   return new_list
+
+def reorder_atom_list(atom_list):
+
+  '''
+  reorder_atoms_list: reorder the atoms list
+
+  Args:
+    atom_list: 1-d string list
+      atom_list is the list containing the name of atoms.
+  Return:
+    ordered_atom_list: 1-d string list
+      ordered_atom_list is the list containing the name of ordered atoms.
+  '''
+
+  atom_num = []
+  for i in range(len(atom_list)):
+    atom_num.append(atom.get_atom_mass(atom_list[i])[0])
+
+  atom_num_asc, asc_index = get_list_order(atom_num, 'ascend', True)
+  ordered_atom_list = reorder_list(atom_list, asc_index)
+
+  return ordered_atom_list
 
 #Functions for string
 def str_2_list(str_tmp):

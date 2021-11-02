@@ -12,53 +12,34 @@ from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
 from CP2K_kit.deepff import load_data
 
-def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_num_one_node):
+def check_deepmd_model(deepmd_dic):
 
   '''
-  check_inp: check the deepff input file
+  check_deepmd_model: check the input file in the deepmd_model subsection
 
   Args:
     deepmd_dic: dictionary
       deepmd_dic contains keywords used in deepmd.
-    lammps_dic: dictionary
-      lammpd_dic contains keywords used in lammps.
-    cp2k_dic: dictionary
-      cp2k_dic contains keywords used in cp2k.
-    model_devi_dic: dictionary
-      model_devi_dic contains keywords used in model_devi.
-    environ_dic: dictionary
-      environ_dic contains keywords used in environment.
-    proc_num_one_node: int
-      proc_num_one_node is the number of processors for one node.
   Returns:
     deepmd_dic: dictionary
       deepmd_dic is the revised deepmd_dic.
-    lmp_dic: dictionary
-      lmp_dic is the revised lmp_dic.
-    cp2k_dic: dictionary
-      cp2k_dic is the revised cp2k_dic.
-    model_devi_dic: dictionary
-      model_devi_dic is the revised model_devi_dic.
-    environ_dic: dictionary
-      environ_dic is the revised environ_dic.
   '''
 
-  #Check parameters for deepmd-kit
   if ( 'model' not in deepmd_dic.keys() ):
-    log_info.log_error('Input error: no model, please set deepff/deepmd/model')
+    log_info.log_error('Input error: no model, please set deepff/deepmd_model/model')
     exit()
   else:
     if ( 'type_map' in deepmd_dic['model'].keys() ):
       if ( all(data_op.eval_str(i) == 0 for i in deepmd_dic['model']['type_map']) ):
         pass
       else:
-        log_info.log_error('Input error: type_map should be string, please check or reset deepff/deepmd/model/type_map')
+        log_info.log_error('Input error: type_map should be string, please check or reset deepff/deepmd_model/model/type_map')
         exit()
     else:
-      log_info.log_error('Input error: no type_map, please set deepff/deepmd/model/type_map')
+      log_info.log_error('Input error: no type_map, please set deepff/deepmd_model/model/type_map')
       exit()
     if ( 'descriptor' not in deepmd_dic['model'].keys() ):
-      log_info.log_error('Input error: no descriptor, please set deepff/deepmd/model/descriptor')
+      log_info.log_error('Input error: no descriptor, please set deepff/deepmd_model/model/descriptor')
       exit()
     else:
       valid_type = ['se_a', 'se_r', 'se_ar']
@@ -67,7 +48,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( descr_type in valid_type ):
           pass
         else:
-          log_info.log_error('Input error: %s is not supported for deepff/deepmd/model/descriptor/type')
+          log_info.log_error('Input error: %s is not supported for deepff/deepmd_model/model/descriptor/type')
           exit()
 
       if ( 'sel' in deepmd_dic['model']['descriptor'].keys() ):
@@ -75,10 +56,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( all(data_op.eval_str(i) == 1 for i in sel) ):
           deepmd_dic['model']['descriptor']['sel'] = [int(x) for x in sel]
         else:
-          log_info.log_error('Input error: sel shoule be list of integer, please check or reset deepff/deepmd/model/descriptor/sel')
+          log_info.log_error('Input error: sel shoule be list of integer, please check or reset deepff/deepmd_model/model/descriptor/sel')
           exit()
       else:
-        log_info.log_error('Input error: no sel, please set deepff/deepmd/model/descriptor/sel')
+        log_info.log_error('Input error: no sel, please set deepff/deepmd_model/model/descriptor/sel')
         exit()
 
       if ( 'rcut_smth' in deepmd_dic['model']['descriptor'].keys() ):
@@ -86,7 +67,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(rcut_smth) == 1 or data_op.eval_str(rcut_smth) == 2 ):
           deepmd_dic['model']['descriptor']['rcut_smth'] = float(rcut_smth)
         else:
-          log_info.log_error('Input error: rcut_smth shoule be float, please check or reset deepff/deepmd/model/descriptor/rcut_smth')
+          log_info.log_error('Input error: rcut_smth shoule be float, please check or reset deepff/deepmd_model/model/descriptor/rcut_smth')
           exit()
       else:
         deepmd_dic['model']['descriptor']['rcut_smth'] = 5.0
@@ -96,7 +77,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(rcut) == 1 or data_op.eval_str(rcut) == 2 ):
           deepmd_dic['model']['descriptor']['rcut'] = float(rcut)
         else:
-          log_info.log_error('Input error: rcut should be float, please check or reset deepff/deepmd/model/descriptor/rcut')
+          log_info.log_error('Input error: rcut should be float, please check or reset deepff/deepmd_model/model/descriptor/rcut')
           exit()
       else:
         deepmd_dic['model']['descriptor']['rcut'] = 6.0
@@ -106,7 +87,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( all(data_op.eval_str(i) == 1 for i in neuron_encode) ):
           deepmd_dic['model']['descriptor']['neuron'] = [int(x) for x in neuron_encode]
         else:
-          log_info.log_error('Input error: neuron error, please check deepff/deepmd/model/descriptor/neuron')
+          log_info.log_error('Input error: neuron error, please check deepff/deepmd_model/model/descriptor/neuron')
           exit()
       else:
         deepmd_dic['model']['descriptor']['neuron'] = [25, 50, 100]
@@ -118,7 +99,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(axis_neuron) == 1 ):
           deepmd_dic['model']['descriptor']['axis_neuron'] = int(axis_neuron)
         else:
-          log_info.log_error('Input error: axis_neuron should be list of integer, please check deepff/deepmd/model/descriptor/axis_neuron')
+          log_info.log_error('Input error: axis_neuron should be list of integer, please check deepff/deepmd_model/model/descriptor/axis_neuron')
           exit()
       else:
         deepmd_dic['model']['descriptor']['axis_neuron'] = 16
@@ -127,7 +108,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
     deepmd_dic['model']['fitting_net']['resnet_dt'] = True
 
   if ( 'learning_rate' not in deepmd_dic.keys() ):
-    log_info.log_error('Input error: no learning_rate, please set deepff/deepmd/learning_rate')
+    log_info.log_error('Input error: no learning_rate, please set deepff/deepmd_model/learning_rate')
     exit()
   else:
     if ( 'type' in deepmd_dic['learning_rate'].keys() ):
@@ -135,7 +116,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(decay_type) == 0 ):
         pass
       else:
-        log_info.log_error('Input error: type in learning_rate should be string, please check or reset deepff/deepmd/learning_rate/type')
+        log_info.log_error('Input error: type in learning_rate should be string, please check or reset deepff/deepmd_model/learning_rate/type')
         exit()
     else:
       deepmd_dic['learning_rate']['type'] = 'exp'
@@ -145,7 +126,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(start_lr) == 2 ):
         deepmd_dic['learning_rate']['start_lr'] = float(start_lr)
       else:
-        log_info.log_error('Input error: start_lr should be float, please check deepff/deepmd/learning_rate/start_lr')
+        log_info.log_error('Input error: start_lr should be float, please check deepff/deepmd_model/learning_rate/start_lr')
         exit()
     else:
       deepmd_dic['learning_rate']['start_lr'] = 0.001
@@ -155,13 +136,13 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(stop_lr) == 2 ):
         deepmd_dic['learning_rate']['stop_lr'] = float(stop_lr)
       else:
-        log_info.log_error('Input error: stop_lr should be float, please check deepff/deepmd/learning_rate/stop_lr')
+        log_info.log_error('Input error: stop_lr should be float, please check deepff/deepmd_model/learning_rate/stop_lr')
         exit()
     else:
       deepmd_dic['learning_rate']['stop_lr'] = 1e-8
 
   if ( 'loss' not in deepmd_dic.keys() ):
-    log_info.log_error('Input error: no loss, please check or set deepff/deepmd/loss')
+    log_info.log_error('Input error: no loss, please check or set deepff/deepmd_model/loss')
     exit()
   else:
     if ( 'start_pref_e' in deepmd_dic['loss'].keys() ):
@@ -169,7 +150,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(start_pref_e) == 1 or data_op.eval_str(start_pref_e) == 2 ):
         deepmd_dic['loss']['start_pref_e'] = float(start_pref_e)
       else:
-        log_info.log_error('Input error: start_pref_e should be float, please check deepff/deepmd/loss/start_pref_e')
+        log_info.log_error('Input error: start_pref_e should be float, please check deepff/deepmd_model/loss/start_pref_e')
         exit()
     else:
       deepmd_dic['loss']['start_pref_e'] = 0.02
@@ -179,7 +160,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(limit_pref_e) == 1 or data_op.eval_str(limit_pref_e) == 2 ):
         deepmd_dic['loss']['limit_pref_e'] = float(limit_pref_e)
       else:
-        log_info.log_error('Input error: limit_pref_e should be float, please check deepff/deepmd/loss/limit_pref_e')
+        log_info.log_error('Input error: limit_pref_e should be float, please check deepff/deepmd_model/loss/limit_pref_e')
         exit()
     else:
       deepmd_dic['loss']['limit_pref_e'] = 1.0
@@ -189,7 +170,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(start_pref_f) == 1 or data_op.eval_str(start_pref_f) == 2 ):
         deepmd_dic['loss']['start_pref_f'] = float(start_pref_f)
       else:
-        log_info.log_error('Input error: start_pref_f should be float, please check deepff/deepmd/loss/start_pref_f')
+        log_info.log_error('Input error: start_pref_f should be float, please check deepff/deepmd_model/loss/start_pref_f')
         exit()
     else:
       deepmd_dic['loss']['start_pref_f'] = 1000.0
@@ -199,7 +180,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(limit_pref_f) == 1 or data_op.eval_str(limit_pref_f) == 2 ):
         deepmd_dic['loss']['limit_pref_f'] = float(limit_pref_f)
       else:
-        log_info.log_error('Input error: limit_pref_f should be float, please check deepff/deepmd/loss/limit_pref_f')
+        log_info.log_error('Input error: limit_pref_f should be float, please check deepff/deepmd_model/loss/limit_pref_f')
         exit()
     else:
       deepmd_dic['loss']['limit_pref_f'] = 1.0
@@ -209,7 +190,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(start_pref_v) == 1 or data_op.eval_str(start_pref_v) == 2 ):
         deepmd_dic['loss']['start_pref_v'] = float(start_pref_v)
       else:
-        log_info.log_error('Input error: start_pref_v should be float, please check deepff/deepmd/loss/start_pref_v')
+        log_info.log_error('Input error: start_pref_v should be float, please check deepff/deepmd_model/loss/start_pref_v')
         exit()
     else:
       deepmd_dic['loss']['start_pref_v'] = 0.0
@@ -219,13 +200,13 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(limit_pref_v) == 1 or data_op.eval_str(limit_pref_v) == 2 ):
         deepmd_dic['loss']['limit_pref_v'] = float(limit_pref_v)
       else:
-        log_info.log_error('Input error: limit_pref_v should, please check deepff/deepmd/loss/limit_pref_v')
+        log_info.log_error('Input error: limit_pref_v should, please check deepff/deepmd_model/loss/limit_pref_v')
         exit()
     else:
       deepmd_dic['loss']['limit_pref_v'] = 0.0
 
   if ( 'training' not in deepmd_dic.keys() ):
-    log_info.log_error('Input error: no training found, please check or set deepff/deepmd/training')
+    log_info.log_error('Input error: no training found, please check or set deepff/deepmd_model/training')
     exit()
   else:
     for i in deepmd_dic['training'].keys():
@@ -235,7 +216,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
           if ( traj_type == 'md' or traj_type == 'mtd' ):
             pass
           else:
-            log_info.log_error('Input error: traj_type should be md or mtd, please check and reset deepff/deepmd/training/system/traj_type')
+            log_info.log_error('Input error: traj_type should be md or mtd, please check and reset deepff/deepmd_model/training/system/traj_type')
         else:
           deepmd_dic['training'][i]['traj_type'] = 'md'
         if ( 'traj_coord_file' in deepmd_dic['training'][i] ):
@@ -243,10 +224,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
           if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
             deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(traj_coord_file)
           else:
-            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_coord_file' %(traj_coord_file))
+            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_coord_file' %(traj_coord_file))
             exit()
         else:
-          log_info.log_error('Input error: no coordination trajectory file, please check deepff/deepmd/training/system/traj_coord_file')
+          log_info.log_error('Input error: no coordination trajectory file, please check deepff/deepmd_model/training/system/traj_coord_file')
           exit()
         if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
           if ( 'traj_frc_file' in deepmd_dic['training'][i] ):
@@ -254,10 +235,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             if ( os.path.exists(os.path.abspath(traj_frc_file)) ):
               deepmd_dic['training'][i]['traj_frc_file'] = os.path.abspath(traj_frc_file)
             else:
-              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_frc_file' %(traj_frc_file))
+              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_frc_file' %(traj_frc_file))
               exit()
           else:
-            log_info.log_error('Input error: no force trajectory file, please check deepff/deepmd/training/system/traj_frc_file')
+            log_info.log_error('Input error: no force trajectory file, please check deepff/deepmd_model/training/system/traj_frc_file')
             exit()
           line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file, os.getcwd())
           if ( line_num == 0 ):
@@ -270,10 +251,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
               if ( os.path.exists(os.path.abspath(traj_cell_file)) ):
                 deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(traj_cell_file)
               else:
-                log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_cell_file' %(traj_cell_file))
+                log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_cell_file' %(traj_cell_file))
                 exit()
             else:
-              log_info.log_error('Input error: no cell trajectory file, please check deepff/deepmd/training/system/traj_cell_file')
+              log_info.log_error('Input error: no cell trajectory file, please check deepff/deepmd_model/training/system/traj_cell_file')
               exit()
           else:
             deepmd_dic['training'][i]['traj_cell_file'] = 'none'
@@ -282,7 +263,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             if ( os.path.exists(os.path.abspath(traj_stress_file)) ):
               deepmd_dic['training'][i]['traj_stress_file'] = os.path.abspath(traj_stress_file)
             else:
-              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/traj_stress_file' %(traj_stress_file))
+              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_stress_file' %(traj_stress_file))
               exit()
           else:
             deepmd_dic['training'][i]['traj_stress_file'] = 'none'
@@ -294,53 +275,56 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
             if ( os.path.exists(os.path.abspath(data_dir)) ):
               deepmd_dic['training'][i]['data_dir'] = os.path.abspath(data_dir)
             else:
-              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd/training/system/data_dir' %(data_dir))
+              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/data_dir' %(data_dir))
               exit()
           else:
-            log_info.log_error('Input error: no data_dir, please set deepff/deepmd/training/system/data_dir')
+            log_info.log_error('Input error: no data_dir, please set deepff/deepmd_model/training/system/data_dir')
             exit()
           if ( not 'task_dir_prefix' in deepmd_dic['training'][i] ):
-            log_info.log_error('Input error: no task_dir_prefix, please set deepff/deepmd/training/system/task_dir_prefix')
+            log_info.log_error('Input error: no task_dir_prefix, please set deepff/deepmd_model/training/system/task_dir_prefix')
             exit()
           if ( not 'proj_name' in deepmd_dic['training'][i] ):
-            log_info.log_error('Input error: no proj_name, please set deepff/deepmd/training/system/proj_name')
+            log_info.log_error('Input error: no proj_name, please set deepff/deepmd_model/training/system/proj_name')
             exit()
           if ( not 'out_file_name' in deepmd_dic['training'][i] ):
-            log_info.log_error('Input error: no out_file_name, please set deepff/deepmd/training/system/out_file_name')
+            log_info.log_error('Input error: no out_file_name, please set deepff/deepmd_model/training/system/out_file_name')
             exit()
         if ( 'start_frame' in deepmd_dic['training'][i] ):
           start_frame = deepmd_dic['training'][i]['start_frame']
           if ( data_op.eval_str(start_frame) == 1 ):
             deepmd_dic['training'][i]['start_frame'] = int(start_frame)
           else:
-            log_info.log_error('Input error: start_frame should be integer, please check deepff/deepmd/training/system/start_frame')
+            log_info.log_error('Input error: start_frame should be integer, please check deepff/deepmd_model/training/system/start_frame')
             exit()
-        elif ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
-          deepmd_dic['training'][i]['start_frame'] = start_id
+        else:
+          if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
+            deepmd_dic['training'][i]['start_frame'] = start_id
         if ( 'end_frame' in deepmd_dic['training'][i] ):
           end_frame = deepmd_dic['training'][i]['end_frame']
           if ( data_op.eval_str(end_frame) == 1 ):
             deepmd_dic['training'][i]['end_frame'] = int(end_frame)
           else:
-            log_info.log_error('Input error: end_frame should be integer, please check deepff/deepmd/training/system/end_frame')
+            log_info.log_error('Input error: end_frame should be integer, please check deepff/deepmd_model/training/system/end_frame')
             exit()
-        elif ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
-          deepmd_dic['training'][i]['end_frame'] = end_id
+        else:
+          if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
+            deepmd_dic['training'][i]['end_frame'] = end_id
         if ( 'choosed_frame_num' in deepmd_dic['training'][i] ):
           choosed_frame_num = deepmd_dic['training'][i]['choosed_frame_num']
           if ( data_op.eval_str(choosed_frame_num) == 1 ):
             deepmd_dic['training'][i]['choosed_frame_num'] = int(choosed_frame_num)
           else:
-            log_info.log_error('Input error: choosed_frame_num should be integer, please check deepff/deepmd/training/system/choosed_frame_num')
+            log_info.log_error('Input error: choosed_frame_num should be integer, please check deepff/deepmd_model/training/system/choosed_frame_num')
             exit()
-        elif ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
-          deepmd_dic['training'][i]['choosed_frame_num'] = int((end_id-start_id)/each)+1
+        else:
+          if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
+            deepmd_dic['training'][i]['choosed_frame_num'] = int((end_id-start_id)/each)+1
         if ( 'set_parts' in deepmd_dic['training'][i] ):
           set_parts = deepmd_dic['training'][i]['set_parts']
           if ( data_op.eval_str(set_parts) == 1 ):
             deepmd_dic['training'][i]['set_parts'] = int(set_parts)
           else:
-            log_info.log_error('Input error: set_parts should be integer, please check deepff/deepmd/training/system/set_parts')
+            log_info.log_error('Input error: set_parts should be integer, please check deepff/deepmd_model/training/system/set_parts')
             exit()
         else:
           deepmd_dic['training'][i]['set_parts'] = 1
@@ -351,7 +335,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( isinstance(use_prev_model_bool, bool) ):
         deepmd_dic['training']['use_prev_model'] = use_prev_model_bool
       else:
-        log_info.log_error('Input error: use_prev_model should be bool, please check or reset deepff/deepmd/training/use_prev_model')
+        log_info.log_error('Input error: use_prev_model should be bool, please check or reset deepff/deepmd_model/training/use_prev_model')
         exit()
     else:
       deepmd_dic['training']['use_prev_model'] = False
@@ -361,7 +345,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(lr_scale) == 2 ):
         deepmd_dic['training']['lr_scale'] = float(lr_scale)
       else:
-        log_info.log_error('Input error: the lr_scale should be float, please check or reset deepff/deepmd/training/lr_scale')
+        log_info.log_error('Input error: the lr_scale should be float, please check or reset deepff/deepmd_model/training/lr_scale')
         exit()
     else:
       deepmd_dic['training']['lr_scale'] = 2
@@ -372,7 +356,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( isinstance(shuffle_data_bool, bool) ):
         deepmd_dic['training']['shuffle_data'] = shuffle_data_bool
       else:
-        log_info.log_error('Input error: shuffle_data should be bool, please check or reset deepff/deepmd/training/shuffle_data')
+        log_info.log_error('Input error: shuffle_data should be bool, please check or reset deepff/deepmd_model/training/shuffle_data')
         exit()
     else:
       deepmd_dic['training']['shuffle_data'] = False
@@ -383,7 +367,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( isinstance(train_stress_bool, bool) ):
         deepmd_dic['training']['train_stress'] = train_stress_bool
       else:
-        log_info.log_error('Input error: train_stress should be bool, please check or reset deepff/deepmd/training/train_stress')
+        log_info.log_error('Input error: train_stress should be bool, please check or reset deepff/deepmd_model/training/train_stress')
         exit()
     else:
       deepmd_dic['training']['train_stress'] = False
@@ -393,7 +377,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( os.path.exists(os.path.abspath(set_data_dir)) ):
         deepmd_dic['training']['set_data_dir'] = os.path.abspath(set_data_dir)
       else:
-        log_info.log_error('Input error: %s directory does not exist, please check or reset deepff/deepmd/training/set_data_dir')
+        log_info.log_error('Input error: %s directory does not exist, please check or reset deepff/deepmd_model/training/set_data_dir')
         exit()
 
     if ( 'model_type' in deepmd_dic['training'].keys() ):
@@ -401,7 +385,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( model_type == 'use_seed' or model_type == 'use_node' ):
         pass
       else:
-        log_info.log_error('Input error: only use_seed and use_node are supported for model_type, please check deepff/deepmd/training/model_type')
+        log_info.log_error('Input error: only use_seed and use_node are supported for model_type, please check deepff/deepmd_model/training/model_type')
         exit()
     else:
       deepmd_dic['training']['model_type'] = 'use_seed'
@@ -412,7 +396,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(seed_num) == 1 ):
           deepmd_dic['training']['seed_num'] = int(seed_num)
         else:
-          log_info.log_error('Input error: seed_num should be integer, please check or reset deepff/deepmd/training/seed_num')
+          log_info.log_error('Input error: seed_num should be integer, please check or reset deepff/deepmd_model/training/seed_num')
           exit()
       else:
         deepmd_dic['training']['seed_num'] = 2
@@ -429,17 +413,17 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
           if ( all(data_op.eval_str(j) == 1 for j in neuron_i) ):
             neuron.append([int(x) for x in neuron_i])
           else:
-            log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd/training/neuron')
+            log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd_model/training/neuron')
             exit()
       elif ( deepmd_dic['training']['model_type'] == 'use_seed' ):
         if ( all(data_op.eval_str(j) == 1 for j in neuron_list) ):
           neuron = [int(x) for x in neuron_list]
         else:
-          log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd/training/neuron')
+          log_info.log_error('Input error: neuron should be list of integer, please check or reset deepff/deepmd_model/training/neuron')
           exit()
       deepmd_dic['training']['neuron'] = neuron
     else:
-      log_info.log_error('Input error: no neuron, please set deepff/deepmd/training/neuron')
+      log_info.log_error('Input error: no neuron, please set deepff/deepmd_model/training/neuron')
       exit()
 
     if ( 'fix_stop_batch' in deepmd_dic['training'].keys() ):
@@ -448,7 +432,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( isinstance(fix_stop_batch_bool, bool) ):
         deepmd_dic['training']['fix_stop_batch'] = fix_stop_batch_bool
       else:
-        log_info.log_error('Input error: fix_stop_batch should be bool, please check or reset deepff/deepmd/training/fix_stop_batch')
+        log_info.log_error('Input error: fix_stop_batch should be bool, please check or reset deepff/deepmd_model/training/fix_stop_batch')
         exit()
     else:
       deepmd_dic['training']['fix_stop_batch'] = False
@@ -460,7 +444,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(decay_steps) == 1 ):
           deepmd_dic['learning_rate']['decay_steps'] = int(decay_steps)
         else:
-          log_info.log_error('Input error: the decay_steps should be integer, please check or reset deepff/deepmd/learning_rate/decay_steps')
+          log_info.log_error('Input error: the decay_steps should be integer, please check or reset deepff/deepmd_model/learning_rate/decay_steps')
           exit()
       else:
         deepmd_dic['learning_rate']['decay_steps'] = 5000
@@ -469,7 +453,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(stop_batch) == 1 ):
           deepmd_dic['training']['stop_batch'] = int(stop_batch)
         else:
-          log_info.log_error('Input error: the stop_batch should be integer, please check or reset deepff/deepmd/training/stop_batch')
+          log_info.log_error('Input error: the stop_batch should be integer, please check or reset deepff/deepmd_model/training/stop_batch')
           exit()
       else:
         deepmd_dic['training']['stop_batch'] = 1000000
@@ -479,7 +463,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
         if ( data_op.eval_str(epoch_num) == 1 ):
           deepmd_dic['training']['epoch_num'] = int(epoch_num)
         else:
-          log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd/training/epoch_num')
+          log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd_model/training/epoch_num')
           exit()
       else:
         deepmd_dic['training']['epoch_num'] = 200
@@ -489,7 +473,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(batch_size) == 1 ):
         deepmd_dic['training']['batch_size'] = int(batch_size)
       else:
-        log_info.log_error('Input error: batch_size shoule be integer, please check or reset deepff/deepmd/training/batch_size')
+        log_info.log_error('Input error: batch_size shoule be integer, please check or reset deepff/deepmd_model/training/batch_size')
         exit()
     else:
       deepmd_dic['training']['batch_size'] = 1
@@ -499,7 +483,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(disp_freq) == 1 ):
         deepmd_dic['training']['disp_freq'] = int(disp_freq)
       else:
-        log_info.log_error('Input error: disp_freq should be integer, please check or reset deepff/deepmd/training/disp_freq')
+        log_info.log_error('Input error: disp_freq should be integer, please check or reset deepff/deepmd_model/training/disp_freq')
         exit()
     else:
       deepmd_dic['training']['disp_freq'] = 100
@@ -509,7 +493,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(numb_test) == 1 ):
         deepmd_dic['training']['numb_test'] = int(numb_test)
       else:
-        log_info.log_error('Input error: numb_test should be integer, please check or reset deepff/deepmd/training/numb_test')
+        log_info.log_error('Input error: numb_test should be integer, please check or reset deepff/deepmd_model/training/numb_test')
         exit()
     else:
       deepmd_dic['training']['numb_test'] = 10
@@ -519,7 +503,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( data_op.eval_str(save_freq) == 1 ):
         deepmd_dic['training']['save_freq'] = int(save_freq)
       else:
-        log_info.log_error('Input error: save_freq should be integer, please check or reset deepff/deepmd/training/save_freq')
+        log_info.log_error('Input error: save_freq should be integer, please check or reset deepff/deepmd_model/training/save_freq')
         exit()
     else:
       deepmd_dic['training']['save_freq'] = 1000
@@ -530,7 +514,7 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       if ( isinstance(disp_training_bool, bool) ):
         deepmd_dic['training']['disp_training'] = disp_training_bool
       else:
-        log_info.log_error('Input error: disp_training should be bool, please check or reset deepff/deepmd/training/disp_training')
+        log_info.log_error('Input error: disp_training should be bool, please check or reset deepff/deepmd_model/training/disp_training')
         exit()
     else:
       deepmd_dic['training']['disp_training'] = True
@@ -542,6 +526,114 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
     deepmd_dic['training']['time_training'] = True
     deepmd_dic['training']['profiling'] = False
     deepmd_dic['training']['profiling_file'] = 'timeline.json'
+
+  return deepmd_dic
+
+def check_deepmd_test(deepmd_dic):
+
+  '''
+  check_deepmd_model: check the input file in the deepmd_model subsection
+
+  Args:
+    deepmd_dic: dictionary
+      deepmd_dic contains keywords used in deepmd.
+  Returns:
+    deepmd_dic: dictionary
+      deepmd_dic is the revised deepmd_dic.
+  '''
+
+  if ( 'init_dpff_dir' in deepmd_dic.keys() ):
+    init_dpff_dir = deepmd_dic['init_dpff_dir']
+    if ( os.path.exists(os.path.abspath(init_dpff_dir)) ):
+      deepmd_dic['init_dpff_dir'] = os.path.abspath(init_dpff_dir)
+    else:
+      log_info.log_error('Input error: %s file does not exist, please check or reset deepff/deepmd_test/init_dpff_dir' %(init_dpff_dir))
+      exit()
+  else:
+    log_info.log_error('Input error: no init_dpff_dir, please set deepff/deepmd_test/init_dpff_dir')
+    exit()
+
+  if ( 'lr_scale' in deepmd_dic.keys() ):
+    lr_scale = deepmd_dic['lr_scale']
+    if ( data_op.eval_str(lr_scale) == 2 ):
+      deepmd_dic['lr_scale'] = float(lr_scale)
+    else:
+      log_info.log_error('Input error: the lr_scale should be float, please check or reset deepff/deepmd_test/lr_scale')
+      exit()
+  else:
+    deepmd_dic['lr_scale'] = 2.0
+
+  if ( 'fix_stop_batch' in deepmd_dic.keys() ):
+    fix_stop_batch = deepmd_dic['fix_stop_batch']
+    fix_stop_batch_bool = data_op.str_to_bool(fix_stop_batch)
+    if ( isinstance(fix_stop_batch_bool, bool) ):
+      deepmd_dic['fix_stop_batch'] = fix_stop_batch_bool
+    else:
+      log_info.log_error('Input error: fix_stop_batch should be bool, please check or reset deepff/deepmd_test/fix_stop_batch')
+      exit()
+  else:
+    deepmd_dic['fix_stop_batch'] = False
+
+  if ( not deepmd_dic['fix_stop_batch'] ):
+    if ( 'epoch_num' in deepmd_dic.keys() ):
+      epoch_num = deepmd_dic['epoch_num']
+      if ( data_op.eval_str(epoch_num) == 1 ):
+        deepmd_dic['epoch_num'] = int(epoch_num)
+      else:
+        log_info.log_error('Input error: the number of epoch should be integer, please check or reset deepff/deepmd_test/epoch_num')
+        exit()
+    else:
+      deepmd_dic['epoch_num'] = 200
+
+  if ( 'use_prev_model' in deepmd_dic.keys() ):
+    use_prev_model = deepmd_dic['use_prev_model']
+    use_prev_model_bool = data_op.str_to_bool(use_prev_model)
+    if ( isinstance(use_prev_model_bool, bool) ):
+      deepmd_dic['use_prev_model'] = use_prev_model_bool
+    else:
+      log_info.log_error('Input error: use_prev_model should be bool, please check or reset deepff/deepmd_test/use_prev_model')
+      exit()
+  else:
+    deepmd_dic['use_prev_model'] = False
+
+  if ( 'shuffle_data' in deepmd_dic.keys() ):
+    shuffle_data = deepmd_dic['shuffle_data']
+    shuffle_data_bool = data_op.str_to_bool(shuffle_data)
+    if ( isinstance(shuffle_data_bool, bool) ):
+      deepmd_dic['shuffle_data'] = shuffle_data_bool
+    else:
+      log_info.log_error('Input error: shuffle_data should be bool, please check or reset deepff/deepmd_test/shuffle_data')
+      exit()
+  else:
+    deepmd_dic['shuffle_data'] = False
+
+  if ( 'train_stress' in deepmd_dic.keys() ):
+    train_stress = deepmd_dic['train_stress']
+    train_stress_bool = data_op.str_to_bool(train_stress)
+    if ( isinstance(train_stress_bool, bool) ):
+      deepmd_dic['train_stress'] = train_stress_bool
+    else:
+      log_info.log_error('Input error: train_stress should be bool, please check or reset deepff/deepmd_test/train_stress')
+      exit()
+  else:
+    deepmd_dic['train_stress'] = False
+
+  return deepmd_dic
+
+def check_lammps(lmp_dic, active_learn_dic):
+
+  '''
+  check_lammps: check the input file in lammps subsection
+
+  Args:
+    lmp_dic: dictionary
+      lmp_dic contains keywords used in lammps.
+    active_learn_dic: dictionary
+      active_learn_dic contains keywords used in active_learn.
+  Returns:
+    lmp_dic: dictionary
+      lmp_dic is the revised lammps_dic.
+  '''
 
   #Check parameters for lammps
   if ( 'nsteps' in lmp_dic.keys() ):
@@ -565,20 +657,10 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
   else:
     lmp_dic['write_restart_freq'] = '1000'
 
-  if ( 'model_devi_freq' in model_devi_dic.keys() ):
-    model_devi_freq = model_devi_dic['model_devi_freq']
-    if ( data_op.eval_str(model_devi_freq) == 1 ):
-      pass
-    else:
-      log_info.log_error('Input error: model_devi_freq should be integer, please check or reset deepff/lammps/model_devi_freq')
-      exit()
-  else:
-    model_devi_dic['model_devi_freq'] = '10'
+  judge_freq = active_learn_dic['judge_freq']
 
-  model_devi_freq = model_devi_dic['model_devi_freq']
-
-  lmp_dic['thermo_freq'] = model_devi_freq
-  lmp_dic['dump_freq'] = model_devi_freq
+  lmp_dic['thermo_freq'] = judge_freq
+  lmp_dic['dump_freq'] = judge_freq
 
   if ( 'time_step' in lmp_dic.keys() ):
     time_step = lmp_dic['time_step']
@@ -686,18 +768,18 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       else:
         lmp_dic[key]['md_type'] = 'nvt'
 
-      if ( 'use_metad' in lmp_dic[key].keys() ):
-        use_metad = lmp_dic[key]['use_metad']
-        use_metad_bool = data_op.str_to_bool(use_metad)
-        if ( isinstance(use_metad_bool, bool) ):
-          lmp_dic[key]['use_metad'] = use_metad_bool
+      if ( 'use_mtd' in lmp_dic[key].keys() ):
+        use_mtd = lmp_dic[key]['use_mtd']
+        use_mtd_bool = data_op.str_to_bool(use_mtd)
+        if ( isinstance(use_mtd_bool, bool) ):
+          lmp_dic[key]['use_mtd'] = use_mtd_bool
         else:
-          log_info.log_out('Input error: use_metad should be bool, please check or set deepff/lammps/system/use_metad')
+          log_info.log_out('Input error: use_mtd should be bool, please check or set deepff/lammps/system/use_mtd')
           exit()
       else:
-        lmp_dic[key]['use_metad'] = False
+        lmp_dic[key]['use_mtd'] = False
 
-      if lmp_dic[key]['use_metad'] :
+      if lmp_dic[key]['use_mtd'] :
         if ( 'plumed_file' in lmp_dic[key].keys() ):
           plumed_file = lmp_dic[key]['plumed_file']
           if ( os.path.exists(os.path.abspath(plumed_file)) ):
@@ -713,68 +795,120 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
     log_info.log_error('Input error: no system for lammps calculation, please set deepff/lammps/system')
     exit()
 
+  return lmp_dic
+
+def check_active_learn(active_learn_dic):
+
+  '''
+  check_active_learn: check the input file in active learn subsection
+
+  Args:
+    active_learn_dic: dictionary
+      active_learn_dic contains keywords used in active_learn.
+  Returns:
+    active_learn_dic: dictionary
+      active_learn_dic is the revised active_learn_dic.
+  '''
+
   #Check parameters for model_devi
-  if ( 'choose_new_data_num_limit' in model_devi_dic.keys() ):
-    choose_new_data_num_limit = model_devi_dic['choose_new_data_num_limit']
+  if ( 'choose_new_data_num_limit' in active_learn_dic.keys() ):
+    choose_new_data_num_limit = active_learn_dic['choose_new_data_num_limit']
     if ( data_op.eval_str(choose_new_data_num_limit) == 1 ):
-      model_devi_dic['choose_new_data_num_limit'] = int(choose_new_data_num_limit)
+      active_learn_dic['choose_new_data_num_limit'] = int(choose_new_data_num_limit)
     else:
-      log_info.log_error('Input error: choose_new_data_num_limit should be integer, please check or reset deepff/model_devi/choose_new_data_num_limit')
+      log_info.log_error('Input error: choose_new_data_num_limit should be integer, please check or reset deepff/active_learn/choose_new_data_num_limit')
       exit()
   else:
-    model_devi_dic['choose_new_data_num_limit'] = 100
+    active_learn_dic['choose_new_data_num_limit'] = 100
 
-  if ( 'force_conv' in model_devi_dic.keys() ):
-    force_conv = model_devi_dic['force_conv']
+  if ( 'judge_freq' in active_learn_dic.keys() ):
+    judge_freq = active_learn_dic['judge_freq']
+    if ( data_op.eval_str(judge_freq) == 1 ):
+      pass
+    else:
+      log_info.log_error('Input error: judge_freq should be integer, please check or reset deepff/lammps/judge_freq')
+      exit()
+  else:
+    active_learn_dic['judge_freq'] = '10'
+
+  if ( 'force_conv' in active_learn_dic.keys() ):
+    force_conv = active_learn_dic['force_conv']
     if ( data_op.eval_str(force_conv) == 1 or data_op.eval_str(force_conv) == 2 ):
-      model_devi_dic['force_conv'] = float(force_conv)
+      active_learn_dic['force_conv'] = float(force_conv)
     else:
       log_info.log_error('Input error: force_conv should be integer or float, please check or set deepff/model_devi/force_conv')
       exit()
   else:
-    model_devi_dic['force_conv'] = 0.05
+    active_learn_dic['force_conv'] = 0.05
 
-  if ( 'max_iter' in model_devi_dic.keys() ):
-    max_iter = model_devi_dic['max_iter']
+  if ( 'energy_conv' in active_learn_dic.keys() ):
+    energy_conv = active_learn_dic['energy_conv']
+    if ( data_op.eval_str(energy_conv) == 1 or data_op.eval_str(energy_conv) == 2 ):
+      active_learn_dic['energy_conv'] = float(energy_conv)
+    else:
+      log_info.log_error('Input error: energy_conv should be integer or float, please check or set deepff/model_devi/energy_conv')
+      exit()
+  else:
+    active_learn_dic['energy_conv'] = 0.005
+
+  if ( 'max_iter' in active_learn_dic.keys() ):
+    max_iter = active_learn_dic['max_iter']
     if ( data_op.eval_str(max_iter) == 1 ):
-      model_devi_dic['max_iter'] = int(max_iter)
+      active_learn_dic['max_iter'] = int(max_iter)
     else:
       log_info.log_error('Input error: max_iter should be integer, please check or reset deepff/model_devi/max_iter')
       exit()
   else:
-    model_devi_dic['max_iter'] = 100
+    active_learn_dic['max_iter'] = 100
 
-  if ( 'restart_iter' in model_devi_dic.keys() ):
-    restart_iter = model_devi_dic['restart_iter']
+  if ( 'restart_iter' in active_learn_dic.keys() ):
+    restart_iter = active_learn_dic['restart_iter']
     if ( data_op.eval_str(restart_iter) == 1 ):
-      model_devi_dic['restart_iter'] = int(restart_iter)
+      active_learn_dic['restart_iter'] = int(restart_iter)
     else:
       log_info.log_error('Input error: restart_iter should be integer, please check or reset deepff/model_devi/restart_iter')
       exit()
   else:
-    model_devi_dic['restart_iter'] = 0
+    active_learn_dic['restart_iter'] = 0
 
-  if ( 'data_num' in model_devi_dic.keys() ):
-    data_num = model_devi_dic['data_num']
-    if ( all(data_op.eval_str(i) == 1 for i in data_num) ):
-      model_devi_dic['data_num'] = [int(i) for i in data_num]
+  if ( 'data_num' in active_learn_dic.keys() ):
+    data_num = active_learn_dic['data_num']
+    if ( isinstance(data_num, str) and data_op.eval_str(data_num) == 1 ):
+      active_learn_dic['data_num'] = [int(data_num)]
     else:
-      log_info.log_error('Input error: data_num should be integer list, please check or reset deepff/model_devi/data_num')
-      exit()
+      if ( isinstance(data_num, list) and all(data_op.eval_str(i) == 1 for i in data_num) ):
+        active_learn_dic['data_num'] = [int(i) for i in data_num]
+      else:
+        log_info.log_error('Input error: data_num should be integer or integer list, please check or reset deepff/model_devi/data_num')
+        exit()
   else:
-    model_devi_dic['data_num'] = [0]
+    active_learn_dic['data_num'] = [0]
 
-  if ( 'restart_stage' in model_devi_dic.keys() ):
-    restart_stage = model_devi_dic['restart_stage']
+  if ( 'restart_stage' in active_learn_dic.keys() ):
+    restart_stage = active_learn_dic['restart_stage']
     if ( data_op.eval_str(restart_stage) == 1 ):
-      model_devi_dic['restart_stage'] = int(restart_stage)
+      active_learn_dic['restart_stage'] = int(restart_stage)
     else:
       log_info.log_error('Input error: restart_stage should be integer, please check or reset deepff/model_devi/restart_stage')
       exit()
   else:
-    model_devi_dic['restart_stage'] = 0
+    active_learn_dic['restart_stage'] = 0
 
-  #Check parameters for CP2K
+  return active_learn_dic
+
+def check_cp2k(cp2k_dic):
+
+  '''
+  check_cp2k: check the input file in cp2k subsection
+
+  Args:
+    cp2k_dic: dictionary
+      cp2k_dic contains keywords used in cp2k.
+  Returns:
+    cp2k_dic: dictionary
+      cp2k_dic is the revised cp2k_dic.
+  '''
+
   #For multi-system, we need multi cp2k input files.
   cp2k_inp_file_tot = []
   if ( 'cp2k_inp_file' in cp2k_dic.keys() ):
@@ -939,6 +1073,21 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
   else:
     cp2k_dic['use_prev_wfn'] = False
 
+  return cp2k_dic
+
+def check_environ(environ_dic):
+
+  '''
+  check_environ: check the input file in environ subsection
+
+  Args:
+    environ_dic: dictionary
+      environ_dic contains keywords used in environment.
+  Returns:
+    environ_dic: dictionary
+      environ_dic is the revised environ_dic.
+  '''
+
   #Check parameters for environ
   if ( 'cp2k_exe' in environ_dic.keys() ):
     cp2k_exe = environ_dic['cp2k_exe']
@@ -1028,216 +1177,116 @@ def check_inp(deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic, proc_n
       lmp_mpi_num_per_job = lmp_mpi_num_per_job-1
     environ_dic['lmp_mpi_num_per_job'] = lmp_mpi_num_per_job
 
-  return deepmd_dic, lmp_dic, cp2k_dic, model_devi_dic, environ_dic
+  return environ_dic
 
-def write_restart_inp(inp_file_name, restart_iter, restart_stage, data_num, work_dir):
+def check_dp_test(dp_test_dic):
 
   '''
-  check_inp: write restart input file for deepff
+  check_dp_test: check the input of dp_test.
 
   Args:
-    inp_file_name: string
-      inp_file_name is the name of cp2k_kit deepff file.
-    restart_iter: int
-      restart_iter is the iteration number of restart.
-    restart_stage: int
-      restart_stage is the stage of restart.
-    data_num: 1-d int list
-      tot_data_num is the data number for each system.
-    work_dir: string
-      work_dir is working directory of CP2K_kit.
+    dp_test_dic: dictionary
+      dp_test_dic contains parameters for dp_test.
   Returns:
-    none
+    dp_test_dic: dictionary
+      dp_test_dic is the revised dp_test_dic.
   '''
 
-  i=0
-  while True:
-    inp_tmp_file_name = ''.join((work_dir, '/input_tmp', str(i), '.inp'))
-    if ( os.path.exists(inp_tmp_file_name) ):
-      i=i+1
+  if ( 'cp2k_frc_file' in dp_test_dic.keys() ):
+    cp2k_frc_file = dp_test_dic['cp2k_frc_file']
+    if ( os.path.exists(os.path.abspath(cp2k_frc_file)) ):
+      dp_test_dic['cp2k_frc_file'] = os.path.abspath(cp2k_frc_file)
     else:
-      break
+      log_info.log_error('Input error: %s file does not exist' %(cp2k_frc_file))
+      exit()
+  else:
+    log_info.log_error('Input error: no cp2k_frc_file, please set analyze/dp_test/cp2k_frc_file')
+    exit()
 
-  cmd = "cp %s %s" %(inp_file_name, inp_tmp_file_name)
-  call.call_simple_shell(work_dir, cmd)
+  if ( 'cp2k_pos_file' in dp_test_dic.keys() ):
+    cp2k_pos_file = dp_test_dic['cp2k_pos_file']
+    if ( os.path.exists(os.path.abspath(cp2k_pos_file)) ):
+      dp_test_dic['cp2k_pos_file'] = os.path.abspath(cp2k_pos_file)
+    else:
+      log_info.log_error('Input error: %s file does not exist' %(cp2k_pos_file))
+      exit()
+  else:
+    log_info.log_error('Input error: no cp2k_pos_file, please set analyze/dp_test/cp2k_pos_file')
+    exit()
 
-  restart_inp_file_name = ''.join((work_dir, '/CP2K_KIT.restart'))
-  whole_line_num = len(open(inp_tmp_file_name).readlines())
+  if ( 'cp2k_cell_file' in dp_test_dic.keys() ):
+    cp2k_cell_file = dp_test_dic['cp2k_cell_file']
+    if ( os.path.exists(os.path.abspath(cp2k_cell_file)) ):
+      dp_test_dic['cp2k_cell_file'] = os.path.abspath(cp2k_cell_file)
+    else:
+      log_info.log_error('Input error: %s file does not exist' %(cp2k_cell_file))
+      exit()
+  else:
+    log_info.log_error('Input error: no cp2k_cell_file, please set analyze/dp_test/cp2k_cell_file')
+    exit()
 
-  line_1_num = file_tools.grep_line_num("'&model_devi'", inp_tmp_file_name, work_dir)[0]
-  line_2_num = file_tools.grep_line_num("'choose_new_data_num_limit'", inp_tmp_file_name, work_dir)
-  line_3_num = file_tools.grep_line_num("'model_devi_freq'", inp_tmp_file_name, work_dir)
-  line_4_num = file_tools.grep_line_num("'force_conv'", inp_tmp_file_name, work_dir)
-  line_5_num = file_tools.grep_line_num("'max_iter'", inp_tmp_file_name, work_dir)
-  line_6_num = file_tools.grep_line_num("'&end model_devi'", inp_tmp_file_name, work_dir)[0]
-  data_num_str = data_op.comb_list_2_str(data_num, ' ')
+  if ( 'dpff_file' in dp_test_dic.keys() ):
+    dpff_file = dp_test_dic['dpff_file']
+    if ( os.path.exists(os.path.abspath(dpff_file)) ):
+      dp_test_dic['dpff_file'] = os.path.abspath(dpff_file)
+    else:
+      log_info.log_error('Input error: %s file does not exist' %(dpff_file))
+      exit()
+  else:
+    log_info.log_error('Input error: no dpff_file, please set analyze/dp_test/dpff_file')
+    exit()
 
-  restart_inp_file = open(restart_inp_file_name, 'w')
-  for i in range(line_1_num):
-    line_i = linecache.getline(inp_tmp_file_name, i+1)
-    restart_inp_file.write(line_i)
+  if ( 'atom_label' in dp_test_dic.keys() ):
+    atom_label = dp_test_dic['atom_label']
+    atom_label_dic = OrderedDict()
+    for i in range (len(atom_label)):
+      label_split = data_op.split_str(atom_label[i], ':')
+      atom_label_dic[int(label_split[0])] = label_split[1]
+    dp_test_dic['atom_label'] = atom_label
+  else:
+    log_info.log_error('Input error: no atom label, please set analyze/dp_test/atom_label')
+    exit()
 
-  for i in [line_2_num, line_3_num, line_4_num, line_5_num]:
-    if ( i != 0 ):
-      line_i = linecache.getline(inp_tmp_file_name, i[0])
-      restart_inp_file.write(line_i)
+  if ( 'lmp_exe' in dp_test_dic.keys() ):
+    lmp_exe = dp_test_dic['lmp_exe']
+    if ( os.path.exists(os.path.abspath(lmp_exe)) ):
+      dp_test_dic['lmp_exe'] = os.path.abspath(lmp_exe)
+    else:
+      log_info.log_error('Input error: %s does not exist' %(lmp_exe))
+      exit()
+  else:
+    log_info.log_error('Input error: no lammps executable file, please set analyze/dp_test/lmp_exe')
+    exit()
 
-  restart_inp_file.write('    restart_iter %d\n' %(restart_iter))
-  restart_inp_file.write('    data_num %s\n' %(data_num_str))
-  restart_inp_file.write('    restart_stage %d\n' %(restart_stage))
+  if ( 'lmp_mpi_num' in dp_test_dic.keys() ):
+    lmp_mpi_num = dp_test_dic['lmp_mpi_num']
+    if ( data_op.eval_str(lmp_mpi_num) == 1 ):
+      dp_test_dic['lmp_mpi_num'] = int(lmp_mpi_num)
+    else:
+      log_info.log_error('Input error: lammps mpi number shoule be integer, please set analyze/dp_test/lmp_mpi_num')
+      exit()
+  else:
+    dp_test_dic['lmp_mpi_num'] = 1
 
-  for i in range(line_6_num, whole_line_num+1, 1):
-    line_i = linecache.getline(inp_tmp_file_name, i)
-    restart_inp_file.write(line_i)
+  if ( 'lmp_omp_num' in dp_test_dic.keys() ):
+    lmp_omp_num = dp_test_dic['lmp_omp_num']
+    if ( data_op.eval_str(lmp_omp_num) == 1 ):
+      dp_test_dic['lmp_omp_num'] = int(lmp_omp_num)
+    else:
+      log_info.log_error('Input error: lammps openmp number shoule be integer, please set analyze/dp_test/lmp_omp_num')
+      exit()
+  else:
+    dp_test_dic['lmp_omp_num'] = 1
 
-  linecache.clearcache()
-  restart_inp_file.close()
+  if ( 'atom_label' in dp_test_dic.keys() ):
+    atom_label = dp_test_dic['atom_label']
+    atom_label_dic = OrderedDict()
+    for i in range (len(atom_label)):
+      label_split = data_op.split_str(atom_label[i], ':')
+      atom_label_dic[int(label_split[0])] = label_split[1]
+    dp_test_dic['atom_label'] = atom_label_dic
+  else:
+    log_info.log_error('Input error: no atom_label, please set analyze/dp_test/atom_label')
+    exit()
 
-  cmd = "rm %s" %(inp_tmp_file_name)
-  call.call_simple_shell(work_dir, cmd)
-
-def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
-
-  '''
-  write_active_data: write the data generated by active learning.
-
-  Args:
-    work_dir: string
-      work_dir is the working directory.
-    conv_iter: int
-      conv_iter is the number of iteration.
-    tot_atoms_type_dic: dictionary
-      tot_atoms_type_dic is the atoms type dictionary.
-  Returns :
-    none
-  '''
-
-  active_data_dir = ''.join((work_dir, '/active_data'))
-
-  if ( not os.path.exists(active_data_dir) ):
-    cmd = "mkdir %s" %('active_data')
-    call.call_simple_shell(work_dir, cmd)
-  cmd = "ls | grep %s" % ('sys_')
-  sys_num = len(call.call_returns_shell(''.join((work_dir, '/iter_0/02.lammps_calc')), cmd))
-
-  for i in range(sys_num):
-
-    energy_cp2k = []
-    frc_cp2k = []
-    frc_x_cp2k = []
-    frc_y_cp2k = []
-    frc_z_cp2k = []
-
-    sys_dir = ''.join((active_data_dir, '/sys_', str(i)))
-    if ( not os.path.exists(sys_dir) ):
-      cmd = "mkdir %s" %(''.join(('sys_', str(i))))
-      call.call_simple_shell(active_data_dir, cmd)
-    energy_file_name = ''.join((sys_dir, '/energy.raw'))
-    coord_file_name = ''.join((sys_dir, '/coord.raw'))
-    frc_file_name = ''.join((sys_dir, '/force.raw'))
-    cell_file_name = ''.join((sys_dir, '/box.raw'))
-    energy_file = open(energy_file_name, 'w')
-    coord_file = open(coord_file_name, 'w')
-    frc_file = open(frc_file_name, 'w')
-    cell_file = open(cell_file_name, 'w')
-
-    traj_coord_file_name = ''.join((sys_dir, '/active-pos-1.xyz'))
-    traj_frc_file_name = ''.join((sys_dir, '/active-frc-1.xyz'))
-    traj_cell_file_name = ''.join((sys_dir, '/active-1.cell'))
-    traj_coord_file = open(traj_coord_file_name, 'w')
-    traj_frc_file = open(traj_frc_file_name, 'w')
-    traj_cell_file = open(traj_cell_file_name, 'w')
-
-    for j in range(conv_iter):
-      iter_dir = ''.join((work_dir, '/iter_', str(j)))
-      data_dir = ''.join((iter_dir, '/03.cp2k_calc/sys_', str(i), '/data'))
-      if ( j == 0 ):
-        cmd = "cp type.raw %s" %(sys_dir)
-        call.call_simple_shell(data_dir, cmd)
-      energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(data_dir)
-      frames_num = len(energy_array)
-      atoms_num = int(len(coord_array[0])/3)
-      for k in range(frames_num):
-        energy_file.write('%f\n' %(energy_array[k]))
-        energy_cp2k.append(energy_array[k])
-        frame_str = ''
-        for l in range(len(coord_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(coord_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(coord_array[k][l])))
-        coord_file.write('%s\n' %(frame_str))
-
-        frc_cp2k_k = []
-        frc_x_cp2k_k = []
-        frc_y_cp2k_k = []
-        frc_z_cp2k_k = []
-
-        frame_str = ''
-        for l in range(len(frc_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(frc_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(frc_array[k][l])))
-          frc_cp2k_k.append(frc_array[k][l])
-          if ( l%3 == 0 ):
-            frc_x_cp2k_k.append(frc_array[k][l])
-          elif ( l%3 == 1 ):
-            frc_y_cp2k_k.append(frc_array[k][l])
-          elif ( l%3 == 2 ):
-            frc_z_cp2k_k.append(frc_array[k][l])
-        frc_cp2k.append(frc_cp2k_k)
-        frc_x_cp2k.append(frc_x_cp2k_k)
-        frc_y_cp2k.append(frc_y_cp2k_k)
-        frc_z_cp2k.append(frc_z_cp2k_k)
-        frc_file.write('%s\n' %(frame_str))
-
-        frame_str = ''
-        for l in range(len(cell_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(cell_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(cell_array[k][l])))
-        cell_file.write('%s\n' %(frame_str))
-    energy_file.close()
-    coord_file.close()
-    frc_file.close()
-    cell_file.close()
-
-    energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(sys_dir)
-    train_data_num, test_data_num = load_data.raw_data_to_set(1, False, sys_dir, energy_array, coord_array, frc_array, cell_array, virial_array)
-
-    atoms = []
-    type_raw = open(''.join((sys_dir, '/type.raw')), 'rb').read().split()
-    for j in range(len(type_raw)):
-      atoms.append(data_op.get_dic_keys(tot_atoms_type_dic, int(type_raw[j].decode())))
-
-    traj_cell_file.write('#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n')
-    frames_num_tot = len(energy_array)
-    for j in range(frames_num_tot):
-      frc_array_j = frc_array[j].reshape(atoms_num, 3)
-      coord_array_j = coord_array[j].reshape(atoms_num, 3)
-      cell_array_j = cell_array[j].reshape(3,3)
-      vol = np.linalg.det(cell_array_j)
-
-      traj_coord_file.write('%8d\n' %(atoms_num))
-      traj_coord_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
-      for k in range(atoms_num):
-        traj_coord_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], coord_array_j[k][0], coord_array_j[k][1], coord_array_j[k][2]))
-
-      traj_frc_file.write('%8d\n' %(atoms_num))
-      traj_frc_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', j, ', time =', j*0.5, ', E =', energy_array[j]))
-      for k in range(atoms_num):
-        traj_frc_file.write('%3s%21.10f%20.10f%20.10f\n' %(atoms[k], frc_array_j[k][0], frc_array_j[k][1], frc_array_j[k][2]))
-
-      traj_cell_file.write('%8d%12.3f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%20.10f%25.10f\n' \
-                           %(j, j*0.5, cell_array_j[0][0], cell_array_j[0][1], cell_array_j[0][2], \
-                             cell_array_j[1][0], cell_array_j[1][1], cell_array_j[1][2], \
-                             cell_array_j[2][0], cell_array_j[2][1], cell_array_j[2][2], vol))
-
-    traj_coord_file.close()
-    traj_frc_file.close()
-    traj_cell_file.close()
-
-  str_print = 'Active data is written in %s' %(active_data_dir)
-  print (data_op.str_wrap(str_print, 80), flush=True)
+  return dp_test_dic

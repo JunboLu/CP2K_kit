@@ -13,158 +13,6 @@ from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.deepff import check_deepff
 
-def gen_deepmd_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
-                    descr_seed, fit_seed, tra_seed, neuron, model_type, data_num, lr_scale):
-
-  '''
-  gen_deepmd_task: generate deepmd tasks
-
-  Args :
-    deepmd_dic: dictionary
-      deepmd_dic contains keywords used in deepmd.
-    work_dir: string
-      work_dir is working directory of CP2K_kit.
-    iter_id: int
-      iter_id is the iteration id.
-    init_train_data: 1-d string list
-      init_train_data contains initial training data directories.
-    numb_test: int
-      numb_test is number of testing data sets when run deepmd
-    descr_seed: 1-d int list
-      descr_seed is the seed number in descriptor part.
-    fit_seed: 1-d int list
-      fit_seed is the seed number in fitting part.
-    tra_seed: 1-d int list
-      tra_seed is the seed number in training part.
-    neuron: 1-d int list or int
-      neuron is the number of nodes in neural network.
-    model_type: string
-      model_type has two choices: 'use_seed', 'use_node'
-    data_num: 1-d int list
-      data_num is the numbers of training data for each system.
-    lr_scale: float
-      lr_scale is the scaling factor of starting learning rate.
-  Returns:
-    none
-  '''
-
-  #copy should be done at first, because the following operators will change it!
-  deepmd_param = copy.deepcopy(deepmd_dic)
-
-  iter_dir = ''.join((work_dir, '/iter_', str(iter_id)))
-  train_dir = ''.join(iter_dir + '/01.train')
-  if ( not os.path.exists(train_dir) ):
-    cmd = "mkdir %s" % ('01.train')
-    call.call_simple_shell(iter_dir, cmd)
-
-  data_dir = copy.deepcopy(init_train_data)
-  final_data_dir = []
-  if ( iter_id > 0 ):
-    for i in range(iter_id):
-      calc_dir = ''.join((work_dir, '/iter_', str(i), '/03.cp2k_calc'))
-      cmd = "ls | grep %s" % ('sys_')
-      sys_num = len(call.call_returns_shell(calc_dir, cmd))
-      for j in range(sys_num):
-        prev_data_dir = ''.join((calc_dir, '/sys_', str(j), '/data'))
-        if ( os.path.exists(prev_data_dir) ):
-          cmd = "ls | grep %s" % ('set.')
-          set_parts = len(call.call_returns_shell(prev_data_dir, cmd))
-          if ( (set_parts-1) >= 10 ):
-            final_set_dir_name = 'set.0'+str(set_parts-1)
-          elif ( (set_parts-1) < 10 ):
-            final_set_dir_name = 'set.00'+str(set_parts-1)
-          elif ( (set_parts-1) > 100 ):
-            final_set_dir_name = 'set.'+str(set_parts-1)
-          ene_npy_file = ''.join((prev_data_dir, '/', final_set_dir_name, '/energy.npy'))
-          final_set_data_num = len(np.load(ene_npy_file))
-          if ( final_set_data_num > numb_test ):
-            data_dir.append(prev_data_dir)
-            if ( i == iter_id-1 ):
-              final_data_dir.append(prev_data_dir)
-
-  if ( iter_id > 1 and len(final_data_dir) == 0 ):
-    print (''.center(80,'*'), flush=True)
-    print ('Cheers! deepff is converged!', flush=True)
-    check_deepff.write_active_data(work_dir, i, tot_atoms_type_dic)
-    exit()
-
-  start_lr = deepmd_param['learning_rate']['start_lr']
-  batch_size = deepmd_param['training']['batch_size']
-  fix_stop_batch = deepmd_param['training']['fix_stop_batch']
-  use_prev_model = deepmd_param['training']['use_prev_model']
-  if not fix_stop_batch:
-    epoch_num = deepmd_param['training']['epoch_num']
-    stop_batch = math.ceil(epoch_num*int(sum(data_num)/batch_size)/10000)*10000
-    decay_steps = math.ceil(int(sum(data_num)/batch_size)/1000)*1000
-    if ( stop_batch < decay_steps*200 ):
-      stop_batch = decay_steps*200
-    deepmd_param['learning_rate']['decay_steps'] = decay_steps
-    deepmd_param['training']['stop_batch'] = stop_batch
-
-  deepmd_param['training']['systems'] = data_dir
-  deepmd_param['training']['batch_size'] = [batch_size]*len(data_dir)
-
-  for key in deepmd_dic['training'].keys():
-    if ( 'system' in key ):
-      deepmd_param['training'].pop(key)
-
-  if ( 'seed_num' in deepmd_param['training'].keys() ):
-    deepmd_param['training'].pop('seed_num')
-  if ( 'epoch_num' in deepmd_param['training'].keys() ):
-    deepmd_param['training'].pop('epoch_num')
-  deepmd_param['training'].pop('model_type')
-  deepmd_param['training'].pop('neuron')
-  deepmd_param['training'].pop('shuffle_data')
-  deepmd_param['training'].pop('train_stress')
-  deepmd_param['training'].pop('use_prev_model')
-  deepmd_param['training'].pop('fix_stop_batch')
-
-  if ( iter_id > 0 and use_prev_model ):
-    data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
-    prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/iter_id)
-    prob_data_num_2 = 1.0-prob_data_num_1
-    if ( lr_scale**iter_id > 100.0 ):
-      deepmd_param['learning_rate']['start_lr'] = start_lr/(100.0)
-    else:
-      deepmd_param['learning_rate']['start_lr'] = start_lr/(lr_scale**iter_id)
-    deepmd_param['training']['stop_batch'] = int(deepmd_param['training']['stop_batch']/2)
-    prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
-    prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)
-    #prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), 0.2)
-    #prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), 0.8)
-    auto_prob_style = data_op.comb_list_2_str(['prob_sys_size', prob_sys_1, prob_sys_2], ';')
-    deepmd_param['training']['auto_prob_style'] = auto_prob_style
-
-  if ( model_type == 'use_seed' ):
-    for i in range(len(descr_seed)):
-      cmd = "mkdir %s" % (str(i))
-      call.call_simple_shell(train_dir, cmd)
-      deepmd_param_i = copy.deepcopy(deepmd_param)
-      deepmd_param_i['model']['descriptor']['seed'] = descr_seed[i]
-      deepmd_param_i['model']['fitting_net']['seed'] = fit_seed[i]
-      deepmd_param_i['training']['seed'] = tra_seed[i]
-      deepmd_param_i['model']['fitting_net']['neuron'] = neuron
-      json_str = json.dumps(deepmd_param_i, indent=4)
-
-      with open(''.join((train_dir, '/', str(i), '/', 'input.json')), 'w') as json_file:
-        json_file.write(json_str)
-
-  elif ( model_type == 'use_node' ):
-    for i in range(len(neuron)):
-      model_dir = ''.join((train_dir, '/', str(i)))
-      if ( not os.path.exists(model_dir) ):
-        cmd = "mkdir %s" % (str(i))
-        call.call_simple_shell(train_dir, cmd)
-      deepmd_param_i = copy.deepcopy(deepmd_param)
-      deepmd_param_i['model']['descriptor']['seed'] = descr_seed[i]
-      deepmd_param_i['model']['fitting_net']['seed'] = fit_seed[i]
-      deepmd_param_i['training']['seed'] = tra_seed[i]
-      deepmd_param_i['model']['fitting_net']['neuron'] = neuron[i]
-      json_str = json.dumps(deepmd_param_i, indent=4)
-
-      with open(''.join((model_dir, '/input.json')), 'w') as json_file:
-        json_file.write(json_str)
-
 def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
 
   '''
@@ -183,6 +31,8 @@ def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe,
       end is the endding model id.
     parallel_exe: string
       parallel_exe is the parallel exacutable file.
+    dp_path: string
+      dp_path is the path of deepmd-kit.
     host: 1-d string list
       host is the name of computational nodes.
     device: 2-d string list
@@ -821,6 +671,8 @@ def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, d
       use_prev_model is whether we need to use previous model.
     parallel_exe: string
       parallel_exe is the parallel exacutable file.
+    dp_path: string
+      dp_path is the path of deepmd-kit.
     host: 1-d string list
       host is the name of computational nodes.
     device: 2-d string list

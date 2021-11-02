@@ -121,7 +121,7 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
   Returns:
     atoms: 2-d string list, dim = (num of frames)*(num of atoms)
       atoms is the atom name along with the trajectory.
-    energy: 2-d float list, dim = (num of frames)*(num of atoms)
+    energy: 1-d float list, dim = num of frames
       energy is the energy along with the trajectory.
     coord: 3-d float list, dim = (num of frames)*(num of atoms)*3
       coord is the coordinates along with the trajectory.
@@ -172,7 +172,6 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
       print ('You want the force, but could not find fxfyfz id in dump item, please check!')
       exit()
 
-  atoms = []
   energy = []
   coord = []
   vel = []
@@ -184,7 +183,6 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
   a_int = int(a[0].split(':')[0])
   line = linecache.getline(lmp_log_file, a_int)
   line_split = data_op.split_str(line, ' ', '\n')
-  line_split[len(line_split)-1] = line_split[len(line_split)-1]
 
   if ene_return:
     if ( 'PotEng' in line_split ):
@@ -193,18 +191,29 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
       print ('You want the potential energy, but could not find PotEng id in thermo item, please check!')
       exit()
 
-  atoms_num, frames_num, start_id, end_id, each = lmp_traj_info(lmp_traj_file, lmp_log_file)
+  atoms_num, frames_num, frames_num_fic, start_id, end_id, each = lmp_traj_info(lmp_traj_file, lmp_log_file, True)
 
-  if ( frames == [] ):
+  frames_fic = []
+  for i in range(frames_num_fic):
+    frames_fic.append(start_id+each*i)
+
+  energy_fic = []
+  for i in frames_fic:
+    line_log_i = linecache.getline(lmp_log_file, int((i-start_id)/each)+a_int+1)
+    line_log_i_split = data_op.split_str(line_log_i, ' ')
+    if ( data_op.eval_str(line_log_i_split[0]) == 1 ):
+      energy_fic.append(float(line_log_i_split[ene_id]))
+
+  if ( len(frames) == 0 ):
     for i in range(frames_num):
       frames.append(start_id+each*i)
 
-  for i in frames:
-    if ene_return:
-      line_log_i = linecache.getline(lmp_log_file, int((i-start_id)/each)+a_int+1)
-      line_log_i_split = data_op.split_str(line_log_i, ' ')
-      energy.append(float(line_log_i_split[ene_id]))
+  if ene_return:
+    for i in frames:
+      index = int((i-start_id)/each)
+      energy.append(energy_fic[index])
 
+  for i in frames:
     if cell_return:
       line_1 = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+6)
       line_1_split = data_op.split_str(line_1, ' ', '\n')
@@ -231,11 +240,11 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
       line_ij = linecache.getline(lmp_traj_file, (atoms_num+9)*int((i-start_id)/each)+j+1+9)
       line_ij_split = data_op.split_str(line_ij, ' ', '\n')
       line_ij_split[len(line_ij_split)-1] = line_ij_split[len(line_ij_split)-1]
-      atom_type = int(line_ij_split[atom_type_id])
       atom_id = int(line_ij_split[atom_id_id])
       atom_id_i.append(atom_id)
-      if ( atom_label != {} ):
-        atom_type_i.append(atom_label[atom_type])
+      if ( i == 0 ):
+        atom_type = int(line_ij_split[atom_type_id])
+        atom_type_i.append(data_op.get_dic_keys(atom_label, atom_type)[0])
       if coord_return:
         x = float(line_ij_split[x_id])
         y = float(line_ij_split[y_id])
@@ -253,9 +262,8 @@ def read_lmp_log_traj(lmp_traj_file, lmp_log_file, atom_label={}, frames=[], ene
         frc_i.append([fx,fy,fz])
 
     atom_id_i_asc, asc_index = data_op.get_list_order(atom_id_i, 'ascend', True)
-    if ( atom_label != {} ):
-      atom_type_i_asc = data_op.reorder_list(atom_type_i, asc_index)
-      atoms.append(atom_type_i_asc)
+    if ( len(atom_label) != 0 and i == 0 ):
+      atoms = data_op.reorder_list(atom_type_i, asc_index)
     if coord_return:
       coord_i_asc = data_op.reorder_list(coord_i, asc_index)
       coord.append(coord_i_asc)

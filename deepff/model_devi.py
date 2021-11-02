@@ -60,7 +60,9 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
 
       log_file = ''.join((lammps_sys_task_dir, '/lammps.out'))
       dump_file = ''.join((lammps_sys_task_dir, '/atom.dump'))
-      atoms_num, frames_num, frames_num_fic, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file, True)
+      atoms_num, frames_num, start_id, end_id, each = read_lmp.lmp_traj_info(dump_file, log_file)
+      atoms, energy, coord, vel, frc, cell = \
+      read_lmp.read_lmp_log_traj(dump_file, log_file, atoms_type_multi_sys[i], [], True, True, False, True, True)
       tot_frames_i.append(frames_num)
 
       model_devi_file_name_abs = ''.join((lammps_sys_task_dir, '/model_devi.out'))
@@ -72,37 +74,15 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
       #Get box parameter, we will calculate distance later.
       success_frames_ij = 0
       success_devi_frames_ij = 0
-      tot_box = []
-      ene_model_0 = []
-      for k in range(frames_num_fic):
-        box = []
-        a_int = file_tools.grep_line_num("'Lx Ly Lz Xy Xz Yz'", log_file, lammps_sys_task_dir)[0]
-        line_k = linecache.getline(log_file, a_int+k+1)
-        line_k_split = data_op.split_str(line_k, ' ')
-        if ( data_op.eval_str(line_k_split[0]) == 1 ):
-          ene_model_0.append(float(line_k_split[2]))
-          for l in range(6):
-            box.append(float(line_k_split[l+7]))
-          tot_box.append(box)
-      linecache.clearcache()
 
       for k in range(frames_num):
         ene_model = []
         frc_model = []
-        atoms = []
-        coord = []
-        for l in range(atoms_num):
-          line_kl = linecache.getline(dump_file, (atoms_num+9)*k+l+9+1)
-          line_kl_split = data_op.split_str(line_kl, ' ')
-
-          atoms.append(data_op.get_dic_keys(atoms_type_multi_sys[i], int(line_kl_split[1]))[0])
-          coord.append([float(line_kl_split[2]), float(line_kl_split[3]), float(line_kl_split[4])])
-
         #Dump energies and forces for models.
         for l in range(model_num):
           model_dir = ''.join((lammps_sys_task_dir, '/model_', str(l)))
           if ( l == 0 ):
-            ene_model.append(ene_model_0[k])
+            ene_model.append(energy[k])
           else:
             model_log_file = ''.join((model_dir, '/traj_', str(k), '/lammps.out'))
             step_line_num = file_tools.grep_line_num("'Step '", model_log_file, lammps_sys_task_dir)[0]
@@ -150,8 +130,7 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
         model_devi_file.write('%-10d%-14.6f%-14.6f%-14.6f%-16.6f%-16.6f%-16.6f\n' \
                                     %(k*each, max_ene, min_ene, avg_ene, max_frc, min_frc, avg_frc))
 
-        vec_a, vec_b, vec_c = get_cell.get_triclinic_cell_six(tot_box[k])
-        atoms_type_dist = calc_dist(atoms, coord, vec_a, vec_b, vec_c)
+        atoms_type_dist = calc_dist(atoms, coord[k], cell[k][0], cell[k][1], cell[k][2])
         dist = []
         atom_type_pair_tot = []
         for key in atoms_type_dist:

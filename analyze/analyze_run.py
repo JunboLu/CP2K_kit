@@ -13,7 +13,6 @@ from CP2K_kit.analyze import diffusion
 from CP2K_kit.analyze import spectrum
 from CP2K_kit.analyze import file_trans
 from CP2K_kit.analyze import lmp2cp2k
-from CP2K_kit.analyze import dp_test
 from CP2K_kit.analyze import v_hartree
 from CP2K_kit.analyze import free_energy
 from CP2K_kit.analyze import arrange_data
@@ -78,5 +77,3 @@ elif ( analyze_job == 'v_hartree' ):
 elif ( analyze_job == 'file_trans' ):
   file_trans.file_trans_run(job_type_param[0], work_dir)
 
-elif ( analyze_job == 'dp_test' ):
-  dp_test.dp_test_run(job_type_param[0], work_dir)

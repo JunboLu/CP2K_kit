@@ -29,8 +29,14 @@ string_split=(${string// / })
 model_type=${string_split[1]}
 fi
 
+if [[ $run_type == deepff ]]; then
+string=`grep 'deepff_type' ${inp_file}`
+string_split=(${string// / })
+deepff_type=${string_split[1]}
+fi
+
 if [[ ${run_type} == deepff ]]; then
-${python_exe} ${CP2K_kit_path}/deepff/deepff_run.py ${work_dir} ${inp_file}
+${python_exe} ${CP2K_kit_path}/deepff/deepff_run.py ${work_dir} ${inp_file} ${deepff_type}
 elif [[ ${run_type} == analyze ]]; then
 ${python_exe} ${CP2K_kit_path}/analyze/analyze_run.py ${work_dir} ${inp_file} ${analyze_job}
 elif [[ ${run_type} == gth_pp_opt ]]; then

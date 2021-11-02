@@ -74,10 +74,7 @@ def get_euclid_dist(a_arr, b_arr):
       euclid_dist is euclid distance between two vector.
   '''
 
-  sum_value = 0.0
-  for i in range(len(a_arr)):
-    sum_value = sum_value + (a_arr[i]-b_arr[i])**2
-
+  sum_value = np.sum(np.square(np.array(a_arr)-np.array(b_arr)))
   euclid_dist = np.sqrt(sum_value/(len(a_arr)))
 
   return euclid_dist

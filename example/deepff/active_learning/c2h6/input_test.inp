@@ -1,0 +1,58 @@
+&global
+  run_type  deepff
+  deepff_type active_dp_test
+&end global
+
+&deepff
+  &deepmd_test
+    init_dpff_file ./frozen_model.pb
+    deepmd_inp_file ./input.json
+    lr_scale 10.0
+    fix_stop_batch false
+    use_prev_model true
+    epoch_num 200
+  &end deepmd_test
+
+  &lammps
+    nsteps 100000
+    write_restart_freq 1000
+    time_step 0.0005
+    temp 50.0
+    pres 1.0
+    tau_t 0.1
+    tau_p 0.5
+    change_init_str false
+    &system
+      box ./lmp_init_data/box
+      coord ./lmp_init_data/str.inc
+      md_type nvt
+      use_metad true
+      plumed_file ./plumed.dat
+    &end system
+  &end lammps
+
+  &active_learn
+    choose_new_data_num_limit 500
+    judge_freq 100
+    force_conv 0.05
+    energy_conv 0.01
+    max_iter 20
+  &active_learn
+
+  &cp2k
+    cp2k_inp_file ./cp2k.inp
+    use_prev_wfn true
+  &end cp2k
+
+  &environ
+    cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
+    cp2k_env_file /home/lujunbo/bin/cp2k-8.2/tools/toolchain/install/setup
+    parallel_exe /home/lujunbo/bin/parallel/bin/parallel
+    cuda_dir none
+    lmp_job_per_node 1
+    lmp_mpi_num_per_job 12
+    lmp_omp_num_per_job 1
+    cp2k_job_per_node 6
+  &end environ
+&end deepff
+
