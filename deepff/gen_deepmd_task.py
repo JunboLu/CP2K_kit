@@ -271,7 +271,7 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num):
     fix_stop_batch = deepmd_test_dic['fix_stop_batch']
     use_prev_model = deepmd_test_dic['use_prev_model']
     lr_scale = deepmd_test_dic['lr_scale']
-    start_lr = deepmd_dic['learning_rate']['start_lr']
+    start_lr = deepmd_test_dic['start_lr']
     batch_size = deepmd_dic['training']['batch_size']
     if not fix_stop_batch:
       epoch_num = deepmd_test_dic['epoch_num']

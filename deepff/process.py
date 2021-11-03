@@ -286,8 +286,12 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
           task_dir_prefix = train_dic[key]['task_dir_prefix']
           proj_name = train_dic[key]['proj_name']
           out_file_name = train_dic[key]['out_file_name']
+          choosed_index = data_op.gen_list(start, end, 1)
+          choosed_index_array = np.array(choosed_index)
+          np.random.shuffle(choosed_index_array)
+          choosed_index = list(choosed_index_array[0:choosed_num])
           load_data.load_data_from_sepfile(data_dir, save_dir, task_dir_prefix, proj_name, tot_atoms_type_dic, \
-                                           range(start, end, 1), choosed_num, out_file_name)
+                                           sorted(choosed_index), out_file_name)
         energy_array, coord_array, frc_array, box_array, virial_array = load_data.read_raw_data(save_dir)
         init_data_num_part, init_test_data_num_part = load_data.raw_data_to_set(parts, shuffle_data, save_dir, energy_array, \
                                                                                 coord_array, frc_array, box_array, virial_array)

@@ -18,6 +18,6 @@ print ('DEEPFF| INPUT FILE NAME %s\n' %(inp_file), flush=True)
 
 if ( deepff_type == 'active_model_devi' or deepff_type == 'active_dp_test' ):
   active.kernel(work_dir, inp_file, deepff_type)
-elif ( deepff_type == 'dp_test' ):
+elif ( deepff_type == 'test' ):
   job_type_param = read_input.dump_info(work_dir, inp_file, [deepff_type])
   dp_test.dp_test_run(job_type_param[0], work_dir)

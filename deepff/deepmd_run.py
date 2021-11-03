@@ -3,7 +3,6 @@
 import os
 import math
 import json
-import copy
 import subprocess
 import linecache
 import numpy as np
@@ -11,7 +10,6 @@ from collections import OrderedDict
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
-from CP2K_kit.deepff import check_deepff
 
 def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, device, usage, cuda_dir):
 

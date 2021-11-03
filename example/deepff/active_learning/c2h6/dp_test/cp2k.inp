@@ -1,0 +1,69 @@
+&Global
+  PRINT_LEVEL LOW
+  PROJECT_NAME cp2k
+  RUN_TYPE ENERGY_FORCE
+&END Global
+
+&FORCE_EVAL
+  METHOD Quickstep
+  STRESS_TENSOR ANALYTICAL
+  &DFT
+     BASIS_SET_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/BASIS_MOLOPT
+     POTENTIAL_FILE_NAME /home/lujunbo/bin/cp2k-8.2/data/POTENTIAL
+    CHARGE 0
+    WFN_RESTART_FILE_NAME ../traj_2/cp2k-RESTART.wfn
+    MULTIPLICITY 1
+    &MGRID
+      CUTOFF 400
+      NGRIDS 4
+      REL_CUTOFF 50
+    &END MGRID
+    &QS
+      METHOD GPW
+      EXTRAPOLATION ASPC
+    &END QS
+    &POISSON
+      PERIODIC XYZ
+    &END POISSON
+    &SCF
+      MAX_SCF 100
+      SCF_GUESS RESTART
+      EPS_SCF 1.0E-6
+      CHOLESKY INVERSE_DBCSR
+      &OUTER_SCF
+        MAX_SCF 6
+        EPS_SCF 1.0E-6
+      &END OUTER_SCF
+      &OT
+        MINIMIZER CG
+        PRECONDITIONER FULL_ALL
+      &END OT
+    &END SCF
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+  &END DFT
+  &PRINT
+    &FORCES
+      FILENAME
+    &END FORCES
+  &END PRINT
+  &SUBSYS
+    &CELL
+      @include box
+      PERIODIC XYZ
+    &END CELL
+    &COORD
+      @include coord
+    &END COORD
+    &KIND C
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q4
+    &END KIND
+    &KIND H
+     BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL

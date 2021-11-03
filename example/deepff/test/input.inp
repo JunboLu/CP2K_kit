@@ -1,0 +1,14 @@
+&global
+  run_type  deepff
+  deepff_type test
+&end global
+
+&deepff
+  &test
+    cp2k_frc_file ./test-frc-1.xyz
+    cp2k_pos_file ./test-pos-1.xyz
+    cp2k_cell_file ./test-1.cell
+    dpff_file ./frozen_model.pb
+    atom_label 1:O 2:H
+  &end test
+&end deepff

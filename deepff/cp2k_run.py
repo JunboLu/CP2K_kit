@@ -1,10 +1,7 @@
 #! /usr/env/bin python
 
 import os
-import copy
 import math
-import linecache
-import numpy as np
 from CP2K_kit.deepff import process
 from CP2K_kit.tools import *
 

@@ -277,7 +277,7 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir):
     for i in range(frames_num):
       writer.writerow([energy_cp2k[i], energy_lmp[i]])
 
-  str_print = 'Success: cp2k energy vs lammps energy is written in %s. RMSD between cp2k and lammps is %f.' \
+  str_print = 'Success: cp2k energy vs lammps energy is written in %s. Averaged RMSD between cp2k and lammps is %f eV/atom.' \
                %(energy_file_name, rmsd_energy_avg)
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)
@@ -291,7 +291,7 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir):
         writer.writerow([frc_cp2k[i][j][1], frc_lmp[i][j][1]])
         writer.writerow([frc_cp2k[i][j][2], frc_lmp[i][j][2]])
 
-  str_print = 'Success: cp2k force vs lammps force is written in %s. RMSD between cp2k and lammps is %f' \
+  str_print = 'Success: cp2k force vs lammps force is written in %s. Averaged RMSD between cp2k and lammps is %f eV/A' \
                %(energy_file_name, rmsd_frc_avg)
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)

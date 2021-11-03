@@ -1,12 +1,9 @@
 #! /usr/env/bin python
 
 import os
-import copy
 import math
-import linecache
 import subprocess
 import numpy as np
-from collections import OrderedDict
 from CP2K_kit.tools import *
 from CP2K_kit.deepff import process
 from CP2K_kit.deepff import gen_lammps_task

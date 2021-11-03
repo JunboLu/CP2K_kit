@@ -389,6 +389,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
                            cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
 
+      print ('Step 4: deep potential test', flush=True)
       struct_index, success_ratio_sys, success_ratio  = \
       dp_test.active_learning_test(work_dir, i, atoms_type_multi_sys, \
                                    use_mtd_tot, force_conv, energy_conv)

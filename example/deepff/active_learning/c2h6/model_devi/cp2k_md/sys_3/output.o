@@ -1,0 +1,2 @@
+/home/lujunbo/.bashrc: line 13: ulimit: stack size: cannot modify limit: Operation not permitted
+/var/spool/pbs/mom_priv/jobs/18054.mgr.SC: line 24: ulimit: stack size: cannot modify limit: Operation not permitted

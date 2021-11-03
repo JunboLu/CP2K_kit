@@ -553,9 +553,19 @@ def check_deepmd_test(deepmd_dic):
     log_info.log_error('Input error: no init_dpff_dir, please set deepff/deepmd_test/init_dpff_dir')
     exit()
 
+  if ( 'start_lr' in deepmd_dic.keys() ):
+    start_lr = deepmd_dic['start_lr']
+    if ( data_op.eval_str(start_lr) == 2 ):
+      deepmd_dic['start_lr'] = float(start_lr)
+    else:
+      log_info.log_error('Input error: the start_lr should be float, please check or reset deepff/deepmd_test/start_lr')
+      exit()
+  else:
+    deepmd_dic['start_lr'] = 2.0
+
   if ( 'lr_scale' in deepmd_dic.keys() ):
     lr_scale = deepmd_dic['lr_scale']
-    if ( data_op.eval_str(lr_scale) == 2 ):
+    if ( data_op.eval_str(lr_scale) == 1 or data_op.eval_str(lr_scale) == 2 ):
       deepmd_dic['lr_scale'] = float(lr_scale)
     else:
       log_info.log_error('Input error: the lr_scale should be float, please check or reset deepff/deepmd_test/lr_scale')
@@ -1246,37 +1256,6 @@ def check_dp_test(dp_test_dic):
   else:
     log_info.log_error('Input error: no atom label, please set analyze/dp_test/atom_label')
     exit()
-
-  if ( 'lmp_exe' in dp_test_dic.keys() ):
-    lmp_exe = dp_test_dic['lmp_exe']
-    if ( os.path.exists(os.path.abspath(lmp_exe)) ):
-      dp_test_dic['lmp_exe'] = os.path.abspath(lmp_exe)
-    else:
-      log_info.log_error('Input error: %s does not exist' %(lmp_exe))
-      exit()
-  else:
-    log_info.log_error('Input error: no lammps executable file, please set analyze/dp_test/lmp_exe')
-    exit()
-
-  if ( 'lmp_mpi_num' in dp_test_dic.keys() ):
-    lmp_mpi_num = dp_test_dic['lmp_mpi_num']
-    if ( data_op.eval_str(lmp_mpi_num) == 1 ):
-      dp_test_dic['lmp_mpi_num'] = int(lmp_mpi_num)
-    else:
-      log_info.log_error('Input error: lammps mpi number shoule be integer, please set analyze/dp_test/lmp_mpi_num')
-      exit()
-  else:
-    dp_test_dic['lmp_mpi_num'] = 1
-
-  if ( 'lmp_omp_num' in dp_test_dic.keys() ):
-    lmp_omp_num = dp_test_dic['lmp_omp_num']
-    if ( data_op.eval_str(lmp_omp_num) == 1 ):
-      dp_test_dic['lmp_omp_num'] = int(lmp_omp_num)
-    else:
-      log_info.log_error('Input error: lammps openmp number shoule be integer, please set analyze/dp_test/lmp_omp_num')
-      exit()
-  else:
-    dp_test_dic['lmp_omp_num'] = 1
 
   if ( 'atom_label' in dp_test_dic.keys() ):
     atom_label = dp_test_dic['atom_label']

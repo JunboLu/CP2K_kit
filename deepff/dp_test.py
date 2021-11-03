@@ -11,7 +11,7 @@ from CP2K_kit.tools import get_cell
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import read_lmp
 from CP2K_kit.tools import log_info
-from CP2K_kit.deepff import lammps_run
+from CP2K_kit.deepff import gen_lammps_task
 from CP2K_kit.deepff import model_devi
 from CP2K_kit.deepff import check_deepff
 from CP2K_kit.deepff import write_data
@@ -62,8 +62,10 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     line_i = linecache.getline(cp2k_cell_file, i+1+1)
     line_i_split = data_op.split_str(line_i, ' ')
     cell_vec = [float(x) for x in line_i_split[2:11]]
+    a, b, c, alpha, beta, gamma = \
+    get_cell.get_cell_const(cell_vec[0:3], cell_vec[3:6], cell_vec[6:10])
     tri_cell_a, tri_cell_b, tri_cell_c = \
-    get_cell.get_triclinic_cell(cell_vec[0:3], cell_vec[3:6], cell_vec[6:10])
+    get_cell.get_triclinic_cell(a, b, c, alpha, beta, gamma)
     tri_cell_tot.append([str(tri_cell_a[0]), str(tri_cell_b[1]), str(tri_cell_c[2]), \
                          str(tri_cell_b[0]), str(tri_cell_c[0]), str(tri_cell_c[1])])
 
@@ -86,19 +88,14 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
 
   linecache.clearcache()
 
-  cmd = "cp %s %s" %(dpff_file, work_dir)
-  call.call_simple_shell(work_dir, cmd)
-
-  dpff_file_split = data_op.split_str(dpff_file, '/')
-  dpff_file_name = dpff_file_split[len(dpff_file_split)-1]
-
   print ('Run lammps jobs for %s system' %(frames_num), flush=True)
 
   for i in range(frames_num):
     frame_dir = ''.join((work_dir, '/frame_', str(i)))
-    cmd = "mkdir %s" %(''.join(('frame_', str(i))))
-    call.call_simple_shell(work_dir, cmd)
-    lammps_run.gen_data_file(tri_cell_tot[i], atom_type_tot[i], x_tot[i], y_tot[i], z_tot[i], frame_dir, 'data.lmp')
+    if ( not os.path.exists(frame_dir) ):
+      cmd = "mkdir %s" %(''.join(('frame_', str(i))))
+      call.call_simple_shell(work_dir, cmd)
+    gen_lammps_task.gen_data_file(tri_cell_tot[i], atom_type_tot[i], x_tot[i], y_tot[i], z_tot[i], frame_dir, 'data.lmp')
     lmp_in_file_name = ''.join((frame_dir, '/in.lammps'))
     lmp_in_file = open(lmp_in_file_name, 'w')
 
@@ -111,7 +108,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
       mass = atom.get_atom_mass(atom_label[key])[1]
       lmp_in_file.write('mass            %d %f\n' %(key, mass))
 
-    lmp_in_file.write('pair_style      deepmd %s\n' %(''.join((work_dir, '/', dpff_file_name))))
+    lmp_in_file.write('pair_style      deepmd %s\n' %(dpff_file))
     lmp_in_file.write('pair_coeff\n')
 
     lmp_in_file.write('thermo_style    custom step temp pe ke etotal\n')
@@ -121,7 +118,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
 
     lmp_in_file.close()
 
-    cmd = 'export OMP_NUM_THREADS=%d && mpirun -np %d %s < ./in.lammps > out' %(lmp_omp_num, lmp_mpi_num, lmp_exe)
+    cmd = 'export OMP_NUM_THREADS=%d && mpirun -np %d %s < ./in.lammps 1> out 2> err' %(lmp_omp_num, lmp_mpi_num, lmp_exe)
     subprocess.run(cmd, shell=True, cwd=frame_dir)
 
   energy_cp2k = []
@@ -220,22 +217,42 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
     energy_conv: float
       energy_conv is the maximum energy convergence.
   Returns:
-    choosed_index:
+    struct_index: dictionary
+      example: {0:{0:[2,4,6...], 1:[2,3,4...]}, 1:{0:[3,4,6...], 1:[5,6,7...]}}
+                 !                !                    !
+               sys_id          task_id              traj_id
+    success_ratio_sys: 1-d float list
+      success_ratio is the successful ratio for different systems.
+    success_ratio: float
+      success_ratio is the successful ratio for whole systems.
   '''
 
   struct_index = OrderedDict()
   success_frames = []
   tot_frames = []
 
-  lmp_dir = ''.join((work_dir, '/iter_', str(iter_id), '/02.lammps_calc'))
+  iter_dir = ''.join((work_dir, '/iter_', str(iter_id)))
+  lmp_dir = ''.join((iter_dir, '/02.lammps_calc'))
+  dp_test_dir = ''.join((iter_dir, '/04.dp_test'))
+  if ( not os.path.exists(dp_test_dir) ):
+    cmd = "mkdir %s" %('04.dp_test')
+    call.call_simple_shell(iter_dir, cmd)
   sys_num = len(atoms_type_multi_sys)
   for i in range(sys_num):
     struct_index_i = OrderedDict()
     success_frames_i = []
     tot_frames_i = []
+    dp_test_sys_dir = ''.join((dp_test_dir, '/sys_', str(i)))
+    if ( not os.path.exists(dp_test_sys_dir) ):
+      cmd = "mkdir %s" %(''.join(('sys_', str(i))))
+      call.call_simple_shell(dp_test_dir, cmd)
     lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
     task_num = process.get_task_num(lmp_sys_dir)
     for j in range(task_num):
+      dp_test_sys_task_dir = ''.join((dp_test_sys_dir, '/task_', str(j)))
+      if ( not os.path.exists(dp_test_sys_task_dir) ):
+        cmd = "mkdir %s" %(''.join(('task_', str(j))))
+        call.call_simple_shell(dp_test_sys_dir, cmd)
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
       lmp_log_file = ''.join((lmp_sys_task_dir, '/lammps.out'))
       lmp_traj_file = ''.join((lmp_sys_task_dir, '/atom.dump'))
@@ -243,7 +260,7 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
       atoms, energy_lmp, coord_lmp, vel_lmp, frc_lmp, cell_lmp = \
       read_lmp.read_lmp_log_traj(lmp_traj_file, lmp_log_file, atoms_type_multi_sys[i], [], True, True, False, True, True)
       tot_frames_i.append(frames_num)
-      if ( use_mtd_tot[i] == 'mtd' ):
+      if use_mtd_tot[i]:
         frc_lmp = []
         model_dir = ''.join((lmp_sys_task_dir, '/model_0'))
         for k in range(frames_num):
@@ -254,7 +271,7 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
           for l in range(atoms_num):
             line_kl = linecache.getline(dump_file, l+9+1)
             line_kl_split = data_op.split_str(line_kl, ' ', '\n')
-            id_k.append(int(line_lm_split[0]))
+            id_k.append(int(line_kl_split[0]))
             frc_k.append([float(line_kl_split[5]), float(line_kl_split[6]), float(line_kl_split[7])])
           linecache.clearcache()
           id_k_asc, asc_index = data_op.get_list_order(id_k, 'ascend', True)
@@ -288,13 +305,13 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
             fy = float(line_kl_split[4])*hartree_to_ev*ang_to_bohr
             fz = float(line_kl_split[5])*hartree_to_ev*ang_to_bohr
             frc_cp2k_k.append([fx, fy, fz])
-            frc_lmp_k.append([frc_lmp[k][l][0], frc_lmp[k][l][1], frc_lmp[k][l][0]])
+            frc_lmp_k.append([frc_lmp[k][l][0], frc_lmp[k][l][1], frc_lmp[k][l][2]])
           linecache.clearcache()
 
           frc_cp2k_final.append(frc_cp2k_k)
           frc_lmp_final.append(frc_lmp_k)
 
-      write_data.write_file(energy_cp2k_final, energy_lmp_final, frc_cp2k_final, frc_lmp_final, cp2k_sys_task_dir)
+      write_data.write_file(energy_cp2k_final, energy_lmp_final, frc_cp2k_final, frc_lmp_final, dp_test_sys_task_dir)
 
       choosed_index = []
       success_frames_ij = 0
@@ -352,9 +369,11 @@ def dp_test_run(dp_test_param, work_dir):
     none
   '''
 
+  from CP2K_kit.deepff import sys_info
+
+  proc_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
   dp_test_param = check_deepff.check_dp_test(dp_test_param)
 
-  learn_type = dp_test_param['learn_type']
   atom_label = dp_test_param['atom_label']
 
   print ('DP_TEST'.center(80, '*'), flush=True)
@@ -362,10 +381,8 @@ def dp_test_run(dp_test_param, work_dir):
   cp2k_pos_file = dp_test_param['cp2k_pos_file']
   cp2k_cell_file = dp_test_param['cp2k_cell_file']
   dpff_file = dp_test_param['dpff_file']
-  lmp_exe = dp_test_param['lmp_exe']
-  lmp_mpi_num = dp_test_param['lmp_mpi_num']
-  lmp_omp_num = dp_test_param['lmp_omp_num']
+  lmp_exe, lmp_path = sys_info.get_lmp_path(work_dir)
 
   print ('Do test for supervised learning type', flush=True)
 
-  supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_mpi_num, lmp_omp_num, dpff_file, atom_label, work_dir)
+  supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, proc_num, 1, dpff_file, atom_label, work_dir)
