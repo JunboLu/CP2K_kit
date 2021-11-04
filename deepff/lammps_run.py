@@ -494,7 +494,7 @@ cd %s
   except subprocess.CalledProcessError as err:
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, model_dir))
 
-def check_lmpfrc(lmp_dir, sys_num, task_num, model_num, traj_num, use_mtd_tot, atoms_num_tot):
+def check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot):
 
   '''
   check_lmpfrc: check the statu of lammps force calculation
@@ -504,12 +504,6 @@ def check_lmpfrc(lmp_dir, sys_num, task_num, model_num, traj_num, use_mtd_tot, a
       lmp_dir is the directory of lammps calculation.
     sys_num: int
       sys_num is the number of systems.
-    task_num: int
-      task_num is the number of tasks.
-    model_num: int
-      model_num is the number of models.
-    traj_num: int
-      traj_num is the number of frames.
     use_mtd_tot: bool
       use_myd_tot is whethet using metadynamics for whole systems.
     atoms_num_tot: 1-d dictionary, dim = num of lammps systems
@@ -523,17 +517,15 @@ def check_lmpfrc(lmp_dir, sys_num, task_num, model_num, traj_num, use_mtd_tot, a
   for i in range(sys_num):
     lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
     cmd = "ls | grep %s" % ('task_')
-    task_num = len(call.call_returns_shell(lmp_sys_dir, cmd))
+    task_num = process.get_task_num(lmp_sys_dir)
     check_lmp_frc_run_i = []
     for j in range(task_num):
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-      cmd = "ls | grep %s" % ("'model_[0-9]'")
-      model_num = len(call.call_returns_shell(lmp_sys_task_dir, cmd))
+      model_num = process.get_lmp_model_num(lmp_sys_task_dir)
       check_lmp_frc_run_ij = []
       for k in range(model_num):
         model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
-        cmd = "ls | grep %s" % ('traj_')
-        traj_num = len(call.call_returns_shell(model_dir, cmd))
+        traj_num = process.get_traj_num(model_dir)
         check_lmp_frc_run_ijk = []
         for l in range(traj_num):
           traj_dir = ''.join((model_dir, '/traj_', str(l)))
@@ -541,7 +533,7 @@ def check_lmpfrc(lmp_dir, sys_num, task_num, model_num, traj_num, use_mtd_tot, a
           log_file_name_abs = ''.join((traj_dir, '/lammps.out'))
           if ( os.path.exists(dump_file_name_abs) and \
                len(open(dump_file_name_abs, 'r').readlines()) == atoms_num_tot[i]+9 ):
-            if ( use_mtd_tot or k != 0 ):
+            if ( use_mtd_tot[i] or k != 0 ):
               if ( os.path.exists(log_file_name_abs) and \
                    file_tools.grep_line_num("'Step'", log_file_name_abs, traj_dir) != 0 and \
                    file_tools.grep_line_num("'Loop time'", log_file_name_abs, traj_dir) != 0 ):
@@ -677,7 +669,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
                               lmp_exe, mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
 
   while True:
-    check_lmp_frc_run = check_lmpfrc(lmp_dir, sys_num, task_num, model_num, traj_num, use_mtd_tot, atoms_num_tot)
+    check_lmp_frc_run = check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot)
     lmp_frc_statu = []
     for i in range(sys_num):
       for j in range(task_num):

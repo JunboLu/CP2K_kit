@@ -171,6 +171,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
       #Get force-force correlation and then choose new structures
+      print ('step 3: model deviation', flush=True)
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       struct_index, success_ratio_sys, success_ratio, success_devi_ratio = \
       model_devi.choose_lmp_str(work_dir, i, atoms_type_multi_sys, force_conv)
@@ -200,7 +201,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
         log_info.log_error('Warning: No selected structure for cp2k calculations, check the deepmd training.')
         exit()
 
-      print ('Step 3: cp2k tasks', flush=True)
+      print ('Step 4: cp2k tasks', flush=True)
       #Perform cp2k calculation
       gen_cp2k_task.gen_cp2k_task(cp2k_dic, work_dir, i, atoms_type_multi_sys, atoms_num_tot, struct_index, conv_new_data_num, \
                                   choose_new_data_num_limit, train_stress, 'model_devi', success_ratio, success_devi_ratio)
