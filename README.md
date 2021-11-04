@@ -40,7 +40,7 @@ Email: lujunbo15@gmail.com
     to "CP2K_kit" after you unzip it.  
     cd CP2K_kit_directory/lib  
     change directory of f2py in Makefile  
-    !Caution: When the gcc version is low, f2py cannot compile core code successfully, please update your  
+    !Caution: If your gcc version is low, f2py cannot compile core code successfully, please update your  
     gcc up to 6.3.  
     make  
 
