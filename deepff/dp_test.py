@@ -125,12 +125,6 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
   energy_lmp = []
   frc_cp2k = []
   frc_lmp = []
-  frc_x_cp2k = []
-  frc_x_lmp = []
-  frc_y_cp2k = []
-  frc_y_lmp = []
-  frc_z_cp2k = []
-  frc_z_lmp = []
 
   for i in range(frames_num):
     frame_dir = ''.join((work_dir, '/frame_', str(i)))
@@ -144,59 +138,35 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
     energy_lmp.append(float(line_log_i_split[2])/atoms_num)
     atom_id_i = []
     frc_lmp_i = []
-    frc_x_lmp_i = []
-    frc_y_lmp_i = []
-    frc_z_lmp_i = []
     for j in range(atoms_num):
       line_traj_ij = linecache.getline(lmp_traj_file, j+1+9)
       line_traj_ij_split = data_op.split_str(line_traj_ij, ' ', '\n')
       atom_id_i.append(int(line_traj_ij_split[0]))
-      frc_x_lmp_i.append(float(line_traj_ij_split[5]))
-      frc_y_lmp_i.append(float(line_traj_ij_split[6]))
-      frc_z_lmp_i.append(float(line_traj_ij_split[7]))
       frc_lmp_i.append([float(line_traj_ij_split[5]), float(line_traj_ij_split[6]), float(line_traj_ij_split[7])])
 
     atom_id_i_asc, asc_index = data_op.get_list_order(atom_id_i, 'ascend', True)
-    frc_x_lmp_i_asc = data_op.order_list(frc_x_lmp_i, asc_index)
-    frc_y_lmp_i_asc = data_op.order_list(frc_y_lmp_i, asc_index)
-    frc_z_lmp_i_asc = data_op.order_list(frc_z_lmp_i, asc_index)
-    frc_lmp_i_asc = data_op.order_list(frc_lmp_i, asc_index)
+    frc_lmp_i_asc = data_op.reorder_list(frc_lmp_i, asc_index)
 
-    frc_lmp.append(data_op.list_reshape(frc_lmp_i_asc))
-    frc_x_lmp.append(frc_x_lmp_i_asc)
-    frc_y_lmp.append(frc_y_lmp_i_asc)
-    frc_z_lmp.append(frc_z_lmp_i_asc)
+    frc_lmp.append(frc_lmp_i_asc)
 
     line_cp2k = linecache.getline(cp2k_frc_file, i*(pre_base_block+atoms_num+end_base_block)+2+pre_base)
     line_cp2k_split = data_op.split_str(line_cp2k, ' ', '\n')
     energy_cp2k.append(float(line_cp2k_split[len(line_cp2k_split)-1])*hartree_to_ev/atoms_num)
 
     frc_cp2k_i = []
-    frc_x_cp2k_i = []
-    frc_y_cp2k_i = []
-    frc_z_cp2k_i = []
     for j in range(atoms_num):
       line_cp2k_ij = linecache.getline(cp2k_frc_file, i*(pre_base_block+atoms_num+end_base_block)+j+1+pre_base+pre_base_block)
       line_cp2k_ij_split = data_op.split_str(line_cp2k_ij, ' ', '\n')
       fx = float(line_cp2k_ij_split[1])*hartree_to_ev*ang_to_bohr
       fy = float(line_cp2k_ij_split[2])*hartree_to_ev*ang_to_bohr
       fz = float(line_cp2k_ij_split[3])*hartree_to_ev*ang_to_bohr
-      frc_x_cp2k_i.append(fx)
-      frc_y_cp2k_i.append(fy)
-      frc_z_cp2k_i.append(fz)
-      frc_cp2k_i.append(fx)
-      frc_cp2k_i.append(fy)
-      frc_cp2k_i.append(fz)
+      frc_cp2k_i.append([fx,fy,fz])
 
     frc_cp2k.append(frc_cp2k_i)
-    frc_x_cp2k.append(frc_x_cp2k_i)
-    frc_y_cp2k.append(frc_y_cp2k_i)
-    frc_z_cp2k.append(frc_z_cp2k_i)
 
   linecache.clearcache()
 
-  write_data.write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, frc_x_cp2k, frc_x_lmp, \
-                        frc_y_cp2k, frc_y_lmp, frc_z_cp2k, frc_z_lmp, work_dir)
+  write_data.write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir)
 
 def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, force_conv, energy_conv):
 
