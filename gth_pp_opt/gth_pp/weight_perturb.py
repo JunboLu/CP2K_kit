@@ -1,5 +1,6 @@
 #! /usr/env/bin python
 
+import os
 import subprocess
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
@@ -36,11 +37,23 @@ def run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
   #make process_3_dir, and copy initial guess gth pp file to process_3_dir
   #The initial guess gth pp file in process_3_dir is produces by process_2
   process_3_dir = ''.join((work_dir, '/process_3'))
-  subprocess.run('mkdir process_3', cwd=work_dir, shell=True)
+  if ( not os.path.exists(process_3_dir) ):
+    subprocess.run('mkdir process_3', cwd=work_dir, shell=True)
   subprocess.run('cp %s %s' % (gth_pp_file, process_3_dir), cwd=work_dir, shell=True)
 
   cmd = "sed -ie '1s/.*/%s GTH-%s-q%d/' GTH-PARAMETER" % (element, method, val_elec_num)
   call.call_simple_shell(process_3_dir, cmd)
+
+  cmd = "ls | grep %s" %('restart')
+  restart_num = len(call.call_returns_shell(process_3_dir, cmd))
+  if ( restart_num != 0 ):
+    cmd = "ls | grep %s" %('bak_1')
+    bak_num = len(call.call_returns_shell(process_3_dir, cmd))
+    bak_dir = ''.join((process_3_dir, '/bak_', str(bak_num+1)))
+    cmd = "mkdir %s" %(''.join(('bak_', str(bak_num+1))))
+    call.call_simple_shell(process_3_dir, cmd)
+    cmd = "mv restart* %s" %(''.join(('bak_', str(bak_num+1))))
+    call.call_simple_shell(process_3_dir, cmd)
 
   perturb = '''
 #! /bin/bash

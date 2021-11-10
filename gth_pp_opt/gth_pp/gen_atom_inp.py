@@ -155,7 +155,7 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
   atom_file.write('    MAX_INIT   200\n')
   atom_file.write('    MAX_FUN    50\n')
   atom_file.write('    STEP_SIZE_SCALING  0.90\n')
-  atom_file.write('    WEIGHT_PSIR0 0.0\n')
+  atom_file.write('    WEIGHT_PSIR0 10.0\n')
   atom_file.write('    TARGET_POT_SEMICORE      [eV]      0.003000\n')
   atom_file.write('    TARGET_POT_VALENCE       [eV]      0.000300\n')
   atom_file.write('    TARGET_POT_VIRTUAL       [eV]      0.003000\n')

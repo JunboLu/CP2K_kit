@@ -1085,7 +1085,7 @@ def check_cp2k(cp2k_dic):
 
   return cp2k_dic
 
-def check_environ(environ_dic):
+def check_environ(environ_dic, proc_num_one_node):
 
   '''
   check_environ: check the input file in environ subsection
@@ -1093,6 +1093,8 @@ def check_environ(environ_dic):
   Args:
     environ_dic: dictionary
       environ_dic contains keywords used in environment.
+    proc_num_one_node: int
+      proc_num_one_node is the number of processors in one node.
   Returns:
     environ_dic: dictionary
       environ_dic is the revised environ_dic.

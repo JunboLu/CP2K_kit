@@ -496,7 +496,7 @@ def kernel(work_dir, inp_file, deepff_type):
   active_learn_dic = check_deepff.check_active_learn(active_learn_dic)
   lammps_dic = check_deepff.check_lammps(lammps_dic, active_learn_dic)
   cp2k_dic = check_deepff.check_cp2k(cp2k_dic)
-  environ_dic = check_deepff.check_environ(environ_dic)
+  environ_dic = check_deepff.check_environ(environ_dic, proc_num_per_node[0])
 
   if ( deepff_type == 'active_model_devi' ):
     tot_atoms_type = process.get_atoms_type(deepmd_dic)

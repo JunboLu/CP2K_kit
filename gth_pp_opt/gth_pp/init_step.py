@@ -128,4 +128,3 @@ seq $run_start $run_end | $parallel_exe -j $parallel_num produce {} $direc
 
   subprocess.run('chmod +x run.sh', cwd=process_1_dir, shell=True)
   subprocess.run("bash -c './run.sh'", cwd=process_1_dir, shell=True)
-
