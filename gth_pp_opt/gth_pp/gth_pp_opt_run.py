@@ -30,7 +30,7 @@ def get_min_step(process_dir):
     if ( return_temp != [] ):
       return_temp_split = data_op.split_str(return_temp[0], ' ')
       if ( len(return_temp_split) > 5 ):
-        value.append(return_temp_split[5])
+        value.append(float(return_temp_split[5]))
         step_index.append(i+1)
 
   min_value = min(value)
@@ -145,7 +145,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     value_asc, asc_order = data_op.get_list_order(value, 'ascend', True)
     for i in asc_order:
-      if ( abs(r_loc[i]-r_loc_def) < 0.005 ):
+      if ( abs(r_loc[i]-r_loc_def) < 0.001 ):
         choosed_index = step_index[i]
         break
     gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
