@@ -9,6 +9,7 @@
   all_elec_method kohn-sham
   xc_func pbe
   relat_method dkh(3)
+  r_loc_conv 0.001
   parallel_num 4
   init_gth_pp_file ./GTH-PARAMETER
   cp2k_exe /home/lujunbo/bin/cp2k/cp2k-6.1-sopt/cp2k-6.1-Linux-x86_64.sopt

@@ -81,6 +81,11 @@ if ( 'restart_stage' in job_type_param[0].keys() ):
 else:
   restart_stage = 0
 
+if ( 'r_loc_conv' in job_type_param[0].keys() ):
+  r_loc_conv = float(job_type_param[0]['r_loc_conv'])
+else:
+  r_loc_conv = 0.005
+
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0])
 
@@ -145,7 +150,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     value_asc, asc_order = data_op.get_list_order(value, 'ascend', True)
     for i in asc_order:
-      if ( abs(r_loc[i]-r_loc_def) < 0.001 ):
+      if ( abs(r_loc[i]-r_loc_def) < r_loc_conv ):
         choosed_index = step_index[i]
         break
     gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
