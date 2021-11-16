@@ -342,7 +342,7 @@ def check_deepmd_model(deepmd_dic):
 
     if ( 'lr_scale' in deepmd_dic['training'].keys() ):
       lr_scale = deepmd_dic['training']['lr_scale']
-      if ( data_op.eval_str(lr_scale) == 2 ):
+      if ( data_op.eval_str(lr_scale) == 1 or data_op.eval_str(lr_scale) == 2 ):
         deepmd_dic['training']['lr_scale'] = float(lr_scale)
       else:
         log_info.log_error('Input error: the lr_scale should be float, please check or reset deepff/deepmd_model/training/lr_scale')

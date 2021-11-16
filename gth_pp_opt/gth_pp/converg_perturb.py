@@ -47,7 +47,7 @@ def run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
   cmd = "ls | grep %s" %('restart')
   restart_num = len(call.call_returns_shell(process_4_dir, cmd))
   if ( restart_num != 0 ):
-    cmd = "ls | grep %s" %('bak_1')
+    cmd = "ls | grep %s" %('bak_')
     bak_num = len(call.call_returns_shell(process_4_dir, cmd))
     bak_dir = ''.join((process_4_dir, '/bak_', str(bak_num+1)))
     cmd = "mkdir %s" %(''.join(('bak_', str(bak_num+1))))

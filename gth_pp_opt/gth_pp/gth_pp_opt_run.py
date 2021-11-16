@@ -20,6 +20,7 @@ from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
 
 def get_min_step(process_dir):
 
+  print (process_dir)
   value = []
   step_index = []
   cmd = "ls | grep %s" % ('step')
@@ -114,7 +115,7 @@ if ( restart_stage == 0 ):
 if ( restart_stage == 0 or restart_stage == 1 ):
   process_2_dir = ''.join((work_dir, '/process_2'))
   if ( os.path.exists(process_2_dir) ):
-    restart_num = len(call.call_returns_shell(process_2_dir, "ls -ll |awk '/^d/ {print $NF}'"))
+    restart_num = len(call.call_returns_shell(process_2_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
   if ( os.path.exists(process_2_dir) and restart_num > 1 ):
@@ -167,7 +168,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 if ( restart_stage == 0 or restart_stage == 2 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
   if ( os.path.exists(process_3_dir) ):
-    restart_num = len(call.call_returns_shell(process_3_dir, "ls -ll |awk '/^d/ {print $NF}'"))
+    restart_num = len(call.call_returns_shell(process_3_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
   if ( os.path.exists(process_3_dir) and restart_num > 1 ):
@@ -192,7 +193,7 @@ if ( restart_stage == 0 or restart_stage == 2 ):
 if ( restart_stage == 0 or restart_stage == 3 ):
   process_4_dir = ''.join((work_dir, '/process_4'))
   if ( os.path.exists(process_4_dir) ):
-    restart_num = len(call.call_returns_shell(process_4_dir, "ls -ll |awk '/^d/ {print $NF}'"))
+    restart_num = len(call.call_returns_shell(process_4_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
   if ( os.path.exists(process_4_dir) and restart_num > 1 ):
