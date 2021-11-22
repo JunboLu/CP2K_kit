@@ -87,6 +87,11 @@ if ( 'r_loc_conv' in job_type_param[0].keys() ):
 else:
   r_loc_conv = 0.005
 
+if ( 'restart_index' in job_type_param[0].keys() ):
+  restart_index = int(job_type_param[0]['restart_index'])
+else:
+  restart_index = 0
+
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0])
 
@@ -163,7 +168,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
   print ('Process_2: automated step size optimization', flush=True)
   restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
                                                 element, method, val_elec_num, python_exe, get_min_index)
-  write_data.write_restart(work_dir, job_type_param[0], 2)
+  write_data.write_restart(work_dir, job_type_param[0], 2, restart_index)
 
 if ( restart_stage == 0 or restart_stage == 2 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
@@ -188,7 +193,7 @@ if ( restart_stage == 0 or restart_stage == 2 ):
   print ('Process_3: weight pertubation optimization', flush=True)
   restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
                                                     element, method, val_elec_num, python_exe, get_min_index)
-  write_data.write_restart(work_dir, job_type_param[0], 3)
+  write_data.write_restart(work_dir, job_type_param[0], 3, restart_index)
 
 if ( restart_stage == 0 or restart_stage == 3 ):
   process_4_dir = ''.join((work_dir, '/process_4'))

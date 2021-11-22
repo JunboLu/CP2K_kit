@@ -274,7 +274,7 @@ cd $direc
     if ( len(value) != 0 ):
       min_value = min(value)
       if ( len(line_split) == 2 ):
-        if ( min_value < float(line_split[1]) ):
+        if ( min_value <= float(line_split[1]) ):
           call.kills(p.pid)
 
   min_value = min(value)
