@@ -40,6 +40,9 @@ def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
   if ( not os.path.exists(process_2_dir) ):
     subprocess.run('mkdir process_2', cwd=work_dir, shell=True)
   subprocess.run('cp %s %s' % (gth_pp_file, process_2_dir), cwd=work_dir, shell=True)
+  cmd = "sed -ie '1s/.*/%s GTH-%s-q%d/' GTH-PARAMETER" % (element, method, val_elec_num)
+  call.call_simple_shell(process_2_dir, cmd)
+
   cmd = "ls | grep %s" %('restart')
   restart_num = len(call.call_returns_shell(process_2_dir, cmd))
   if ( restart_num != 0 ):
@@ -271,10 +274,10 @@ cd $direc
     if ( subprocess.Popen.poll(p) is not None ):
       if ( line == '' ):
         break
-    if ( len(value) != 0 ):
-      min_value = min(value)
+    if ( len(value) > 1 ):
+      min_value = min(value[0:(len(value)-1)])
       if ( len(line_split) == 2 ):
-        if ( min_value <= float(line_split[1]) ):
+        if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
           call.kills(p.pid)
 
   min_value = min(value)

@@ -20,7 +20,6 @@ from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
 
 def get_min_step(process_dir):
 
-  print (process_dir)
   value = []
   step_index = []
   cmd = "ls | grep %s" % ('step')
@@ -170,7 +169,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
                                                 element, method, val_elec_num, python_exe, get_min_index)
   write_data.write_restart(work_dir, job_type_param[0], 2, restart_index)
 
-if ( restart_stage == 0 or restart_stage == 2 ):
+if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
   if ( os.path.exists(process_3_dir) ):
     restart_num = len(call.call_returns_shell(process_3_dir, "ls | grep 'restart'"))
@@ -195,7 +194,7 @@ if ( restart_stage == 0 or restart_stage == 2 ):
                                                     element, method, val_elec_num, python_exe, get_min_index)
   write_data.write_restart(work_dir, job_type_param[0], 3, restart_index)
 
-if ( restart_stage == 0 or restart_stage == 3 ):
+if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
   process_4_dir = ''.join((work_dir, '/process_4'))
   if ( os.path.exists(process_4_dir) ):
     restart_num = len(call.call_returns_shell(process_4_dir, "ls | grep 'restart'"))

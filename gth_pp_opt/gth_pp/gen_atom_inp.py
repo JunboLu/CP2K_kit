@@ -71,11 +71,13 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
   elec_config_line = ''.join(('  ELECTRON_CONFIGURATION', config, '\n'))
   atom_file.write(elec_config_line)
 
-  core_config = ''
-  for i in range(len(elec_core_config)):
-    core_config = ' '.join((core_config, elec_core_config[i]))
-
-  core_config_line = ''.join(('  CORE', core_config, '\n'))
+  if ( isinstance(elec_core_config, list) ):
+    core_config = ''
+    for i in range(len(elec_core_config)):
+      core_config = ' '.join((core_config, elec_core_config[i]))
+    core_config_line = ''.join(('  CORE', core_config, '\n'))
+  else:
+    core_config_line = ''.join(('  CORE  ', elec_core_config, '\n'))
   atom_file.write(core_config_line)
 
   val_config = copy.deepcopy(elec_config)

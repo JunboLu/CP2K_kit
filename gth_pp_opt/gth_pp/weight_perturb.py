@@ -307,9 +307,9 @@ cd $direc
       if ( line == '' ):
         break
     if ( len(value) > 10 ):
-      min_value = min(value)
+      min_value = min(value[0:(len(value)-1)])
       if ( len(line_split) == 2 ):
-        if ( min_value <= float(line_split[1]) ):
+        if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
           call.kills(p.pid)
 
   min_value = min(value)
