@@ -33,8 +33,11 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
     if ( key != 'restart_stage' and key != 'elec_config' and key != 'elec_core_config' and key != 'restart_index' ):
       restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
     if ( key == 'elec_config' or key == 'elec_core_config' ):
-      key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
-      restart_file.write('  %s %s\n' %(key, key_str))
+      if ( isinstance(gth_pp_opt_dic[key], list) ):
+        key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
+        restart_file.write('  %s %s\n' %(key, key_str))
+      else:
+        restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
   restart_file.write('  restart_stage %d\n' %(restart_stage))
   if ( restart_index != 0 ):
     restart_file.write('  restart_index %d\n' %(restart_index))

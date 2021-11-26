@@ -26,11 +26,11 @@ def get_min_step(process_dir):
   step_num = len(call.call_returns_shell(process_dir, cmd))
   for i in range(step_num):
     cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
-    return_temp = call.call_returns_shell(process_dir, cmd)
-    if ( return_temp != [] ):
-      return_temp_split = data_op.split_str(return_temp[0], ' ')
-      if ( len(return_temp_split) > 5 ):
-        value.append(float(return_temp_split[5]))
+    return_tmp = call.call_returns_shell(process_dir, cmd)
+    if ( return_tmp != [] ):
+      return_tmp_split = data_op.split_str(return_tmp[0], ' ')
+      if ( len(return_tmp_split) > 5 ):
+        value.append(float(return_tmp_split[5]))
         step_index.append(i+1)
 
   min_value = min(value)
@@ -91,6 +91,11 @@ if ( 'restart_index' in job_type_param[0].keys() ):
 else:
   restart_index = 0
 
+if ( 'max_cycle' in job_type_param[0].keys() ):
+  max_cycle = int(job_type_param[0]['max_cycle'])
+else:
+  max_cycle = 1
+
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0])
 
@@ -128,17 +133,22 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     gth_pp_file = ''.join((process_2_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
   else:
     #Choose the lowest value of process_1
-    value = []
     step_index = []
+    value = []
     r_loc = []
+    wfn_state_1 = []
     process_1_dir = ''.join((work_dir, '/process_1'))
     for i in range(129):
       cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
-      return_temp = call.call_returns_shell(process_1_dir, cmd)
-      if ( return_temp != [] ):
-        return_temp_split = data_op.split_str(return_temp[0], ' ')
-        if ( len(return_temp_split) > 5 ):
-          value.append(float(return_temp_split[5]))
+      return_func = call.call_returns_shell(process_1_dir, cmd)
+      if ( return_func != [] ):
+        return_func_split = data_op.split_str(return_func[0], ' ')
+        cmd = "grep %s step_%s/atom.out" %("'s-states N=    1'", str(i+1))
+        return_wfn = call.call_returns_shell(process_1_dir, cmd)
+        return_wfn_split = data_op.split_str(return_wfn[0], ' ')
+        if ( len(return_func_split) > 5 ):
+          value.append(float(return_func_split[5]))
+          wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
           step_index.append(i+1)
           opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(i+1), '/GTH-PARAMETER'))
           line = linecache.getline(opt_gth_pp_file, 3)
@@ -153,10 +163,22 @@ if ( restart_stage == 0 or restart_stage == 1 ):
           step_index_res.remove(i)
       print ('  Warning: uncompleted steps are:', data_op.comb_list_2_str(step_index_res, ' '))
 
-    value_asc, asc_order = data_op.get_list_order(value, 'ascend', True)
+    value_proc = []
+    r_loc_proc = []
+    wfn_state_1_proc = []
+    step_index_proc = []
+    for i in range(len(value)):
+      if ( value[i] < 10000.0 ):
+        value_proc.append(value[i])
+        r_loc_proc.append(r_loc[i])
+        wfn_state_1_proc.append(wfn_state_1[i])
+        step_index_proc.append(step_index[i])
+
+    wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
+    value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
     for i in asc_order:
-      if ( abs(r_loc[i]-r_loc_def) < r_loc_conv ):
-        choosed_index = step_index[i]
+      if ( abs(r_loc_proc[i]-r_loc_def) < r_loc_conv and wfn_state_1_proc_abs[i] < 1.2*min(wfn_state_1_proc_abs) ):
+        choosed_index = step_index_proc[i]
         break
     gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
     str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
@@ -165,8 +187,14 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
   #Run process_2
   print ('Process_2: automated step size optimization', flush=True)
-  restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
-                                                element, method, val_elec_num, python_exe, get_min_index)
+  for i in range(max_cycle):
+    if ( i != 0 ):
+      process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
+      min_step = get_min_step(process_2_min_restart_dir)
+      gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+
+    restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
+                                                  element, method, val_elec_num, python_exe, get_min_index)
   write_data.write_restart(work_dir, job_type_param[0], 2, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
