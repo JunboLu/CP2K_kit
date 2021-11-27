@@ -176,10 +176,18 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
     value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
-    for i in asc_order:
-      if ( abs(r_loc_proc[i]-r_loc_def) < r_loc_conv and wfn_state_1_proc_abs[i] < 1.2*min(wfn_state_1_proc_abs) ):
-        choosed_index = step_index_proc[i]
+    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0]
+    for scale in wfn_scale:
+      for i in asc_order:
+        if ( abs(r_loc_proc[i]-r_loc_def) < r_loc_conv and wfn_state_1_proc_abs[i] < scale*min(wfn_state_1_proc_abs) ):
+          choosed_index = step_index_proc[i]
+          break
+      if ( 'choosed_index' in locals() ):
         break
+
+    if ( 'choosed_index' not in locals() ):
+      log_info.log_error('Running error: no good parameter in process_1')
+      exit()
     gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
     str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
     str_print = data_op.str_wrap(str_print, 80, '  ')
