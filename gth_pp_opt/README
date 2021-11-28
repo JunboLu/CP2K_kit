@@ -3,7 +3,7 @@ However, it is not easy to realize it! We build a routine approach based on CP2K
 
 The reference literatures are:
 1. J.-B. Lu et al. J. Chem. Theory Comput. 2019, 15, 5987−5997. 
-2. J.-B. Lu et al. DOI:10.26434/chemrxiv.13550054.v1
+2. J.-B. Lu et al. J. Chem. Theory Comput. 2021, 17, 3360-3371.
 
 For GTH pseudopotential optimization:
 The procedure is rather easy. Users just need to use the input file in example/gth_pp_opt
@@ -21,5 +21,5 @@ There are two main procedures to optimize MOLOPT basis sets:
   input file with different confinment. The script named 'check_basis.py' is used to check
   relatively good gaussian exponents. And then test these choosed gaussian exponents.
 (2) Optimize contraction coefficients
-  The input files to optimize contration coefficients is in mol_bs/COE_OPT.
+  The input files to optimize contration coefficients is in mol_bs/COEFF_OPT.
 
