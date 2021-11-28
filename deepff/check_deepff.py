@@ -1128,6 +1128,15 @@ def check_environ(environ_dic, proc_num_one_node):
   else:
     environ_dic['cuda_dir'] = 'none'
 
+  if ( 'dp_version' in environ_dic.keys() ):
+    dp_version = environ_dic['dp_version']
+    dp_version_sup = ['1.3.3', '2.0.0']
+    if ( dp_version not in dp_version_sup ):
+      log_info.log_error('Input error: current deepmd-kit version is not supported, please check or reset deepff/environ/dp_version')
+      exit()
+  else:
+    environ_dic['dp_version'] = '1.3.3'
+
   if ( environ_dic['cuda_dir'] != 'none' ):
     if ( os.path.exists(os.path.abspath(cuda_dir)) ):
       environ_dic['cuda_dir'] = os.path.abspath(cuda_dir)
@@ -1165,6 +1174,16 @@ def check_environ(environ_dic, proc_num_one_node):
       exit()
   else:
     environ_dic['lmp_job_per_node'] = 1
+
+  if ( 'dp_job_per_node' in environ_dic.keys() ):
+    dp_job_per_node = environ_dic['dp_job_per_node']
+    if ( data_op.eval_str(dp_job_per_node) == 1 ):
+      environ_dic['dp_job_per_node'] = int(dp_job_per_node)
+    else:
+      log_info.log_error('Input error: dp_job_per_node should be integer, please check or reset deepff/environ/dp_job_per_node')
+      exit()
+  else:
+    environ_dic['dp_job_per_node'] = 1
 
   if ( 'lmp_omp_num_per_job' in environ_dic.keys() ):
     lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']

@@ -332,6 +332,11 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
         calculated_id = i
       else:
         break
+    device_num_per_node = [len(device_per_node) for device_per_node in device]
+    device_num_min = min(device_num_per_node)
+    if ( device_num_min == 1 ):
+      lmp_job_per_node = 1
+
     if ( calculated_id != total_task_num-1 ):
       run_start = calculated_id
       run_end = run_start+lmp_job_per_node*len(host)-1
@@ -339,6 +344,13 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
         run_end=total_task_num-1
       cycle = math.ceil((total_task_num-run_start)/(lmp_job_per_node*len(host)))
       for i in range(cycle):
+        device_num_list = data_op.int_split(device_num_min, lmp_job_per_node)
+        device_id_start = [0]
+        for j in range(len(device_num_list)-1):
+          device_id_start.append(device_id_start[j]+device_num_list[j])
+        device_num_str = data_op.comb_list_2_str((device_num_list*len(host))[0:(run_end-run_start+1)], ' ')
+        device_id_start_str = data_op.comb_list_2_str((device_id_start*len(host))[0:(run_end-run_start+1)], ' ')
+
         tot_mpi_num_list = []
         for proc_num in proc_num_per_node:
           mpi_num_list = [lmp_mpi_num_per_job]*lmp_job_per_node
@@ -350,14 +362,6 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
         task_index = [sys_task[1] for sys_task in sys_task_index_part]
         sys_index_str = data_op.comb_list_2_str(sys_index, ' ')
         task_index_str = data_op.comb_list_2_str(task_index, ' ')
-        device_num_per_node = [len(device_per_node) for device_per_node in device]
-        device_num_min = min(device_num_per_node)
-        device_num_list = data_op.int_split(device_num_min, lmp_job_per_node)
-        device_id_start = [0]
-        for j in range(len(device_num_list)-1):
-          device_id_start.append(device_id_start[j]+device_num_list[j])
-        device_num_str = data_op.comb_list_2_str((device_num_list*len(host))[0:(run_end-run_start+1)], ' ')
-        device_id_start_str = data_op.comb_list_2_str((device_id_start*len(host))[0:(run_end-run_start+1)], ' ')
 
         lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index_str, task_index_str, mpi_num_str, \
                        device_num_str, device_id_start_str, lmp_omp_num_per_job, lmp_job_per_node, proc_num_per_node, ssh, host)

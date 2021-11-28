@@ -81,12 +81,11 @@ def read_gpuinfo(work_dir, gpuinfo_file):
   Returns:
     device: 1-d string list
       device is the gpu device name.
-    usage: 1-d float list
-      usage is the memory use of gpu device.
   '''
 
-  device = []
+  device_tot = []
   usage = []
+  device = []
 
   cmd_a = "grep -n %s %s" % ("'|===============================+'", gpuinfo_file)
   a = call.call_returns_shell(work_dir, cmd_a)
@@ -98,7 +97,7 @@ def read_gpuinfo(work_dir, gpuinfo_file):
     for i in range(device_num):
       line_1 = linecache.getline(gpuinfo_file, a_int+i*4+1)
       line_1_split = data_op.split_str(line_1, ' ')
-      device.append(line_1_split[1])
+      device_tot.append(line_1_split[1])
       line_2 = linecache.getline(gpuinfo_file, a_int+i*4+2)
       line_2_split = data_op.split_str(line_2, ' ')
       mem_used = float(line_2_split[8][0:line_2_split[8].index('M')])
@@ -107,7 +106,11 @@ def read_gpuinfo(work_dir, gpuinfo_file):
 
     linecache.clearcache()
 
-  return device, usage
+  for i in range(len(device_tot)):
+    if ( usage[i] < 0.01 ):
+      device.append(device_tot[i])
+
+  return device
 
 def analyze_gpu(host, ssh, work_dir):
 
@@ -124,12 +127,9 @@ def analyze_gpu(host, ssh, work_dir):
   Returns:
     device: 2-d string list
       device is the gpu device name.
-    usage: 2-d float list
-      usage is the memory use of gpu device.
   '''
 
   device = []
-  usage = []
 
   for i in range(len(host)):
     gpuinfo_file = ''.join((work_dir, '/gpuinfo_', host[i]))
@@ -167,16 +167,15 @@ fi
     except subprocess.CalledProcessError as err:
       log_info.log_error('Running error: %s command running error in %s' %(err.cmd, work_dir))
 
-    device_i, usage_i = read_gpuinfo(work_dir, gpuinfo_file)
+    device_i = read_gpuinfo(work_dir, gpuinfo_file)
     device.append(device_i)
-    usage.append(usage_i)
 
   cmd_1 = 'rm check_gpu.sh'
   call.call_simple_shell(work_dir, cmd_1)
   cmd_2 = 'rm gpuinfo_*'
   call.call_simple_shell(work_dir, cmd_2)
 
-  return device, usage
+  return device
 
 def get_lmp_path(work_dir):
 

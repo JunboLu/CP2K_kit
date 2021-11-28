@@ -54,7 +54,13 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
   '''
 
   proc_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
-  device, usage = sys_info.analyze_gpu(host, ssh, work_dir)
+  device = sys_info.analyze_gpu(host, ssh, work_dir)
+  device_num = []
+  for i in device:
+    device_num.append(len(i))
+  if ( len(data_op.list_replicate(device_num)) != 1 and 0 in device_num ):
+    log_info.log_error("Resource error: we recommend users use pure CPU or GPU nodes")
+    exit()
 
   max_iter = active_learn_dic['max_iter']
   restart_iter = active_learn_dic['restart_iter']
@@ -93,8 +99,10 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
   cp2k_env_file = environ_dic['cp2k_env_file']
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
+  dp_version = environ_dic['dp_version']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
   lmp_job_per_node = environ_dic['lmp_job_per_node']
+  dp_job_per_node = environ_dic['dp_job_per_node']
   lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
   lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
 
@@ -147,7 +155,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
 
       gen_deepmd_task.gen_deepmd_model_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                             descr_seed, fit_seed, tra_seed, neuron, model_type, data_num)
-      deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir)
+      deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 ):
@@ -268,7 +276,13 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   '''
 
   proc_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
-  device, usage = sys_info.analyze_gpu(host, ssh, work_dir)
+  device = sys_info.analyze_gpu(host, ssh, work_dir)
+  device_num = []
+  for i in device:
+    device_num.append(len(i))
+  if ( len(data_op.list_replicate(device_num)) != 1 and 0 in device_num ):
+    log_info.log_error("Resource error: we recommend users use pure CPU or GPU nodes")
+    exit()
 
   max_iter = active_learn_dic['max_iter']
   restart_iter = active_learn_dic['restart_iter']
@@ -316,8 +330,10 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   cp2k_env_file = environ_dic['cp2k_env_file']
   parallel_exe = environ_dic['parallel_exe']
   cuda_dir = environ_dic['cuda_dir']
+  dp_version = environ_dic['dp_version']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
   lmp_job_per_node = environ_dic['lmp_job_per_node']
+  dp_job_per_node = envrion_dic['dp_job_per_node']
   lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
   lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
 
@@ -345,7 +361,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
 
       gen_deepmd_task.gen_deepmd_test_task(deepmd_dic, work_dir, i, data_num)
       if ( i>0 ):
-        deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, usage, cuda_dir)
+        deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node)
       else:
         str_print = 'Success: the initial deep potential file is copied in %s' %(''.join((work_dir, '/iter_0/01.train/0')))
         str_print = data_op.str_wrap(str_print, 80, '  ')
