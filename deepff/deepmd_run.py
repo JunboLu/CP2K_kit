@@ -12,7 +12,7 @@ from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 
 def deepmd_parallel_cycle(work_dir, deepmd_train_dir, dp_path, cuda_dir, dp_cmd, dp_version, model_str, \
-                          device_num_str, device_start_str, dp_job_per_node, parallel_exe, host):
+                          device_num_str, device_start_str, dp_job_per_node, parallel_exe, host, ssh):
 
   '''
     work_dir: string
@@ -39,6 +39,8 @@ def deepmd_parallel_cycle(work_dir, deepmd_train_dir, dp_path, cuda_dir, dp_cmd,
       parallel_exe is the parallel exacutable file.
     host: 1-d string list
       host is the name of computational nodes.
+    ssh: bool
+      ssh is whether to ssh to computational node.
   '''
 
   host_info = data_op.comb_list_2_str(host, ',')
@@ -93,7 +95,6 @@ direc=$2
 x_arr=(${x///})
 
 device_num=${x_arr[1]}
-if [ $device_num != 0 ]; then
 device_id_start=${x_arr[2]}
 for ((i=0;i<=device_num-1;i++));
 do
@@ -139,7 +140,7 @@ cd %s
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
     exit()
 
-def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node):
+def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node):
 
   '''
   deepmd_parallel: run deepmd calculation in parallel.
@@ -161,6 +162,8 @@ def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe,
       dp_path is the path of deepmd-kit.
     host: 1-d string list
       host is the name of computational nodes.
+    ssh: bool
+      ssh is whether to ssh to computational node.
     device: 2-d string list
       device is the GPU device.
     cuda_dir: string
@@ -365,9 +368,11 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
         log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_i_dir))
 
   #Case 4
-  if ( len(device[0]) > 1 ):
+  if ( len(device[0]) > 1 or (len(host) > 1 and len(device[0]) >= 1) ):
     device_num_per_node = [len(device_per_node) for device_per_node in device]
     device_num_min = min(device_num_per_node)
+    if ( device_num_min == 1 ):
+      dp_job_per_node = 1
     cycle = math.ceil(model_num/(dp_job_per_node*len(host)))
 
     run_start = 0
@@ -376,7 +381,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       run_end=model_num-1
 
     for i in range(cycle):
-      device_num_list = data_op.int_split(device_num_min, lmp_job_per_node)
+      device_num_list = data_op.int_split(device_num_min, dp_job_per_node)
       device_id_start = [0]
       for j in range(len(device_num_list)-1):
         device_id_start.append(device_id_start[j]+device_num_list[j])
@@ -385,7 +390,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       model_list = data_op.gen_list(run_start, run_end, 1)
       model_str = data_op.comb_list_2_str(model_list, ' ')
       deepmd_parallel_cycle(work_dir, deepmd_train_dir, dp_path, cuda_dir, dp_cmd, dp_version, model_str, \
-                            device_num_str, device_start_id_str, dp_job_per_node, parallel_exe, host)
+                            device_num_str, device_id_start_str, dp_job_per_node, parallel_exe, host, ssh)
 
       run_start = run_start + dp_job_per_node*len(host)
       run_end = run_end + dp_job_per_node*len(host)
@@ -395,7 +400,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       run_start = 0
       run_end = run_start+len(device[0])-1
 
-def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node):
+def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node):
 
   '''
   run_deepmd: kernel function to run deepmd.
@@ -413,6 +418,8 @@ def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, d
       dp_path is the path of deepmd-kit.
     host: 1-d string list
       host is the name of computational nodes.
+    ssh: bool
+      ssh is whether to ssh to computational node.
     device: 2-d string list
       device is the GPU device.
     cuda_dir: string
@@ -451,7 +458,7 @@ def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, d
     log_info.log_error('Input error: there are gpu devices in nodes, but cuda_dir is none, please set cuda directory in deepff/environ/cuda_dir')
     exit()
   #Run deepmd-kit tasks
-  deepmd_parallel(work_dir, iter_id, use_prev_model, 0, model_num-1, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node)
+  deepmd_parallel(work_dir, iter_id, use_prev_model, 0, model_num-1, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
 
   #Check the deepmd tasks.
   check_deepmd_run = []

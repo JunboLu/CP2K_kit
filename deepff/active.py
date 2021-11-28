@@ -155,7 +155,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
 
       gen_deepmd_task.gen_deepmd_model_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
                                             descr_seed, fit_seed, tra_seed, neuron, model_type, data_num)
-      deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node)
+      deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 ):
@@ -361,7 +361,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
 
       gen_deepmd_task.gen_deepmd_test_task(deepmd_dic, work_dir, i, data_num)
       if ( i>0 ):
-        deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, device, cuda_dir, dp_version, dp_job_per_node)
+        deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       else:
         str_print = 'Success: the initial deep potential file is copied in %s' %(''.join((work_dir, '/iter_0/01.train/0')))
         str_print = data_op.str_wrap(str_print, 80, '  ')
