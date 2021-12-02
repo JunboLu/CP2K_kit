@@ -373,6 +373,8 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
     device_num_min = min(device_num_per_node)
     if ( device_num_min == 1 ):
       dp_job_per_node = 1
+    if ( dp_job_per_node > device_num_min ):
+      dp_job_per_node = device_num_min
     cycle = math.ceil(model_num/(dp_job_per_node*len(host)))
 
     run_start = 0
