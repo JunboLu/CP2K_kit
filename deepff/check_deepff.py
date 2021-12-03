@@ -767,6 +767,15 @@ def check_lammps(lmp_dic, active_learn_dic):
           log_info.log_error('Input error: %s file does not exist' %(coord_file))
           exit()
 
+      if ( 'mass' in lmp_dic[key].keys() ):
+        for element in lmp_dic[key]['mass']:
+          element_mass = lmp_dic[key]['mass'][element]
+          if ( data_op.eval_str(element) == 1 or data_op.eval_str(element) == 2 ):
+            lmp_dic[key]['mass'][element] = float(element_mass)
+          else:
+            log_info.log_error('Input error: mass of element should be int or float, please check or reset deepff/lammps/system/mass')
+            exit()
+
       valid_md_type = ['nve', 'nvt', 'npt']
       if ( 'md_type' in lmp_dic[key].keys() ):
         md_type = lmp_dic[key]['md_type']

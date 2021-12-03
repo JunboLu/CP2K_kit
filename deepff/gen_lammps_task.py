@@ -312,6 +312,10 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
         for l in range(len(atoms_type)):
           atom_num, atom_mass = atom.get_atom_mass(atoms_type[l])
+          if ( 'mass' in lmp_dic[sys].keys() ):
+            for element in lmp_dic[sys]['mass'].keys():
+              if ( element.upper() == atoms_type[l].upper() ):
+                atom_mass = lmp_dic[sys]['mass'][element]
           line_l = ''.join(('mass            ', str(l+1), ' ', str(atom_mass),'\n'))
           md_in_file.write(line_l)
 
