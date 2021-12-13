@@ -92,8 +92,8 @@ def assign_prob(data_dir, final_data_dir, data_num, iter_id):
 
   return prob_sys_1, prob_sys_2
 
-def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, \
-                          descr_seed, fit_seed, tra_seed, neuron, model_type, data_num):
+def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_test, descr_seed, fit_seed, \
+                          tra_seed, neuron, model_type, data_num, tot_atoms_type_dic):
 
   '''
   gen_deepmd_model_task: generate deepmd model tasks
@@ -121,6 +121,8 @@ def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_t
       model_type has two choices: 'use_seed', 'use_node'
     data_num: 1-d int list
       data_num is the numbers of training data for each system.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     none
   '''
@@ -137,9 +139,15 @@ def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_t
   data_dir, final_data_dir = assign_data_dir(work_dir, init_train_data, iter_id, numb_test)
 
   if ( iter_id > 1 and len(final_data_dir) == 0 ):
-    print (''.center(80,'*'), flush=True)
-    print ('Cheers! deepff is converged!', flush=True)
-    write_data.write_active_data(work_dir, i, tot_atoms_type_dic)
+    str_print = '''  There are no new data in No.%d iteration, two possible reasons:
+  (1) If the accurate ratio is larger than 96.0%%, the deepff is converged
+  (2) If the accurate ratio is very small (less than 4.0%%), the deepff is no
+  converged. But the program have to be stopped. The whole iterations does not
+  succeed. The only thing we can do is changing either initial data sets or
+  training parameters.''' %(iter_id-1)
+    print ('Warning'.center(80,'*'), flush=True)
+    print (str_print, flush=True)
+    write_data.write_active_data(work_dir, iter_id, tot_atoms_type_dic)
     exit()
 
   start_lr = deepmd_param['learning_rate']['start_lr']
@@ -216,7 +224,7 @@ def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_t
       with open(''.join((model_dir, '/input.json')), 'w') as json_file:
         json_file.write(json_str)
 
-def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num):
+def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms_type_dic):
 
   '''
   gen_deepmd_test_task: generate deepmd test tasks
@@ -234,6 +242,8 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num):
       init_dpff_file is the initial deep potential force field file.
     data_num: 1-d int list
       data_num is the numbers of training data for each system.
+    tot_atoms_type_dic: dictionary
+      tot_atoms_type_dic is the atoms type dictionary.
   Returns:
     none
   '''
@@ -265,9 +275,15 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num):
     data_dir, final_data_dir = assign_data_dir(work_dir, init_train_data, iter_id, numb_test)
 
     if ( iter_id > 1 and len(final_data_dir) == 0 ):
-      print (''.center(80,'*'), flush=True)
-      print ('Cheers! deepff is converged!', flush=True)
-      write_data.write_active_data(work_dir, i, tot_atoms_type_dic)
+      str_print = '''  There are no new data in No.%d iteration, two possible reasons:
+  (1) If the accurate ratio is larger than 96.0%%, the deepff is converged
+  (2) If the accurate ratio is very small (less than 4.0%%), the deepff is no
+  converged. But the program have to be stopped. The whole iterations does not
+  succeed. The only thing we can do is changing either initial data sets or
+  training parameters.''' %(iter_id-1)
+      print ('Warning'.center(80,'*'), flush=True)
+      print (str_print, flush=True)
+      write_data.write_active_data(work_dir, iter_id, tot_atoms_type_dic)
       exit()
 
     fix_stop_batch = deepmd_test_dic['fix_stop_batch']

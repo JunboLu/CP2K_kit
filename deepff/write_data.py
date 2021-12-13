@@ -13,6 +13,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
 from CP2K_kit.tools import file_tools
 from CP2K_kit.deepff import load_data
+from CP2K_kit.deepff import process
 
 def write_restart_inp(inp_file_name, restart_iter, restart_stage, data_num, work_dir):
 
@@ -135,55 +136,59 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
 
     for j in range(conv_iter):
       iter_dir = ''.join((work_dir, '/iter_', str(j)))
-      data_dir = ''.join((iter_dir, '/03.cp2k_calc/sys_', str(i), '/data'))
-      if ( j == 0 ):
-        cmd = "cp type.raw %s" %(sys_dir)
-        call.call_simple_shell(data_dir, cmd)
-      energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(data_dir)
-      frames_num = len(energy_array)
-      atoms_num = int(len(coord_array[0])/3)
-      for k in range(frames_num):
-        energy_file.write('%f\n' %(energy_array[k]))
-        energy_cp2k.append(energy_array[k])
-        frame_str = ''
-        for l in range(len(coord_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(coord_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(coord_array[k][l])))
-        coord_file.write('%s\n' %(frame_str))
+      cp2k_sys_dir = ''.join((iter_dir, '/03.cp2k_calc/sys_', str(i)))
+      task_num, task_dir = process.get_task_num(cp2k_sys_dir, True)
+      for k in range(task_num):
+        cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/', task_dir[k]))
+        data_dir = ''.join((cp2k_sys_task_dir, '/data'))
+        if ( j == 0 ):
+          cmd = "cp type.raw %s" %(sys_dir)
+          call.call_simple_shell(data_dir, cmd)
+        energy_array, coord_array, frc_array, cell_array, virial_array = load_data.read_raw_data(data_dir)
+        frames_num = len(energy_array)
+        atoms_num = int(len(coord_array[0])/3)
+        for l in range(frames_num):
+          energy_file.write('%f\n' %(energy_array[l]))
+          energy_cp2k.append(energy_array[l])
+          frame_str = ''
+          for m in range(len(coord_array[l])):
+            if ( m == 0 ):
+              frame_str = ''.join((frame_str, str(coord_array[l][m])))
+            else:
+              frame_str = ' '.join((frame_str, str(coord_array[l][m])))
+          coord_file.write('%s\n' %(frame_str))
 
-        frc_cp2k_k = []
-        frc_x_cp2k_k = []
-        frc_y_cp2k_k = []
-        frc_z_cp2k_k = []
+          frc_cp2k_l = []
+          frc_x_cp2k_l = []
+          frc_y_cp2k_l = []
+          frc_z_cp2k_l = []
 
-        frame_str = ''
-        for l in range(len(frc_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(frc_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(frc_array[k][l])))
-          frc_cp2k_k.append(frc_array[k][l])
-          if ( l%3 == 0 ):
-            frc_x_cp2k_k.append(frc_array[k][l])
-          elif ( l%3 == 1 ):
-            frc_y_cp2k_k.append(frc_array[k][l])
-          elif ( l%3 == 2 ):
-            frc_z_cp2k_k.append(frc_array[k][l])
-        frc_cp2k.append(frc_cp2k_k)
-        frc_x_cp2k.append(frc_x_cp2k_k)
-        frc_y_cp2k.append(frc_y_cp2k_k)
-        frc_z_cp2k.append(frc_z_cp2k_k)
-        frc_file.write('%s\n' %(frame_str))
+          frame_str = ''
+          for m in range(len(frc_array[l])):
+            if ( m == 0 ):
+              frame_str = ''.join((frame_str, str(frc_array[l][m])))
+            else:
+              frame_str = ' '.join((frame_str, str(frc_array[l][m])))
+            frc_cp2k_l.append(frc_array[l][m])
+            if ( m%3 == 0 ):
+              frc_x_cp2k_l.append(frc_array[l][m])
+            elif ( m%3 == 1 ):
+              frc_y_cp2k_l.append(frc_array[l][m])
+            elif ( m%3 == 2 ):
+              frc_z_cp2k_l.append(frc_array[l][m])
+          frc_cp2k.append(frc_cp2k_l)
+          frc_x_cp2k.append(frc_x_cp2k_l)
+          frc_y_cp2k.append(frc_y_cp2k_l)
+          frc_z_cp2k.append(frc_z_cp2k_l)
+          frc_file.write('%s\n' %(frame_str))
 
-        frame_str = ''
-        for l in range(len(cell_array[k])):
-          if ( l == 0 ):
-            frame_str = ''.join((frame_str, str(cell_array[k][l])))
-          else:
-            frame_str = ' '.join((frame_str, str(cell_array[k][l])))
-        cell_file.write('%s\n' %(frame_str))
+          frame_str = ''
+          for m in range(len(cell_array[l])):
+            if ( m == 0 ):
+              frame_str = ''.join((frame_str, str(cell_array[l][m])))
+            else:
+              frame_str = ' '.join((frame_str, str(cell_array[l][m])))
+          cell_file.write('%s\n' %(frame_str))
     energy_file.close()
     coord_file.close()
     frc_file.close()

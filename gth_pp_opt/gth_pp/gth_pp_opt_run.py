@@ -141,7 +141,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     for i in range(129):
       cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
       return_func = call.call_returns_shell(process_1_dir, cmd)
-      if ( return_func != [] ):
+      if ( len(return_func) != 0 and 'No such file' not in return_func[0] ):
         return_func_split = data_op.split_str(return_func[0], ' ')
         cmd = "grep %s step_%s/atom.out" %("'s-states N=    1'", str(i+1))
         return_wfn = call.call_returns_shell(process_1_dir, cmd)
@@ -176,7 +176,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
     value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
-    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0]
+    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     for scale in wfn_scale:
       for i in asc_order:
         if ( abs(r_loc_proc[i]-r_loc_def) < r_loc_conv and wfn_state_1_proc_abs[i] < scale*min(wfn_state_1_proc_abs) ):

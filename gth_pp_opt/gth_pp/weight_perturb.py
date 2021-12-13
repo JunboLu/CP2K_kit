@@ -1,6 +1,8 @@
 #! /usr/env/bin python
 
 import os
+import time
+import tempfile
 import subprocess
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
@@ -291,26 +293,30 @@ cd $direc
 
   subprocess.run('chmod +x perturb.sh', cwd=process_3_dir, shell=True)
   subprocess.run('chmod +x optimize.sh', cwd=process_3_dir, shell=True)
-  p = subprocess.Popen("bash -c './perturb.sh'", cwd=process_3_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  out_temp=tempfile.TemporaryFile(mode='w+')
+  fileno=out_temp.fileno()
+  p = subprocess.Popen("bash -c './perturb.sh'", cwd=process_3_dir, shell=True, stdout=fileno, stderr=fileno)
 
   #kill the shell process if the result does not decay. 
-  restart_index = []
-  value = []
-  for line in iter(p.stdout.readline, 'b'):
-    line = line.rstrip().decode('utf8')
-    if ( line != '' ):
-      line_split = data_op.split_str(line, ' ')
-      if ( len(line_split) == 2 ):
-        restart_index.append(int(line_split[0]))
-        value.append(float(line_split[1]))
-    if ( subprocess.Popen.poll(p) is not None ):
-      if ( line == '' ):
-        break
+  while p.poll() is None:
+    time.sleep(30)
+    out_temp.seek(0)
+    rt = out_temp.read()
+    rt_list = rt.strip().split('\n')
+    value = []
+    restart_index = []
+    for line in iter(rt_list):
+      if ( line != '' ):
+        line_split = data_op.split_str(line, ' ')
+        if ( len(line_split) == 2 ):
+          restart_index.append(int(line_split[0]))
+          value.append(float(line_split[1]))
     if ( len(value) > 10 ):
       min_value = min(value[0:(len(value)-1)])
       if ( len(line_split) == 2 ):
         if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
           call.kills(p.pid)
+  out_temp.close()
 
   min_value = min(value)
   min_value_index = value.index(min_value)

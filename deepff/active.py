@@ -153,8 +153,8 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
           fit_seed.append(np.random.randint(10000000000))
           tra_seed.append(np.random.randint(10000000000))
 
-      gen_deepmd_task.gen_deepmd_model_task(deepmd_dic, work_dir, i, init_train_data, numb_test, \
-                                            descr_seed, fit_seed, tra_seed, neuron, model_type, data_num)
+      gen_deepmd_task.gen_deepmd_model_task(deepmd_dic, work_dir, i, init_train_data, numb_test, descr_seed, fit_seed, \
+                                            tra_seed, neuron, model_type, data_num, tot_atoms_type_dic)
       deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
 
@@ -359,7 +359,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       write_data.write_restart_inp(inp_file, i, 0, data_num, work_dir)
       print ('Step 1: deepmd-kit tasks', flush=True)
 
-      gen_deepmd_task.gen_deepmd_test_task(deepmd_dic, work_dir, i, data_num)
+      gen_deepmd_task.gen_deepmd_test_task(deepmd_dic, work_dir, i, data_num, tot_atoms_type_dic)
       if ( i>0 ):
         deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       else:

@@ -416,7 +416,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys, use_
         box_vec = []
         line_k = linecache.getline(log_file_name_abs, a_int+k+1)
         line_k_split = data_op.split_str(line_k, ' ')
-        if ( data_op.eval_str(line_k_split[0]) == 1 ):
+        if ( data_op.eval_str(line_k_split[0]) == 1 and len(line_k_split) > 8 ):
           frames_num_true = frames_num_true+1
           for l in range(6):
             box_param_float = float(line_k_split[l+7])
