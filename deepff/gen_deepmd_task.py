@@ -276,8 +276,8 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms
 
     if ( iter_id > 1 and len(final_data_dir) == 0 ):
       str_print = '''  There are no new data in No.%d iteration, two possible reasons:
-  (1) If the accurate ratio is larger than 96.0%%, the deepff is converged
-  (2) If the accurate ratio is very small (less than 4.0%%), the deepff is no
+  (1) If the accurate ratio is larger than 96.0%%, the deepff is converged, cheers!
+  (2) If the accurate ratio is very small (less than 4.0%%), the deepff is not
   converged. But the program have to be stopped. The whole iterations does not
   succeed. The only thing we can do is changing either initial data sets or
   training parameters.''' %(iter_id-1)

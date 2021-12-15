@@ -162,7 +162,7 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
   atom_file.write('    TARGET_POT_VALENCE       [eV]      0.000300\n')
   atom_file.write('    TARGET_POT_VIRTUAL       [eV]      0.003000\n')
   atom_file.write('    WEIGHT_POT_NODE                    10.0\n')
-  atom_file.write('    WEIGHT_POT_SEMICORE                30.0\n')
+  atom_file.write('    WEIGHT_POT_SEMICORE                5.0\n')
   atom_file.write('    WEIGHT_POT_VALENCE                 2.0\n')
   atom_file.write('    WEIGHT_POT_VIRTUAL                 1.0\n')
   atom_file.write('    SEMICORE_LEVEL       [eV]         15.0\n')

@@ -63,7 +63,7 @@ def run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
 direc=%s
 
 conv=0.001
-weight_standard='30 2 1'
+weight_standard='5 2 1'
 converge_standard='0.003 0.0003 0.003'
 weight_perturb_choice_1='2 5 1'
 weight_perturb_choice_2='5 1 2'

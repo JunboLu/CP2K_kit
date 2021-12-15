@@ -164,13 +164,11 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       print ('  Warning: uncompleted steps are:', data_op.comb_list_2_str(step_index_res, ' '))
 
     value_proc = []
-    r_loc_proc = []
     wfn_state_1_proc = []
     step_index_proc = []
     for i in range(len(value)):
-      if ( value[i] < 10000.0 ):
+      if ( value[i] < 10000.0 and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
         value_proc.append(value[i])
-        r_loc_proc.append(r_loc[i])
         wfn_state_1_proc.append(wfn_state_1[i])
         step_index_proc.append(step_index[i])
 
@@ -179,7 +177,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     for scale in wfn_scale:
       for i in asc_order:
-        if ( abs(r_loc_proc[i]-r_loc_def) < r_loc_conv and wfn_state_1_proc_abs[i] < scale*min(wfn_state_1_proc_abs) ):
+        if ( wfn_state_1_proc_abs[i] < scale*min(wfn_state_1_proc_abs) ):
           choosed_index = step_index_proc[i]
           break
       if ( 'choosed_index' in locals() ):
