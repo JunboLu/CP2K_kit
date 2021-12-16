@@ -8,7 +8,7 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 
 def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                    method, val_elec_num, python_exe, get_min_index):
+                    method, val_elec_num, python_exe, get_min_index, weight_1):
 
   '''
   run_step_weight : run step reweight process.
@@ -32,6 +32,8 @@ def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
       python_exe is the python exacutable file.
     get_min_index : string
       get_min_index is the get_min_index file.
+    weight_1: 1-d float list
+      weight_1 is the initial weight 1.
   Returns :
     The restart index where the value is the smallest.
   '''
@@ -62,7 +64,7 @@ def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
 direc=%s
 
 conv=0.001
-weight_standard='5 2 1'
+weight_standard='%f %f %f'
 converge_standard='0.003 0.0003 0.003'
 
 m=2
@@ -105,7 +107,7 @@ echo $i $value_2
 echo $i $value_2 >> $direc/$filename
 fi
 done
-''' % (process_2_dir)
+''' % (process_2_dir, weight_1[0], weight_1[1], weight_1[2])
 
   optimize = '''
 #! /bin/bash

@@ -3,7 +3,7 @@
 import copy
 from CP2K_kit.tools import data_op
 
-def gen_atom_inp(work_dir, gth_pp_opt_param):
+def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1):
 
   '''
   gen_atom_inp : generate atom input file used to optimize gth pp.
@@ -13,6 +13,8 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
       work_dir is working directory of CP2K_kit.
     gth_pp_opt_param : dictionary
       gth_pp_opt_param contains keywords used to generate atom input file.
+    weight_1: 1-d float list
+      weight_1 is the initial weight.
   Returns :
     none
   '''
@@ -162,9 +164,9 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
   atom_file.write('    TARGET_POT_VALENCE       [eV]      0.000300\n')
   atom_file.write('    TARGET_POT_VIRTUAL       [eV]      0.003000\n')
   atom_file.write('    WEIGHT_POT_NODE                    10.0\n')
-  atom_file.write('    WEIGHT_POT_SEMICORE                5.0\n')
-  atom_file.write('    WEIGHT_POT_VALENCE                 2.0\n')
-  atom_file.write('    WEIGHT_POT_VIRTUAL                 1.0\n')
+  atom_file.write('    WEIGHT_POT_SEMICORE                %f\n' %(weight_1[0]))
+  atom_file.write('    WEIGHT_POT_VALENCE                 %f\n' %(weight_1[1]))
+  atom_file.write('    WEIGHT_POT_VIRTUAL                 %f\n' %(weight_1[2]))
   atom_file.write('    SEMICORE_LEVEL       [eV]         15.0\n')
   atom_file.write('  &END\n')
   atom_file.write('&END ATOM\n')

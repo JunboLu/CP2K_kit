@@ -96,8 +96,18 @@ if ( 'max_cycle' in job_type_param[0].keys() ):
 else:
   max_cycle = 1
 
+if ( 'weight_1' in job_type_param[0].keys() ):
+  weight_1 = [float(x) for x in job_type_param[0]['weight_1']]
+else:
+  weight_1 = [5.0, 2.0, 1.0]
+
+if ( 'weight_2' in job_type_param[0].keys() ):
+  weight_2 = [float(x) for x in job_type_param[0]['weight_2']]
+else:
+  weight_2 = [2.0, 5.0, 1.0]
+
 #Generate atom input file
-element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0])
+element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0], weight_1)
 
 #Get defined r_loc
 line = linecache.getline(gth_pp_file, 3)
@@ -199,8 +209,8 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       min_step = get_min_step(process_2_min_restart_dir)
       gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
-    restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
-                                                  element, method, val_elec_num, python_exe, get_min_index)
+    restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                  method, val_elec_num, python_exe, get_min_index, weight_1)
   write_data.write_restart(work_dir, job_type_param[0], 2, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
@@ -224,8 +234,8 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
 
   #Run process_3
   print ('Process_3: weight pertubation optimization', flush=True)
-  restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
-                                                    element, method, val_elec_num, python_exe, get_min_index)
+  restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                    method, val_elec_num, python_exe, get_min_index, weight_1)
   write_data.write_restart(work_dir, job_type_param[0], 3, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
@@ -249,8 +259,8 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
 
   #Run process_4
   print ('Process_4: convergence value pertubation optimization', flush=True)
-  restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
-                                                      element, method, val_elec_num, python_exe, get_min_index)
+  restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                      method, val_elec_num, python_exe, get_min_index, weight_2)
 
   process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
   min_step = get_min_step(process_4_min_restart_dir)

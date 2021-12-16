@@ -7,8 +7,8 @@ import subprocess
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 
-def run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
-                        element, method, val_elec_num, python_exe, get_min_index):
+def run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                        method, val_elec_num, python_exe, get_min_index, weight_2):
 
   '''
   run_converg_perturb : run convergence perturbation process
@@ -32,6 +32,8 @@ def run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
       python_exe is the python exacutable file.
     get_min_index : string
       get_min_index is the get_min_index file.
+    weight_2: 1-d float list
+      weight_2 is the initial weight 2.
   Returns :
     The restart index where the value is the smallest.
   '''
@@ -63,7 +65,7 @@ def run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, \
 direc=%s
 
 conv=0.001
-weight_standard='2 5 1'
+weight_standard='%f %f %f'
 converge_standard='0.003 0.0003 0.003'
 weight_perturb_choice_1='30 2 1'
 converge_perturb_choice_1='0.0003 0.00003 0.0003'
@@ -142,7 +144,7 @@ echo $k $value_2
 echo $k $value_2 >> $direc/$filename
 fi
 done
-''' % (process_4_dir)
+''' % (process_4_dir, weight_2[0], weight_2[1], weight_2[2])
 
   optimize = '''
 #! /bin/bash
