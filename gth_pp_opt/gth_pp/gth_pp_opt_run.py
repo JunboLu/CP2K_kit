@@ -185,7 +185,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     for scale in wfn_scale:
       for i in asc_order:
-        if ( wfn_state_1_proc_abs[i] < scale*min(wfn_state_1_proc_abs) ):
+        if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
           choosed_index = step_index_proc[i]
           break
       if ( 'choosed_index' in locals() ):
