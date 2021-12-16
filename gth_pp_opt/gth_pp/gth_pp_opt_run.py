@@ -9,6 +9,7 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import read_input
 from CP2K_kit.tools import data_op
+from CP2K_kit.deepff import sys_info
 from CP2K_kit.gth_pp_opt.gth_pp import write_data
 from CP2K_kit.gth_pp_opt.gth_pp import gen_atom_inp
 from CP2K_kit.gth_pp_opt.gth_pp import init_step
@@ -65,11 +66,6 @@ else:
   print ('No parallel executable file found, please set parallel_exe')
   exit()
 
-if ( 'parallel_num' in job_type_param[0].keys() ):
-  parallel_num = int(job_type_param[0]['parallel_num'])
-else:
-  parallel_num = 1
-
 if ( 'init_gth_pp_file' in job_type_param[0].keys() ):
   gth_pp_file = job_type_param[0]['init_gth_pp_file']
 else:
@@ -105,6 +101,8 @@ if ( 'weight_2' in job_type_param[0].keys() ):
   weight_2 = [float(x) for x in job_type_param[0]['weight_2']]
 else:
   weight_2 = [2.0, 5.0, 1.0]
+
+parallel_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0], weight_1)
