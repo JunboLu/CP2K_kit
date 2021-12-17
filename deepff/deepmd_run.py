@@ -7,6 +7,7 @@ import subprocess
 import linecache
 import numpy as np
 from collections import OrderedDict
+from CP2K_kit.tools import file_tools
 from CP2K_kit.tools import call
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
@@ -197,10 +198,21 @@ def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe,
     lcurve_file_exists.append(os.path.exists(lcurve_file))
     if ( os.path.exists(lcurve_file) ):
       whole_line_num = len(open(lcurve_file, 'r').readlines())
-      line = linecache.getline(lcurve_file, whole_line_num)
+      batch_line = file_tools.grep_line_num('batch', lcurve_file, work_dir)
+      if ( whole_line_num > len(batch_line) ):
+        line_num = whole_line_num
+        while True:
+          line = linecache.getline(lcurve_file, line_num)
+          line_split = data_op.split_str(line, ' ', '\n')
+          if ( len(line_split) >= 8 and data_op.eval_str(line_split[0]) == 1 ):
+            break
+          line_num = line_num-1
+      else:
+        final_batch.append(0)
+      line = linecache.getline(lcurve_file, line_num)
       linecache.clearcache()
       line_split = data_op.split_str(line, ' ', '\n')
-      if ( len(line_split) > 0 and data_op.eval_str(line_split[0]) == 1 ):
+      if ( len(line_split) >= 8 ):
         final_batch.append(int(line_split[0]))
       else:
         final_batch.append(0)

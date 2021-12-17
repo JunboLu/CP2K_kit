@@ -157,6 +157,16 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
                                             tra_seed, neuron, model_type, data_num, tot_atoms_type_dic)
       deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
+      failure_model = process.check_deepff_run(work_dir, i)
+      if ( len(failure_model) == 0 ):
+        pass
+      else:
+        print ('Warning'.center(80,'*'), flush=True)
+        for model_id in failure_model:
+          str_print = 'The training is failed as force is fluctuated in No.%d model in No.%d iteration' %(model_id, i)
+          str_print = data_op.str_wrap(str_print, 80, '')
+          print (str_print, flush=True)
+        exit()
 
     if ( restart_stage == 0 or restart_stage == 1 ):
       #Perform lammps calculations
@@ -364,9 +374,20 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
         deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       else:
         str_print = 'Success: the initial deep potential file is copied in %s' %(''.join((work_dir, '/iter_0/01.train/0')))
-        str_print = data_op.str_wrap(str_print, 80, '  ')
+        str_print = data_op.str_wrap(str_print, 80, '')
         print (str_print, flush=True)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
+      if ( i>0 ):
+        failure_model = process.check_deepff_run(work_dir, i)
+        if ( len(failure_model) == 0 ):
+          pass
+        else:
+          print ('Warning'.center(80,'*'), flush=True)
+          for model_id in failure_model:
+            str_print = 'The training is failed as force is fluctuated in No.%d model in No.%d iteration' %(model_id, i)
+            str_print = data_op.str_wrap(str_print, 80, '  ')
+            print (str_print, flush=True)
+          exit()
 
     if ( restart_stage == 0 or restart_stage == 1 ):
       #Perform lammps calculations

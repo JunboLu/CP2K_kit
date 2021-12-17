@@ -1,6 +1,7 @@
 #! /usr/env/bin python
 
 import os
+import linecache
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
@@ -305,6 +306,45 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
     init_data_num = init_data_num+set_data_num
 
   return init_train_data, init_data_num
+
+def check_deepff_run(work_dir, iter_id):
+
+  '''
+  check_deepff_run: check the running state of deepff
+
+  Args:
+   work_dir: string
+      work_dir is workding directory.
+    iter_id: int
+      iter_id is current iteration number.
+  Returns:
+    failure_model: 1-d int list
+      failure_model is the id of failure models.
+  '''
+
+  train_dir = ''.join((work_dir, '/iter_', str(iter_id), '/01.train'))
+  model_num = get_deepmd_model_num(train_dir)
+  failure_model = []
+  for i in range(model_num):
+    model_dir = ''.join((train_dir, '/', str(i)))
+    lcurve_file = ''.join((model_dir, '/lcurve.out'))
+    whole_line_num = len(open(lcurve_file).readlines())
+    choosed_line_num = int(0.1*whole_line_num)
+    start_line = whole_line_num-choosed_line_num
+    force_trn = []
+    for j in range(choosed_line_num):
+      line = linecache.getline(lcurve_file, start_line+j+1)
+      line_split = data_op.split_str(line, ' ')
+      if ( data_op.eval_str(line_split[0]) == 1 and len(line_split) >= 8 ):
+        force_trn.append(float(line_split[6]))
+    linecache.clearcache()
+    force_max = max(force_trn)
+    force_min = min(force_trn)
+    force_avg = np.mean(np.array(force_trn))
+    if ( ((force_max-force_min) >= 0.04 and force_max >= 0.08) or force_avg >= 0.08 ):
+      failure_model.append(i)
+
+  return failure_model
 
 def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
 

@@ -12,7 +12,6 @@
   weight_1 30.0 2.0 1.0
   weight_2 2.0 5.0 1.0
   r_loc_conv 0.001
-  parallel_num 4
   init_gth_pp_file ./GTH-PARAMETER
   cp2k_exe /home/lujunbo/bin/cp2k/cp2k-6.1-sopt/cp2k-6.1-Linux-x86_64.sopt
   parallel_exe /home/lujunbo/bin/parallel/bin/parallel 
