@@ -131,7 +131,7 @@ value_2=`$direc/optimize.sh "${weight_standard}" "${converge_standard}" $k new $
 ((m=$m+2))
 n=$m
 fi
-echo $k $value_2
+echo $k $value_2 $choice
 echo $k $value_2 >> $direc/$filename
 fi
 done
@@ -307,15 +307,17 @@ cd $direc
     rt_list = rt.strip().split('\n')
     value = []
     restart_index = []
+    choice = []
     for line in iter(rt_list):
       if ( line != '' ):
         line_split = data_op.split_str(line, ' ')
         if ( len(line_split) == 2 ):
           restart_index.append(int(line_split[0]))
           value.append(float(line_split[1]))
+          choice.append(int(line_split[2]))
     if ( len(value) > 10 ):
       min_value = min(value[0:(len(value)-1)])
-      if ( len(line_split) == 2 ):
+      if ( len(line_split) == 3 and 3 in choice ):
         if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
           call.kills(p.pid)
   out_temp.close()
