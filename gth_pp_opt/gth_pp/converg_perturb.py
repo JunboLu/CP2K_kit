@@ -324,11 +324,19 @@ cd $direc
           restart_index.append(int(line_split[0]))
           value.append(float(line_split[1]))
           choice.append(int(line_split[2]))
-    if ( 11 in choice ):
-      min_value = min(value[0:(len(value)-1)])
-      final_value = value[len(value)-1]
-      if ( min_value < final_value or abs(min_value-final_value) < 0.0001 ):
-        call.kills(p.pid)
+    if ( 12 in choice ):
+      index_1 = []
+      index_12 = []
+      for index, value in enumerate(choice):
+        if ( value == 1 ):
+          index_1.append(index)
+        elif ( value == 12 ):
+          index_12.append(index)
+      if ( index_1(len(index_1)-1) > index_12(len(index_12)-1) ):
+        min_value = min(value[0:(len(value)-1)])
+        final_value = value[len(value)-1]
+        if ( min_value < final_value or abs(min_value-final_value) < 0.0001 ):
+          call.kills(p.pid)
 
   min_value = min(value)
   min_value_index = value.index(min_value)

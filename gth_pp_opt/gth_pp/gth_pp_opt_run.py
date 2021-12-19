@@ -169,7 +169,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       for i in step_index:
         if i in step_index_res_copy:
           step_index_res.remove(i)
-      str_print = '  Warning: uncompleted steps are: %s', %(data_op.comb_list_2_str(step_index_res, ' '))
+      str_print = '  Warning: uncompleted steps are: %s' %(data_op.comb_list_2_str(step_index_res, ' '))
       str_print = data_op.str_wrap(str_print, 80, '  ')
       print (str_print, flush=True)
 
