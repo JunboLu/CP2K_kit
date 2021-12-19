@@ -81,12 +81,12 @@ filename=value
 
 $direc/optimize.sh "${weight_perturb_choice_1}" "${converge_standard}" 1
 value_1=`$direc/optimize.sh "${weight_standard}" "${converge_standard}" 2`
-echo 2 $value_1
+echo 2 $value_1 $choice
 echo 2 $value_1 >> $direc/$filename
 
 $direc/optimize.sh "${weight_perturb_choice_1}" "${converge_standard}" 3 new 2
 value_2=`$direc/optimize.sh "${weight_standard}" "${converge_standard}" 4 new 3`
-echo 4 $value_2
+echo 4 $value_2 $choice
 echo 4 $value_2 >> $direc/$filename
 
 for i in {1..2000}
@@ -101,7 +101,7 @@ $direc/optimize.sh "${weight_pertburb_new}" "${converge_standard}" $j old $m
 value_2=`$direc/optimize.sh "${weight_standard}" "${converge_standard}" $k old $j`
 ((m=$m+2))
 n=$m
-echo $k $value_2
+echo $k $value_2 $choice
 echo $k $value_2 >> $direc/$filename
 
 elif [[ `echo "$(echo "scale=4; $value_1 - $value_2" | bc) < $conv" | bc` == 1 ]]; then
@@ -311,15 +311,15 @@ cd $direc
     for line in iter(rt_list):
       if ( line != '' ):
         line_split = data_op.split_str(line, ' ')
-        if ( len(line_split) == 2 ):
+        if ( len(line_split) == 3 ):
           restart_index.append(int(line_split[0]))
           value.append(float(line_split[1]))
           choice.append(int(line_split[2]))
-    if ( len(value) > 10 ):
+    if ( 3 in choice ):
       min_value = min(value[0:(len(value)-1)])
-      if ( len(line_split) == 3 and 3 in choice ):
-        if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
-          call.kills(p.pid)
+      final_value = value[len(value)-1]
+      if ( min_value < final_value or abs(min_value-final_value) < 0.0001 ):
+        call.kills(p.pid)
   out_temp.close()
 
   min_value = min(value)

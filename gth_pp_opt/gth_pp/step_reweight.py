@@ -283,9 +283,9 @@ cd $direc
           value.append(float(line_split[1]))
     if ( len(value) > 1 ):
       min_value = min(value[0:(len(value)-1)])
-      if ( len(line_split) == 2 ):
-        if ( min_value < float(line_split[1]) or abs(min_value-float(line_split[1])) < 0.0001 ):
-          call.kills(p.pid)
+      final_value = value[len(value)-1]
+      if ( min_value < final_value or abs(min_value-final_value) < 0.0001 ):
+        call.kills(p.pid)
   out_temp.close()
 
   min_value = min(value)
