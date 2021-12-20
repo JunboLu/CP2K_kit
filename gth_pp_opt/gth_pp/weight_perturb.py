@@ -311,19 +311,21 @@ cd $direc
     for line in iter(rt_list):
       if ( line != '' ):
         line_split = data_op.split_str(line, ' ')
-        if ( len(line_split) == 3 ):
+        if ( len(line_split) == 3 and data_op.eval_str(line_split[0]) == 1 and \
+             data_op.eval_str(line_split[1]) == 2 and \
+             data_op.eval_str(line_split[2]) == 1 ):
           restart_index.append(int(line_split[0]))
           value.append(float(line_split[1]))
           choice.append(int(line_split[2]))
     if ( 4 in choice ):
-      index_1 = []
+      index_3 = []
       index_4 = []
-      for index, value in enumerate(choice):
-        if ( value == 1 ):
-          index_1.append(index)
-        elif ( value == 4 ):
+      for index, choice_value in enumerate(choice):
+        if ( choice_value == 3 ):
+          index_3.append(index)
+        elif ( choice_value == 4 ):
           index_4.append(index)
-      if ( index_1(len(index_1)-1) > index_4(len(index_4)-1) ):
+      if ( index_3[len(index_3)-1] > index_4[len(index_4)-1] ):
         min_value = min(value[0:(len(value)-1)])
         final_value = value[len(value)-1]
         if ( min_value < final_value or abs(min_value-final_value) < 0.0001 ):

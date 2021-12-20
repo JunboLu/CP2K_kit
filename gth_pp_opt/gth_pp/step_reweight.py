@@ -278,7 +278,8 @@ cd $direc
     for line in iter(rt_list):
       if ( line != '' ):
         line_split = data_op.split_str(line, ' ')
-        if ( len(line_split) == 2 ):
+        if ( len(line_split) == 2 and data_op.eval_str(line_split[0]) == 1 and \
+             data_op.eval_str(line_split[1]) == 2 ):
           restart_index.append(int(line_split[0]))
           value.append(float(line_split[1]))
     if ( len(value) > 1 ):

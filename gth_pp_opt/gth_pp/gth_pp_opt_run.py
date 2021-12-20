@@ -10,6 +10,7 @@ from CP2K_kit.tools import log_info
 from CP2K_kit.tools import read_input
 from CP2K_kit.tools import data_op
 from CP2K_kit.deepff import sys_info
+from CP2K_kit.gth_pp_opt.gth_pp import check_gth_opt
 from CP2K_kit.gth_pp_opt.gth_pp import write_data
 from CP2K_kit.gth_pp_opt.gth_pp import gen_atom_inp
 from CP2K_kit.gth_pp_opt.gth_pp import init_step
@@ -52,60 +53,28 @@ print (data_op.str_wrap('GTH_PP_OPT| PROGRAM STARTED IN %s' %(work_dir), 80), fl
 print ('GTH_PP_OPT| Input file name %s\n' %(inp_file), flush=True)
 print ('GTH_PP_OPT'.center(80,'*'), flush=True)
 
-job_type_param = read_input.dump_info(work_dir, inp_file, [run_type])
-
-if ( 'cp2k_exe' in job_type_param[0].keys() ):
-  cp2k_exe = job_type_param[0]['cp2k_exe']
-else:
-  print ('No cp2k executable file found, please set cp2k_exe')
-  exit()
-
-if ( 'parallel_exe' in job_type_param[0].keys() ):
-  parallel_exe = job_type_param[0]['parallel_exe']
-else:
-  print ('No parallel executable file found, please set parallel_exe')
-  exit()
-
-if ( 'init_gth_pp_file' in job_type_param[0].keys() ):
-  gth_pp_file = job_type_param[0]['init_gth_pp_file']
-else:
-  print ('No file of initial guess gth parameter found, please set init_gth_pp_file')
-  exit()
-
-if ( 'restart_stage' in job_type_param[0].keys() ):
-  restart_stage = int(job_type_param[0]['restart_stage'])
-else:
-  restart_stage = 0
-
-if ( 'r_loc_conv' in job_type_param[0].keys() ):
-  r_loc_conv = float(job_type_param[0]['r_loc_conv'])
-else:
-  r_loc_conv = 0.005
-
-if ( 'restart_index' in job_type_param[0].keys() ):
-  restart_index = int(job_type_param[0]['restart_index'])
-else:
-  restart_index = 0
-
-if ( 'max_cycle' in job_type_param[0].keys() ):
-  max_cycle = int(job_type_param[0]['max_cycle'])
-else:
-  max_cycle = 1
-
-if ( 'weight_1' in job_type_param[0].keys() ):
-  weight_1 = [float(x) for x in job_type_param[0]['weight_1']]
-else:
-  weight_1 = [5.0, 2.0, 1.0]
-
-if ( 'weight_2' in job_type_param[0].keys() ):
-  weight_2 = [float(x) for x in job_type_param[0]['weight_2']]
-else:
-  weight_2 = [2.0, 5.0, 1.0]
-
 parallel_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
+if ( len(proc_num_per_node) != 1 ):
+  log_info.log_error('The job is runing in %d nodes, it is better to use just one node' %(len(proc_num_per_node)), 'Warning')
+  exit()
+
+if ( parallel_num > 12 or parallel_num < 10 ):
+  log_info.log_error('The job uses %d cores, it is better to use 10-12 cores' %(parallel_num), 'Warning')
+
+job_type_param = read_input.dump_info(work_dir, inp_file, [run_type])
+gth_opt_param = check_gth_opt.check_gth_opt(job_type_param[0])
+cp2k_exe = gth_opt_param['cp2k_exe']
+parallel_exe = gth_opt_param['parallel_exe']
+gth_pp_file = gth_opt_param['init_gth_pp_file']
+restart_stage = gth_opt_param['restart_stage']
+r_loc_conv = gth_opt_param['r_loc_conv']
+restart_index = gth_opt_param['restart_index']
+max_cycle = gth_opt_param['max_cycle']
+weight_1 = gth_opt_param['weight_1']
+weight_2 = gth_opt_param['weight_2']
 
 #Generate atom input file
-element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, job_type_param[0], weight_1)
+element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
 
 #Get defined r_loc
 line = linecache.getline(gth_pp_file, 3)
@@ -127,7 +96,7 @@ if ( restart_stage == 0 ):
     end = end+parallel_num
     if ( end > 129 ):
       end = 129
-  write_data.write_restart(work_dir, job_type_param[0], 1)
+  write_data.write_restart(work_dir, gth_opt_param, 1)
 
 if ( restart_stage == 0 or restart_stage == 1 ):
   process_2_dir = ''.join((work_dir, '/process_2'))
@@ -169,7 +138,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       for i in step_index:
         if i in step_index_res_copy:
           step_index_res.remove(i)
-      str_print = '  Warning: uncompleted steps are: %s' %(data_op.comb_list_2_str(step_index_res, ' '))
+      str_print = 'Warning: uncompleted steps are: %s' %(data_op.comb_list_2_str(step_index_res, ' '))
       str_print = data_op.str_wrap(str_print, 80, '  ')
       print (str_print, flush=True)
 
@@ -211,7 +180,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                   method, val_elec_num, python_exe, get_min_index, weight_1)
-  write_data.write_restart(work_dir, job_type_param[0], 2, restart_index)
+  write_data.write_restart(work_dir, gth_opt_param, 2, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
@@ -236,7 +205,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
   print ('Process_3: weight pertubation optimization', flush=True)
   restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                     method, val_elec_num, python_exe, get_min_index, weight_1)
-  write_data.write_restart(work_dir, job_type_param[0], 3, restart_index)
+  write_data.write_restart(work_dir, gth_opt_param, 3, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
   process_4_dir = ''.join((work_dir, '/process_4'))

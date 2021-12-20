@@ -25,10 +25,28 @@ def check_deepmd_model(deepmd_dic):
       deepmd_dic is the revised deepmd_dic.
   '''
 
+  deepmd_valid_key = ['model', 'learning_rate', 'loss', 'training']
+  model_valid_key = ['type_map', 'descriptor']
+  descr_valid_key = ['type', 'sel', 'rcut_smth', 'rcut', 'neuron', 'axis_neuron']
+  lr_valid_key = ['type', 'start_lr', 'decay_steps', 'stop_lr']
+  loss_valid_key = ['start_pref_e', 'limit_pref_e', 'start_pref_f', 'limit_pref_f', 'start_pref_v', 'limit_pref_v']
+  training_valid_key = ['train_stress', 'shuffle_data', 'use_prev_model', 'fix_stop_batch', \
+                        'lr_scale', 'epoch_num', 'set_data_dir', 'model_type', 'neuron', \
+                        'batch_size', 'disp_freq', 'numb_test', 'save_freq']
+
+  for key in deepmd_dic.keys():
+    if key not in deepmd_valid_key:
+      log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model' %(key))
+      exit()
+
   if ( 'model' not in deepmd_dic.keys() ):
     log_info.log_error('Input error: no model, please set deepff/deepmd_model/model')
     exit()
   else:
+    for key in deepmd_dic['model'].keys():
+      if key not in model_valid_key:
+        log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model/model' %(key))
+        exit()
     if ( 'type_map' in deepmd_dic['model'].keys() ):
       if ( all(data_op.eval_str(i) == 0 for i in deepmd_dic['model']['type_map']) ):
         pass
@@ -42,6 +60,10 @@ def check_deepmd_model(deepmd_dic):
       log_info.log_error('Input error: no descriptor, please set deepff/deepmd_model/model/descriptor')
       exit()
     else:
+      for key in deepmd_dic['model']['descriptor'].keys():
+        if key not in descr_valid_key:
+          log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model/model/descriptor' %(key))
+          exit()
       valid_type = ['se_a', 'se_r', 'se_ar']
       if ( 'type' in deepmd_dic['model']['descriptor'].keys() ):
         descr_type = deepmd_dic['model']['descriptor']['type']
@@ -111,6 +133,10 @@ def check_deepmd_model(deepmd_dic):
     log_info.log_error('Input error: no learning_rate, please set deepff/deepmd_model/learning_rate')
     exit()
   else:
+    for key in deepmd_dic['learning_rate'].keys():
+      if key not in lr_valid_key:
+        log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model/learning_rate' %(key))
+        exit()
     if ( 'type' in deepmd_dic['learning_rate'].keys() ):
       decay_type = deepmd_dic['learning_rate']['type']
       if ( data_op.eval_str(decay_type) == 0 ):
@@ -145,6 +171,10 @@ def check_deepmd_model(deepmd_dic):
     log_info.log_error('Input error: no loss, please check or set deepff/deepmd_model/loss')
     exit()
   else:
+    for key in deepmd_dic['loss'].keys():
+      if key not in loss_valid_key:
+        log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model/loss' %(key))
+        exit()
     if ( 'start_pref_e' in deepmd_dic['loss'].keys() ):
       start_pref_e = deepmd_dic['loss']['start_pref_e']
       if ( data_op.eval_str(start_pref_e) == 1 or data_op.eval_str(start_pref_e) == 2 ):
@@ -210,6 +240,9 @@ def check_deepmd_model(deepmd_dic):
     exit()
   else:
     for i in deepmd_dic['training'].keys():
+      if 'system' not in i and i not in training_valid_key:
+        log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_model/training' %(i))
+        exit()
       if ( 'system' in i ):
         if ( 'traj_type' in deepmd_dic['training'][i] ):
           traj_type = deepmd_dic['training'][i]['traj_type']
@@ -542,6 +575,13 @@ def check_deepmd_test(deepmd_dic):
       deepmd_dic is the revised deepmd_dic.
   '''
 
+  deepmd_valid_key = ['init_dpff_dir', 'start_lr', 'lr_scale', 'fix_stop_batch', \
+                      'use_prev_model', 'train_stress', 'shuffle_data', 'epoch_num']
+  for key in deepmd_dic.keys():
+    if key not in deepmd_valid_key:
+      log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_test' %(key))
+      exit()
+
   if ( 'init_dpff_dir' in deepmd_dic.keys() ):
     init_dpff_dir = deepmd_dic['init_dpff_dir']
     if ( os.path.exists(os.path.abspath(init_dpff_dir)) ):
@@ -645,7 +685,12 @@ def check_lammps(lmp_dic, active_learn_dic):
       lmp_dic is the revised lammps_dic.
   '''
 
-  #Check parameters for lammps
+  lammps_valid_key = ['nsteps', 'write_restart_freq', 'time_step', 'temp', 'pres', 'tau_t', 'tau_p', 'change_init_str']
+  for key in lmp_dic.keys():
+    if 'system' not in key and key not in lammps_valid_key:
+      log_info.log_error('Input error: %s is invalid key, please check or reset deepff/lammps' %(key))
+      exit()
+
   if ( 'nsteps' in lmp_dic.keys() ):
     nsteps = lmp_dic['nsteps']
     if ( data_op.eval_str(nsteps) == 1 ):
@@ -829,7 +874,12 @@ def check_active_learn(active_learn_dic):
       active_learn_dic is the revised active_learn_dic.
   '''
 
-  #Check parameters for model_devi
+  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'max_iter']
+  for key in active_learn_dic.keys():
+    if key not in active_valid_key:
+      log_info.log_error('Input error: %s is invalid key, please check or reset deepff/active_learn' %(key))
+      exit()
+
   if ( 'choose_new_data_num_limit' in active_learn_dic.keys() ):
     choose_new_data_num_limit = active_learn_dic['choose_new_data_num_limit']
     if ( data_op.eval_str(choose_new_data_num_limit) == 1 ):
@@ -1109,7 +1159,13 @@ def check_environ(environ_dic, proc_num_one_node):
       environ_dic is the revised environ_dic.
   '''
 
-  #Check parameters for environ
+  environ_valid_key = ['cp2k_exe', 'cp2k_env_file', 'parallel_exe', 'cuda_dir', 'lmp_job_per_node', \
+                       'lmp_mpi_num_per_job', 'lmp_omp_num_per_job', 'cp2k_job_per_node', 'dp_version', 'dp_job_per_node']
+  for key in environ_dic.keys():
+    if key not in environ_valid_key:
+      log_info.log_error('Input error: %s is invalid key, please check or reset deepff/environ' %(key))
+      exit()
+
   if ( 'cp2k_exe' in environ_dic.keys() ):
     cp2k_exe = environ_dic['cp2k_exe']
     if ( os.path.exists(os.path.abspath(cp2k_exe)) ):

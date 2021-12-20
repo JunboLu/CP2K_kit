@@ -19,39 +19,12 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1):
     none
   '''
 
-  if ( 'element' in gth_pp_opt_param.keys() ):
-    element = gth_pp_opt_param['element']
-  else:
-    print ('No element found, please set element')
-    exit()
-
-  if ( 'elec_config' in gth_pp_opt_param.keys() ):
-    elec_config = gth_pp_opt_param['elec_config']
-  else:
-    print ('No electron configuration of atom found, please set elec_config')
-    exit()
-
-  if ( 'elec_core_config' in gth_pp_opt_param.keys() ):
-    elec_core_config = gth_pp_opt_param['elec_core_config']
-  else:
-    print ('No core electron configuration found, please set elec_core_config')
-    exit()
-
-  if ( 'all_elec_method' in gth_pp_opt_param.keys() ):
-    all_elec_method = gth_pp_opt_param['all_elec_method']
-  else:
-    all_elec_method = 'kohn-sham'
-
-  if ( all_elec_method == 'kohn-sham' ):
-    if ( 'xc_func' in gth_pp_opt_param.keys() ):
-      xc_func = gth_pp_opt_param['xc_func']
-    else:
-      xc_func = 'pbe'
-
-  if ( 'relat_method' in gth_pp_opt_param.keys() ):
-    relat_method = gth_pp_opt_param['relat_method']
-  else:
-    relat_method = 'dkh(3)'
+  element = gth_pp_opt_param['element']
+  elec_config = gth_pp_opt_param['elec_config']
+  elec_core_config = gth_pp_opt_param['elec_core_config']
+  all_elec_method = gth_pp_opt_param['all_elec_method']
+  xc_func = gth_pp_opt_param['xc_func']
+  relat_method = gth_pp_opt_param['relat_method']
 
   inp_file = ''.join((work_dir, '/atom.inp'))
   atom_file = open(inp_file, 'w')
