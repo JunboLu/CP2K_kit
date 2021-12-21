@@ -20,6 +20,11 @@ from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
 
 #We know that this module is not beautiful enough, but we have to...
 
+#Every generation begins as babies,
+#Every body must learn from scratch,
+#Some generations reach high endpoints than others,
+#Before they die off because of stupidity, dirtiness......
+
 def get_min_step(process_dir):
 
   value = []
@@ -72,6 +77,7 @@ restart_index = gth_opt_param['restart_index']
 max_cycle = gth_opt_param['max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
+proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
@@ -146,7 +152,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     wfn_state_1_proc = []
     step_index_proc = []
     for i in range(len(value)):
-      if ( value[i] < 10000.0 and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
+      if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
         value_proc.append(value[i])
         wfn_state_1_proc.append(wfn_state_1[i])
         step_index_proc.append(step_index[i])

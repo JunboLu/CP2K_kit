@@ -19,7 +19,7 @@ def check_gth_opt(gth_opt_param):
 
   valid_keyword = ['element', 'elec_config', 'elec_core_config', 'all_elec_method', 'xc_func', \
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
-                   'restart_index', 'max_cycle', 'r_loc_conv', 'weight_1', 'weight_2']
+                   'restart_index', 'max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', 'proc_1_func_conv']
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -127,13 +127,23 @@ def check_gth_opt(gth_opt_param):
 
   if ( 'r_loc_conv' in gth_opt_param.keys() ):
     r_loc_conv = gth_opt_param['r_loc_conv']
-    if ( data_op.eval_str(r_loc_conv) == 2 ):
+    if ( data_op.eval_str(r_loc_conv) == 1 or data_op.eval_str(r_loc_conv) == 2 ):
       gth_opt_param['r_loc_conv'] = float(r_loc_conv)
     else:
-      log_info.log_error('Input error: r_loc_conv should be integer, please check or reset gth_pp_opt/r_loc_conv')
+      log_info.log_error('Input error: r_loc_conv should be float or integer, please check or reset gth_pp_opt/r_loc_conv')
       exit()
   else:
     gth_opt_param['r_loc_conv'] = 0.005
+
+  if ( 'proc_1_func_conv' in gth_opt_param.keys() ):
+    proc_1_func_conv = gth_opt_param['proc_1_func_conv']
+    if ( data_op.eval_str(proc_1_func_conv) == 1 or data_op.eval_str(proc_1_func_conv) == 2 ):
+      gth_opt_param['proc_1_func_conv'] = float(proc_1_func_conv)
+    else:
+      log_info.log_error('Input error: proc_1_func_conv should be float or integer, please check or reset gth_pp_opt/proc_1_func_conv')
+      exit()
+  else:
+    gth_opt_param['proc_1_func_conv'] = 10000.0
 
   if ( 'weight_1' in gth_opt_param.keys() ):
     weight_1 = gth_opt_param['weight_1']

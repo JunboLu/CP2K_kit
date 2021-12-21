@@ -17,6 +17,14 @@ def check_constraint_md_inp(cmd_dic):
       cmd_dic is the revised cmd_dic.
   '''
 
+  cmd_valid_key = ['run_type', 'cp2k_inp_file', 'init_value', 'end_value', \
+                   'macro_steps', 'micro_steps', 'restart_step', 'colvar_id', \
+                   'cp2k_exe', 'cp2k_mpi_num']
+  for key in cmd_dic.keys():
+    if key not in cmd_valid_key:
+      log_info.log_error('Input error: %s is invalid keyword, please check or reset thermo_int/constraint_md')
+      exit()
+
   if ( 'run_type' in cmd_dic.keys() ):
     run_type = cmd_dic['run_type']
     if ( run_type == 'slow_growth' or run_type == 'finite_points' ):
@@ -139,6 +147,12 @@ def check_mix_force_eval_inp(mix_dic):
     mix_dic: dictionary
       mix_dic is the revised mix_dic.
   '''
+
+  mix_dic_valid_key = ['mix_inp_file', 'macro_steps', 'micro_steps', 'restart_step', 'cp2k_exe']
+  for key in mix_dic.keys():
+    if key not in mix_dic_valid_key:
+      log_info.log_error('Input error: %s is invalid keyword, please check or reset thermo_int/mix_force_eval')
+      exit()
 
   if ( 'mix_inp_file' in mix_dic.keys() ):
     mix_inp_file = mix_dic['mix_inp_file']
