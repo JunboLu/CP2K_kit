@@ -32,7 +32,7 @@ def check_deepmd_model(deepmd_dic):
   loss_valid_key = ['start_pref_e', 'limit_pref_e', 'start_pref_f', 'limit_pref_f', 'start_pref_v', 'limit_pref_v']
   training_valid_key = ['train_stress', 'shuffle_data', 'use_prev_model', 'fix_stop_batch', \
                         'lr_scale', 'epoch_num', 'set_data_dir', 'model_type', 'neuron', \
-                        'batch_size', 'disp_freq', 'numb_test', 'save_freq']
+                        'stop_batch', 'batch_size', 'disp_freq', 'numb_test', 'save_freq']
 
   for key in deepmd_dic.keys():
     if key not in deepmd_valid_key:
@@ -874,7 +874,9 @@ def check_active_learn(active_learn_dic):
       active_learn_dic is the revised active_learn_dic.
   '''
 
-  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'max_iter']
+  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'max_iter', \
+                      'restart_iter', 'restart_index', 'data_num', 'restart_stage']
+
   for key in active_learn_dic.keys():
     if key not in active_valid_key:
       log_info.log_error('Input error: %s is invalid key, please check or reset deepff/active_learn' %(key))

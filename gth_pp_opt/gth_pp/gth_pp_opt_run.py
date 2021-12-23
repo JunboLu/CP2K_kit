@@ -74,7 +74,7 @@ gth_pp_file = gth_opt_param['init_gth_pp_file']
 restart_stage = gth_opt_param['restart_stage']
 r_loc_conv = gth_opt_param['r_loc_conv']
 restart_index = gth_opt_param['restart_index']
-max_cycle = gth_opt_param['max_cycle']
+micro_max_cycle = gth_opt_param['micro_max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
@@ -178,7 +178,7 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
   #Run process_2
   print ('Process_2: automated step size optimization', flush=True)
-  for i in range(max_cycle):
+  for i in range(micro_max_cycle):
     if ( i != 0 ):
       process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
       min_step = get_min_step(process_2_min_restart_dir)
@@ -209,8 +209,14 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
 
   #Run process_3
   print ('Process_3: weight pertubation optimization', flush=True)
-  restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                    method, val_elec_num, python_exe, get_min_index, weight_1)
+  for i in range(micro_max_cycle):
+    if ( i != 0 ):
+      process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
+      min_step = get_min_step(process_3_min_restart_dir)
+      gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+
+    restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                      method, val_elec_num, python_exe, get_min_index, weight_1)
   write_data.write_restart(work_dir, gth_opt_param, 3, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
@@ -234,8 +240,14 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
 
   #Run process_4
   print ('Process_4: convergence value pertubation optimization', flush=True)
-  restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                      method, val_elec_num, python_exe, get_min_index, weight_2)
+  for i in range(micro_max_cycle):
+    if ( i != 0 ):
+      process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
+      min_step = get_min_step(process_4_min_restart_dir)
+      gth_pp_file = ''.join((process_4_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+
+    restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                        method, val_elec_num, python_exe, get_min_index, weight_2)
 
   process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
   min_step = get_min_step(process_4_min_restart_dir)
