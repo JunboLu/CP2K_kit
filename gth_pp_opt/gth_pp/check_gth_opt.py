@@ -19,7 +19,8 @@ def check_gth_opt(gth_opt_param):
 
   valid_keyword = ['element', 'elec_config', 'elec_core_config', 'all_elec_method', 'xc_func', \
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
-                   'restart_index', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', 'proc_1_func_conv']
+                   'restart_index', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
+                   'proc_1_step_start', 'proc_1_func_conv']
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -114,6 +115,16 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['restart_index'] = 0
+
+  if ( 'proc_1_step_start' in gth_opt_param.keys() ):
+    proc_1_step_start = gth_opt_param['proc_1_step_start']
+    if ( data_op.eval_str(proc_1_step_start) == 1 ):
+      gth_opt_param['proc_1_step_start'] = int(proc_1_step_start)
+    else:
+      log_info.log_error('Input error: proc_1_step_start should be integer, please check or reset gth_pp_opt/proc_1_step_start')
+      exit()
+  else:
+    gth_opt_param['proc_1_step_start'] = 1
 
   if ( 'micro_max_cycle' in gth_opt_param.keys() ):
     micro_max_cycle = gth_opt_param['micro_max_cycle']

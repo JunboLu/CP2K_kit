@@ -21,7 +21,7 @@ from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
 #We know that this module is not beautiful enough, but we have to...
 
 #Every generation begins as babies,
-#Every body must learn from scratch,
+#Every baby must learn from scratch,
 #Some generations reach high endpoints than others,
 #Before they die off because of stupidity, dirtiness......
 
@@ -78,6 +78,7 @@ micro_max_cycle = gth_opt_param['micro_max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
+proc_1_step_start = gth_opt_param['proc_1_step_start']
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
@@ -92,9 +93,9 @@ if ( restart_stage == 0 ):
   print ('Process_1: initial optimization', flush=True)
   init_step.gen_init_step(work_dir, gth_pp_file)
 
-  start = 1
+  start = proc_1_step_start
   end = start+parallel_num-1
-  cycle = math.ceil(129/parallel_num)
+  cycle = math.ceil((129-proc_1_step_start+1)/parallel_num)
 
   for i in range(cycle):
     init_step.run_init_step(work_dir, cp2k_exe, parallel_exe, element, val_elec_num, method, parallel_num, start, end)
