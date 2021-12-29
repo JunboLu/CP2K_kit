@@ -77,6 +77,10 @@ restart_index = gth_opt_param['restart_index']
 micro_max_cycle = gth_opt_param['micro_max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
+weight_pertub_1 = gth_opt_param['weight_pertub_1']
+weight_pertub_2 = gth_opt_param['weight_pertub_2']
+weight_pertub_3 = gth_opt_param['weight_pertub_3']
+weight_pertub_4 = gth_opt_param['weight_pertub_4']
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
 
@@ -217,7 +221,8 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
       gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                      method, val_elec_num, python_exe, get_min_index, weight_1)
+                                                      method, val_elec_num, python_exe, get_min_index, weight_1, \
+                                                      weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4)
   write_data.write_restart(work_dir, gth_opt_param, 3, restart_index)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):

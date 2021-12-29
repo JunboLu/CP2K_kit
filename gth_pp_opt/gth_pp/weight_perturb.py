@@ -8,7 +8,8 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 
 def run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                       method, val_elec_num, python_exe, get_min_index, weight_1):
+                       method, val_elec_num, python_exe, get_min_index, weight_1, \
+                       weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4):
 
   '''
   run_weight_perturb : run weight perturbation process
@@ -34,6 +35,8 @@ def run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
       get_min_index is the get_min_index file.
     weight_1: 1-d float list
       weight_1 is the initial weight 1.
+    weight_pertub_x: 1-d float list
+      weight_pertub_x is the pertub weight.
   Returns :
     The restart index where the value is the smallest.
   '''
@@ -59,6 +62,11 @@ def run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
     cmd = "mv restart* %s" %(''.join(('bak_', str(bak_num+1))))
     call.call_simple_shell(process_3_dir, cmd)
 
+  weight_pertub_1_str = data_op.comb_list_2_str(weight_pertub_1, ' ')
+  weight_pertub_2_str = data_op.comb_list_2_str(weight_pertub_2, ' ')
+  weight_pertub_3_str = data_op.comb_list_2_str(weight_pertub_3, ' ')
+  weight_pertub_4_str = data_op.comb_list_2_str(weight_pertub_4, ' ')
+
   perturb = '''
 #! /bin/bash
 
@@ -67,10 +75,10 @@ direc=%s
 conv=0.001
 weight_standard='%f %f %f'
 converge_standard='0.003 0.0003 0.003'
-weight_perturb_choice_1='2 5 1'
-weight_perturb_choice_2='5 1 2'
-weight_perturb_choice_3='2 1 5'
-weight_perturb_choice_4='1 5 2'
+weight_perturb_choice_1='%s'
+weight_perturb_choice_2='%s'
+weight_perturb_choice_3='%s'
+weight_perturb_choice_4='%s'
 
 m=4
 n=4
@@ -135,7 +143,7 @@ echo $k $value_2 $choice
 echo $k $value_2 >> $direc/$filename
 fi
 done
-''' % (process_3_dir, weight_1[0], weight_1[1], weight_1[2])
+''' % (process_3_dir, weight_1[0], weight_1[1], weight_1[2], weight_pertub_1_str, weight_pertub_2_str, weight_pertub_3_str, weight_pertub_4_str)
 
   optimize = '''
 #! /bin/bash

@@ -20,7 +20,8 @@ def check_gth_opt(gth_opt_param):
   valid_keyword = ['element', 'elec_config', 'elec_core_config', 'all_elec_method', 'xc_func', \
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
                    'restart_index', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
-                   'proc_1_step_start', 'proc_1_func_conv']
+                   'proc_1_step_start', 'proc_1_func_conv', 'weight_pertub_1', 'weight_pertub_2', \
+                   'weight_pertub_3', 'weight_pertub_4',]
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -175,5 +176,45 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['weight_2'] = [2.0, 5.0, 1.0]
+
+  if ( 'weight_pertub_1' in gth_opt_param.keys() ):
+    weight_pertub_1 = gth_opt_param['weight_pertub_1']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in weight_pertub_1):
+      gth_opt_param['weight_pertub_1'] = [float(x) for x in weight_pertub_1]
+    else:
+      log_info.log_error('Input error: weight value in weight_pertub_1 should be integer or float, please check or reset gth_pp_opt/weight_pertub_1')
+      exit()
+  else:
+    gth_opt_param['weight_pertub_1'] = [2.0, 5.0, 1.0]
+
+  if ( 'weight_pertub_2' in gth_opt_param.keys() ):
+    weight_pertub_2 = gth_opt_param['weight_pertub_2']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in weight_pertub_2):
+      gth_opt_param['weight_pertub_2'] = [float(x) for x in weight_pertub_2]
+    else:
+      log_info.log_error('Input error: weight value in weight_pertub_2 should be integer or float, please check or reset gth_pp_opt/weight_pertub_2')
+      exit()
+  else:
+    gth_opt_param['weight_pertub_2'] = [5.0, 1.0, 2.0]
+
+  if ( 'weight_pertub_3' in gth_opt_param.keys() ):
+    weight_pertub_3 = gth_opt_param['weight_pertub_3']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in weight_pertub_3):
+      gth_opt_param['weight_pertub_3'] = [float(x) for x in weight_pertub_3]
+    else:
+      log_info.log_error('Input error: weight value in weight_pertub_3 should be integer or float, please check or reset gth_pp_opt/weight_pertub_3')
+      exit()
+  else:
+    gth_opt_param['weight_pertub_3'] = [2.0, 1.0, 5.0]
+
+  if ( 'weight_pertub_4' in gth_opt_param.keys() ):
+    weight_pertub_4 = gth_opt_param['weight_pertub_4']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in weight_pertub_4):
+      gth_opt_param['weight_pertub_4'] = [float(x) for x in weight_pertub_4]
+    else:
+      log_info.log_error('Input error: weight value in weight_pertub_4 should be integer or float, please check or reset gth_pp_opt/weight_pertub_4')
+      exit()
+  else:
+    gth_opt_param['weight_pertub_4'] = [1.0, 5.0, 2.0]
 
   return gth_opt_param

@@ -35,7 +35,11 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
          key != 'elec_core_config' and \
          key != 'restart_index' and \
          key != 'weight_1' and \
-         key != 'weight_2'):
+         key != 'weight_2' and \
+         key != 'weight_pertub_1' and \
+         key != 'weight_pertub_2' and \
+         key != 'weight_pertub_3' and \
+         key != 'weight_pertub_4'):
       restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
     if ( key == 'elec_config' or key == 'elec_core_config' ):
       if ( isinstance(gth_pp_opt_dic[key], list) ):
@@ -43,7 +47,12 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
         restart_file.write('  %s %s\n' %(key, key_str))
       else:
         restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
-    if ( key == 'weight_1' or key == 'weight_2' ):
+    if ( key == 'weight_1' or \
+         key == 'weight_2' or \
+         key == 'weight_pertub_1' or \
+         key == 'weight_pertub_2' or \
+         key == 'weight_pertub_3' or \
+         key == 'weight_pertub_4'):
       key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
       restart_file.write('  %s %s\n' %(key, key_str))
   restart_file.write('  restart_stage %d\n' %(restart_stage))
