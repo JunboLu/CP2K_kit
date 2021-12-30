@@ -40,9 +40,13 @@ def get_min_step(process_dir):
         value.append(float(return_tmp_split[5]))
         step_index.append(i+1)
 
-  min_value = min(value)
-  min_value_index = value.index(min_value)
-  min_step = step_index[min_value_index]
+  if ( len(value) != 0 ):
+    min_value = min(value)
+    min_value_index = value.index(min_value)
+    min_step = step_index[min_value_index]
+  else:
+    log_info.log_error('Running error: no optimized paramter in %s, please check cp2k running in this directory' %(process_dir))
+    exit()
 
   return min_step
 
@@ -83,6 +87,7 @@ weight_pertub_3 = gth_opt_param['weight_pertub_3']
 weight_pertub_4 = gth_opt_param['weight_pertub_4']
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
+consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
@@ -143,7 +148,10 @@ if ( restart_stage == 0 or restart_stage == 1 ):
           line_split = data_op.split_str(line, ' ')
           r_loc.append(float(line_split[0]))
 
-    if ( len(step_index) != 129 ):
+    if ( len(step_index) == 0 ):
+      log_info.log_error('Running error: no optimized paramter in %s, please check cp2k running in this directory' %(process_1_dir))
+      exit()
+    elif ( len(step_index) > 0 and len(step_index) < 129 ):
       step_index_res = data_op.gen_list(1,129,1)
       step_index_res_copy = copy.deepcopy(step_index_res)
       for i in step_index:
@@ -162,16 +170,25 @@ if ( restart_stage == 0 or restart_stage == 1 ):
         wfn_state_1_proc.append(wfn_state_1[i])
         step_index_proc.append(step_index[i])
 
-    wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
-    value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
-    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-    for scale in wfn_scale:
-      for i in asc_order:
-        if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
-          choosed_index = step_index_proc[i]
+    if ( len(value_proc) == 0 ):
+      log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
+      exit()
+
+    if consider_wfn_0:
+      wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
+      value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
+      wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+      for scale in wfn_scale:
+        for i in asc_order:
+          if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
+            choosed_index = step_index_proc[i]
+            break
+        if ( 'choosed_index' in locals() ):
           break
-      if ( 'choosed_index' in locals() ):
-        break
+    else:
+      min_value = min(value_proc)
+      min_value_index = value_proc.index(min_value)
+      choosed_index = step_index_proc[min_value_index]
 
     if ( 'choosed_index' not in locals() ):
       log_info.log_error('Running error: no good parameter in process_1')
