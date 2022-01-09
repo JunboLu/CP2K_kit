@@ -21,7 +21,7 @@ def check_gth_opt(gth_opt_param):
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
                    'restart_index', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
                    'proc_1_step_start', 'proc_1_func_conv', 'weight_pertub_1', 'weight_pertub_2', \
-                   'weight_pertub_3', 'weight_pertub_4', 'consider_wfn_0']
+                   'weight_pertub_3', 'weight_pertub_4', 'consider_wfn_0', 'consider_r_loc']
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -73,6 +73,16 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['consider_wfn_0'] = 'true'
+
+  if ( 'consider_r_loc' in gth_opt_param.keys() ):
+    consider_r_loc = gth_opt_param['consider_r_loc']
+    if consider_r_loc.upper() == 'TRUE' or consider_r_loc.upper() == 'FALSE' :
+      pass
+    else:
+      log_info.log_error('Input error: consider_r_loc should be bool, please check or reset gth_pp_opt/consider_r_loc')
+      exit()
+  else:
+    gth_opt_param['consider_r_loc'] = 'true'
 
   if ( 'cp2k_exe' in gth_opt_param.keys() ):
     cp2k_exe = gth_opt_param['cp2k_exe']

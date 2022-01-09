@@ -88,6 +88,7 @@ weight_pertub_4 = gth_opt_param['weight_pertub_4']
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
 consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
+consider_r_loc = data_op.str_to_bool(gth_opt_param['consider_r_loc'])
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
@@ -164,11 +165,18 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     value_proc = []
     wfn_state_1_proc = []
     step_index_proc = []
-    for i in range(len(value)):
-      if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
-        value_proc.append(value[i])
-        wfn_state_1_proc.append(wfn_state_1[i])
-        step_index_proc.append(step_index[i])
+    if consider_r_loc:
+      for i in range(len(value)):
+        if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
+          value_proc.append(value[i])
+          wfn_state_1_proc.append(wfn_state_1[i])
+          step_index_proc.append(step_index[i])
+    else:
+      for i in range(len(value)):
+        if ( value[i] < proc_1_func_conv ):
+          value_proc.append(value[i])
+          wfn_state_1_proc.append(wfn_state_1[i])
+          step_index_proc.append(step_index[i])
 
     if ( len(value_proc) == 0 ):
       log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
