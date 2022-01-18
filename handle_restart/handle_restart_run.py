@@ -3,6 +3,7 @@
 import sys
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import read_input
+from CP2K_kit.tools import data_op
 from CP2K_kit.handle_restart import handle_restart_traj
 
 work_dir = str(sys.argv[1])
