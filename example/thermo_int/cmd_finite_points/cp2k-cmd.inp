@@ -102,7 +102,7 @@
     &END CELL
 
     &TOPOLOGY
-     COORD_FILE_NAME ./ch3cl2.xyz
+     COORD_FILE_NAME /home/lujunbo/code/github/CP2K_kit/example/thermo_int/cmd_finite_points/ch3cl2.xyz
       COORD_FILE_FORMAT xyz
       &CENTER_COORDINATES
       &END CENTER_COORDINATES

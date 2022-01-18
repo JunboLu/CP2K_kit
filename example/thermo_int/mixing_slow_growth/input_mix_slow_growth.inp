@@ -6,7 +6,6 @@
 &thermo_int
   &mix_force_eval
     mix_inp_file ./cp2k-mix.inp
-    macro_steps 20000
-    cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
+    max_interval 20000
   &end mix_force_eval
 &end thermo_int

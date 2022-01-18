@@ -9,7 +9,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import file_tools
 from CP2K_kit.thermo_int import check_thermo_int
 
-def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_exe, work_dir):
+def mix_force_eval(mix_inp_file, max_interval, md_steps, restart_step, cp2k_exe, work_dir):
 
   '''
   mix_force_eval: mixing force eval calculation
@@ -17,8 +17,10 @@ def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_ex
   Args:
     mix_inp_file: string
       mix_inp_file is the cp2k mixing force eval file.
-    macro_steps: int
-      macro_steps is the totals steps.
+    max_interval: int
+      max_interval is the totals steps.
+    md_steps: int
+      md_steps is the steps for each md.
     restart_step: int
       restart_step is the restaring step.
     cp2k_exe: string
@@ -59,7 +61,7 @@ def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_ex
     cmd = "cp %s %s" %(mix_inp_file, restart_file_name)
     call.call_simple_shell(work_dir, cmd)
 
-  incre_value = float(1.0/macro_steps)
+  incre_value = float(1.0/max_interval)
 
   m = 0
   while True:
@@ -70,7 +72,7 @@ def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_ex
     else:
       break
 
-  for i in range(restart_step, macro_steps+2, 1):
+  for i in range(restart_step, max_interval+2, 1):
     #Write cp2k_kit restart file
     while True:
       restart_inp_file_name_abs = ''.join((work_dir, '/CP2K_KIT.restart'))
@@ -84,10 +86,11 @@ def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_ex
       cmd = "cp %s %s" %('RESTART_BAK_FILE', restart_file_name)
       call.call_simple_shell(work_dir, cmd)
 
-    whole_line_num = len(open(mix_ene_file_name_abs, 'r').readlines())
-    if ( whole_line_num > 2*(restart_step-1)*micro_steps ):
-      cmd = "sed -i '%d,%dd' %s" %((restart_step-1)*micro_steps+1, whole_line_num, mix_ene_file_name)
-      call.call_simple_shell(work_dir, cmd)
+    if ( os.path.exists(mix_ene_file_name_abs) ):
+      whole_line_num = len(open(mix_ene_file_name_abs, 'r').readlines())
+      if ( whole_line_num > 2*(restart_step-1)*md_steps ):
+        cmd = "sed -i '%d,%dd' %s" %((restart_step-1)*md_steps+1, whole_line_num, mix_ene_file_name)
+        call.call_simple_shell(work_dir, cmd)
 
     restart_inp_file = open(restart_inp_file_name_abs, 'w')
     restart_inp_file.write('&global\n')
@@ -99,8 +102,8 @@ def mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_ex
     restart_inp_file.write('&thermo_int\n')
     restart_inp_file.write('  &mix_force_eval\n')
     restart_inp_file.write('    mix_inp_file %s\n' %(mix_inp_file))
-    restart_inp_file.write('    macro_steps %d\n' %(macro_steps))
-    restart_inp_file.write('    micro_steps %d\n' %(micro_steps))
+    restart_inp_file.write('    max_interval %d\n' %(max_interval))
+    restart_inp_file.write('    md_steps %d\n' %(md_steps))
     if ( os.path.exists(restart_file_name_abs) ):
       restart_inp_file.write('    restart_step %d\n' %(i))
     else:
@@ -164,16 +167,18 @@ def mix_force_eval_run(mix_param, work_dir):
     none
   '''
 
-  mix_param = check_thermo_int.check_mix_force_eval_inp(mix_param)
+  cp2k_exe = call.call_returns_shell(work_dir, 'which cp2k.popt')
+  if ( len(cp2k_exe) == 0 or 'no cp2k.popt in' in cp2k_exe[0] ):
+    log_info.log_error('Envrionment error: can not find cp2k executable file, please set the environment for cp2k')
+    exit()
 
+  mix_param = check_thermo_int.check_mix_force_eval_inp(mix_param)
   mix_inp_file = mix_param['mix_inp_file']
-  macro_steps = mix_param['macro_steps']
-  micro_steps = mix_param['micro_steps']
+  max_interval = mix_param['max_interval']
+  md_steps = mix_param['md_steps']
   restart_step = mix_param['restart_step']
-  cp2k_exe = mix_param['cp2k_exe']
 
   print ('MIX_FORCE_EVAL'.center(80, '*'), flush=True)
   print ('Run slow-growth mixing force eval claculation', flush=True)
-  print ('%d tasks from initial value %f to endding value %f' %(macro_steps, 0.0, 1.0), flush=True)
-  mix_force_eval(mix_inp_file, macro_steps, micro_steps, restart_step, cp2k_exe, work_dir)
-
+  print ('%d tasks from initial value %f to endding value %f' %(max_interval, 0.0, 1.0), flush=True)
+  mix_force_eval(mix_inp_file, max_interval, md_steps, restart_step, cp2k_exe[0], work_dir)

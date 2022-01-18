@@ -91,7 +91,7 @@ consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
 consider_r_loc = data_op.str_to_bool(gth_opt_param['consider_r_loc'])
 
 #Generate atom input file
-element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1)
+element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1, consider_wfn_0)
 
 #Get defined r_loc
 line = linecache.getline(gth_pp_file, 3)
@@ -290,5 +290,5 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
   min_step_dir = ''.join((process_4_min_restart_dir, '/step_', str(min_step)))
   final_pp_dir = ''.join((work_dir, '/final'))
   call.call_simple_shell(work_dir, 'mkdir final')
-  cmd = "cp %s %s" % (''.join((min_step_dir, '/*')), )
+  cmd = "cp %s %s" % (''.join((min_step_dir, '/*')), final_pp_dir)
   call.call_simple_shell(min_step_dir, cmd)

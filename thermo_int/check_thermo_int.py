@@ -18,8 +18,8 @@ def check_constraint_md_inp(cmd_dic):
   '''
 
   cmd_valid_key = ['run_type', 'cp2k_inp_file', 'init_value', 'end_value', \
-                   'macro_steps', 'micro_steps', 'restart_step', 'colvar_id', \
-                   'cp2k_exe', 'cp2k_mpi_num']
+                   'max_interval', 'md_steps', 'restart_step', 'colvar_id']
+
   for key in cmd_dic.keys():
     if key not in cmd_valid_key:
       log_info.log_error('Input error: %s is invalid keyword, please check or reset thermo_int/constraint_md')
@@ -69,26 +69,26 @@ def check_constraint_md_inp(cmd_dic):
     log_info.log_error('Input error: no endding value, please set thermo_int/constraint_md/end_value')
     exit()
 
-  if ( 'macro_steps' in cmd_dic.keys() ):
-    macro_steps = cmd_dic['macro_steps']
-    if ( data_op.eval_str(macro_steps) == 1 ):
-      cmd_dic['macro_steps'] = int(macro_steps)
+  if ( 'max_interval' in cmd_dic.keys() ):
+    max_interval = cmd_dic['max_interval']
+    if ( data_op.eval_str(max_interval) == 1 ):
+      cmd_dic['max_interval'] = int(max_interval)
     else:
-      log_info.log_error('Input error: macro steps should be integer, please check or reset thermo_int/constraint_md/macro_steps')
+      log_info.log_error('Input error: macro steps should be integer, please check or reset thermo_int/constraint_md/max_interval')
       exit()
   else:
-    log_info.log_error('Input error: no macro steps, please set thermo_int/constraint_md/macro_steps')
+    log_info.log_error('Input error: no macro steps, please set thermo_int/constraint_md/max_interval')
     exit()
 
-  if ( 'micro_steps' in cmd_dic.keys() ):
-    micro_steps = cmd_dic['micro_steps']
-    if ( data_op.eval_str(micro_steps) == 1 ):
-      cmd_dic['micro_steps'] = int(micro_steps)
+  if ( 'md_steps' in cmd_dic.keys() ):
+    md_steps = cmd_dic['md_steps']
+    if ( data_op.eval_str(md_steps) == 1 ):
+      cmd_dic['md_steps'] = int(md_steps)
     else:
-      log_info.log_error('Input error: micro steps should be integer, please check or reset thermo_int/constraint_md/micro_steps')
+      log_info.log_error('Input error: md steps should be integer, please check or reset thermo_int/constraint_md/md_steps')
       exit()
   else:
-    log_info.log_error('Input error: no micro steps, please set thermo_int/constraint_md/micro_steps')
+    log_info.log_error('Input error: no md steps, please set thermo_int/constraint_md/md_steps')
     exit()
 
   if ( 'restart_step' in cmd_dic.keys() ):
@@ -111,28 +111,6 @@ def check_constraint_md_inp(cmd_dic):
   else:
     cmd_dic['colvar_id'] = 1
 
-  if ( 'cp2k_exe' in cmd_dic.keys() ):
-    cp2k_exe = cmd_dic['cp2k_exe']
-    if ( os.path.exists(os.path.abspath(cp2k_exe)) ):
-      cmd_dic['cp2k_exe'] = os.path.abspath(cp2k_exe)
-    else:
-      log_info.log_error('Input error: %s does not exists')
-      exit()
-  else:
-    log_info.log_error('Input error: no cp2k executable file, please set thermo_int/constraint_md/cp2k_exe')
-    exit()
-
-  if ( 'cp2k_mpi_num' in cmd_dic.keys() ):
-    cp2k_mpi_num = cmd_dic['cp2k_mpi_num']
-    if ( data_op.eval_str(cp2k_mpi_num) == 1 ):
-      cmd_dic['cp2k_mpi_num'] = int(cp2k_mpi_num)
-    else:
-      log_info.log_error('Input error: cp2k mpi number should be integer, please check or reset thermo_int/constraint_md/cp2k_mpi_num')
-      exit()
-  else:
-    log_info.log_error('Input error: no cp2k mpi number, please set thermo_int/constraint_md/cp2k_mpi_num')
-    exit()
-
   return cmd_dic
 
 def check_mix_force_eval_inp(mix_dic):
@@ -148,7 +126,8 @@ def check_mix_force_eval_inp(mix_dic):
       mix_dic is the revised mix_dic.
   '''
 
-  mix_dic_valid_key = ['mix_inp_file', 'macro_steps', 'micro_steps', 'restart_step', 'cp2k_exe']
+  mix_dic_valid_key = ['mix_inp_file', 'max_interval', 'md_steps', 'restart_step']
+
   for key in mix_dic.keys():
     if key not in mix_dic_valid_key:
       log_info.log_error('Input error: %s is invalid keyword, please check or reset thermo_int/mix_force_eval')
@@ -165,25 +144,25 @@ def check_mix_force_eval_inp(mix_dic):
     log_info.log_error('Input error: no cp2k mixing force_eval input file, please set thermo_int/mix_force_eval/mix_inp_file')
     exit()
 
-  if ( 'macro_steps' in mix_dic.keys() ):
-    macro_steps = mix_dic['macro_steps']
-    if ( data_op.eval_str(macro_steps) == 1 ):
-      mix_dic['macro_steps'] = int(macro_steps)
+  if ( 'max_interval' in mix_dic.keys() ):
+    max_interval = mix_dic['max_interval']
+    if ( data_op.eval_str(max_interval) == 1 ):
+      mix_dic['max_interval'] = int(max_interval)
     else:
-      log_info.log_error('Input error: macro steps should be integer, please check or reset thermo_int/mix_force_eval/macro_steps')
+      log_info.log_error('Input error: macro steps should be integer, please check or reset thermo_int/mix_force_eval/max_interval')
       exit()
   else:
-    mix_dic['macro_steps'] = 10000
+    mix_dic['max_interval'] = 10000
 
-  if ( 'micro_steps' in mix_dic.keys() ):
-    micro_steps = mix_dic['micro_steps']
-    if ( data_op.eval_str(micro_steps) == 1 ):
-      mix_dic['micro_steps'] = int(micro_steps)
+  if ( 'md_steps' in mix_dic.keys() ):
+    md_steps = mix_dic['md_steps']
+    if ( data_op.eval_str(md_steps) == 1 ):
+      mix_dic['md_steps'] = int(md_steps)
     else:
-      log_info.log_error('Input error: micro steps should be integer, please check or reset thermo_int/mix_force_eval/micro_steps')
+      log_info.log_error('Input error: md steps should be integer, please check or reset thermo_int/mix_force_eval/md_steps')
       exit()
   else:
-    mix_dic['micro_steps'] = 1
+    mix_dic['md_steps'] = 1
 
   if ( 'restart_step' in mix_dic.keys() ):
     restart_step = mix_dic['restart_step']
@@ -194,16 +173,5 @@ def check_mix_force_eval_inp(mix_dic):
       exit()
   else:
     mix_dic['restart_step'] = 1
-
-  if ( 'cp2k_exe' in mix_dic.keys() ):
-    cp2k_exe = mix_dic['cp2k_exe']
-    if ( os.path.exists(os.path.abspath(cp2k_exe)) ):
-      mix_dic['cp2k_exe'] = os.path.abspath(cp2k_exe)
-    else:
-      log_info.log_error('Input error: %s does not exists')
-      exit()
-  else:
-    log_info.log_error('Input error: no cp2k executable file, please set thermo_int/mix_force_eval/cp2k_exe')
-    exit()
 
   return mix_dic

@@ -7,9 +7,10 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import call
 from CP2K_kit.tools import file_tools
 from CP2K_kit.tools import revise_cp2k_inp
+from CP2K_kit.deepff import sys_info
 from CP2K_kit.thermo_int import check_thermo_int
 
-def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, \
+def finite_points(cp2k_inp_file, init_value, end_value, max_interval, md_steps, \
                   restart_step, colvar_id, cp2k_exe, cp2k_mpi_num, work_dir):
 
   '''
@@ -22,10 +23,10 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
       init_value is the initial value.
     end_value: float
       end_value is the endding value.
-    macro_steps: int
-      macro_steps is the totals steps.
-    micro_steps: int
-      micro_step is the steps for each macro step.
+    max_interval: int
+      max_interval is the totals steps.
+    md_steps: int
+      md_step is the steps for each macro step.
     restart_step: int
       restart_step is the restarting step.
     colvar_id: int
@@ -43,7 +44,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
   proj_name = revise_cp2k_inp.get_proj_name(cp2k_inp_file, work_dir)
   target_str = revise_cp2k_inp.revise_target_value(cp2k_inp_file, init_value, colvar_id, work_dir)
   if ( restart_step == 1 ):
-    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
+    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, md_steps, work_dir)
     revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
@@ -51,12 +52,12 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
     revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
 
-  incre_value = float((end_value-init_value)/macro_steps)
+  incre_value = float((end_value-init_value)/max_interval)
 
   restart_file_name = ''.join((proj_name, '-1.restart'))
   lag_file_name = ''.join((proj_name, '-1.LagrangeMultLog'))
 
-  for i in range(restart_step, macro_steps+2, 1):
+  for i in range(restart_step, max_interval+2, 1):
     print (''.join(('Task ', str(i))).center(80, '*'), flush=True)
     #Write cp2k_kit restart file
     while True:
@@ -79,8 +80,8 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
     restart_inp_file.write('    cp2k_inp_file %s\n' %(cp2k_inp_file))
     restart_inp_file.write('    init_value %f\n' %(init_value))
     restart_inp_file.write('    end_value %f\n' %(end_value))
-    restart_inp_file.write('    macro_steps %d\n' %(macro_steps))
-    restart_inp_file.write('    micro_steps %d\n' %(micro_steps))
+    restart_inp_file.write('    max_interval %d\n' %(max_interval))
+    restart_inp_file.write('    md_steps %d\n' %(md_steps))
     restart_inp_file.write('    restart_step %d\n' %(i))
     restart_inp_file.write('    cp2k_exe %s\n' %(cp2k_exe))
     restart_inp_file.write('    cp2k_mpi_num %d\n' %(cp2k_mpi_num))
@@ -108,7 +109,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
       if ( whole_line_num > 2*num ):
         cmd = "sed -i '%d,%dd' %s" %(2*num+1, whole_line_num, lag_file_name)
         call.call_simple_shell(task_dir, cmd)
-      remain_num = micro_steps-num
+      remain_num = md_steps-num
       step_line_num = file_tools.grep_line_num("'STEPS'", restart_file_name_abs, work_dir)[0]
       cmd = "sed -i '%ds/.*/     STEPS %d/' %s " %(step_line_num, remain_num, restart_file_name)
       call.call_simple_shell(task_dir, cmd)
@@ -154,7 +155,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
         cmd = "sed -i '%ds/.*/       %s %f/' %s" %(target_line_num, target_str, target_value, restart_file_name)
         call.call_simple_shell(task_dir, cmd)
         step_line_num = file_tools.grep_line_num("'STEPS'", restart_file_name, task_dir)[0]
-        cmd = "sed -i '%ds/.*/     STEPS %d/' %s " %(step_line_num, micro_steps, restart_file_name)
+        cmd = "sed -i '%ds/.*/     STEPS %d/' %s " %(step_line_num, md_steps, restart_file_name)
         call.call_simple_shell(task_dir, cmd)
         cmd = "cp %s %s" %(restart_file_name, 'input.inp')
         call.call_simple_shell(task_dir, cmd)
@@ -168,7 +169,7 @@ def finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps
         else:
           print ('Success: constraint molecular dynamics for task %d' %(i), flush=True)
 
-def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, \
+def slow_growth(cp2k_inp_file, init_value, end_value, max_interval, md_steps, \
                 restart_step, colvar_id, cp2k_exe, cp2k_mpi_num, work_dir):
 
   '''
@@ -181,10 +182,10 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
       init_value is the initial value.
     end_value: float
       end_value is the endding value.
-    macro_steps: int
-      macro_steps is the totals steps.
-    micro_steps: int
-      micro_step is the steps for each macro step.
+    max_interval: int
+      max_interval is the totals steps.
+    md_steps: int
+      md_step is the steps for each macro step.
     restart_step: int
       restart_step is the restarting step.
     colvar_id: int
@@ -202,7 +203,7 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
   proj_name = revise_cp2k_inp.get_proj_name(cp2k_inp_file, work_dir)
   target_str = revise_cp2k_inp.revise_target_value(cp2k_inp_file, init_value, colvar_id, work_dir)
   if ( restart_step == 1 ):
-    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, micro_steps, work_dir)
+    revise_cp2k_inp.revise_md_steps(cp2k_inp_file, md_steps, work_dir)
     revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_pot_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_coord_file_name(cp2k_inp_file, work_dir)
@@ -210,7 +211,7 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
     revise_cp2k_inp.revise_rvv10_file_name(cp2k_inp_file, work_dir)
     revise_cp2k_inp.revise_include_file_name(cp2k_inp_file, work_dir)
 
-  incre_value = float((end_value-init_value)/macro_steps)
+  incre_value = float((end_value-init_value)/max_interval)
 
   restart_file_name = ''.join((proj_name, '-1.restart'))
   restart_file_name_abs = ''.join((work_dir, '/', restart_file_name))
@@ -230,7 +231,7 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
     else:
       break
 
-  for i in range(restart_step, macro_steps+2, 1):
+  for i in range(restart_step, max_interval+2, 1):
     #Write cp2k_kit restart file
     while True:
       restart_inp_file_name_abs = ''.join((work_dir, '/CP2K_KIT.restart'))
@@ -245,8 +246,8 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
       call.call_simple_shell(work_dir, cmd)
 
       whole_line_num = len(open(lag_file_name_abs, 'r').readlines())
-      if ( whole_line_num > 2*(restart_step-1)*micro_steps ):
-        cmd = "sed -i '%d,%dd' %s" %(2*(restart_step-1)*micro_steps+1, whole_line_num, lag_file_name)
+      if ( whole_line_num > 2*(restart_step-1)*md_steps ):
+        cmd = "sed -i '%d,%dd' %s" %(2*(restart_step-1)*md_steps+1, whole_line_num, lag_file_name)
         call.call_simple_shell(work_dir, cmd)
 
     restart_inp_file = open(restart_inp_file_name_abs, 'w')
@@ -262,8 +263,8 @@ def slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, 
     restart_inp_file.write('    cp2k_inp_file %s\n' %(cp2k_inp_file))
     restart_inp_file.write('    init_value %f\n' %(init_value))
     restart_inp_file.write('    end_value %f\n' %(end_value))
-    restart_inp_file.write('    macro_steps %d\n' %(macro_steps))
-    restart_inp_file.write('    micro_steps %d\n' %(micro_steps))
+    restart_inp_file.write('    max_interval %d\n' %(max_interval))
+    restart_inp_file.write('    md_steps %d\n' %(md_steps))
     if ( os.path.exists(restart_file_name_abs) ):
       restart_inp_file.write('    restart_step %d\n' %(i))
     else:
@@ -310,29 +311,33 @@ def constraint_md_run(cmd_param, work_dir):
     none
   '''
 
-  cmd_param = check_thermo_int.check_constraint_md_inp(cmd_param)
+  cp2k_mpi_num, proc_num_per_node, host, ssh = sys_info.get_host(work_dir)
 
+  cp2k_exe = call.call_returns_shell(work_dir, 'which cp2k.popt')
+  if ( len(cp2k_exe) == 0 or 'no cp2k.popt in' in cp2k_exe[0] ):
+    log_info.log_error('Envrionment error: can not find cp2k executable file, please set the environment for cp2k')
+    exit()
+
+  cmd_param = check_thermo_int.check_constraint_md_inp(cmd_param)
   run_type = cmd_param['run_type']
   cp2k_inp_file = cmd_param['cp2k_inp_file']
   init_value = cmd_param['init_value']
   end_value = cmd_param['end_value']
-  macro_steps = cmd_param['macro_steps']
-  micro_steps = cmd_param['micro_steps']
+  max_interval = cmd_param['max_interval']
+  md_steps = cmd_param['md_steps']
   restart_step = cmd_param['restart_step']
-  cp2k_exe = cmd_param['cp2k_exe']
-  cp2k_mpi_num = cmd_param['cp2k_mpi_num']
   colvar_id = cmd_param['colvar_id']
 
   print ('CONSTRAINT_MD'.center(80, '*'), flush=True)
 
   if ( run_type == 'slow_growth' ):
     print ('Run slow-growth constraint molecular dynamics', flush=True)
-    print ('%d tasks from initial value %f to endding value %f' %(macro_steps+1, init_value, end_value), flush=True)
-    slow_growth(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, \
-                restart_step, colvar_id, cp2k_exe, cp2k_mpi_num, work_dir)
+    print ('%d tasks from initial value %f to endding value %f' %(max_interval+1, init_value, end_value), flush=True)
+    slow_growth(cp2k_inp_file, init_value, end_value, max_interval, md_steps, \
+                restart_step, colvar_id, cp2k_exe[0], cp2k_mpi_num, work_dir)
 
   elif ( run_type == 'finite_points' ):
     print ('Run finite-points constraint molecular dynamics', flush=True)
-    print ('%d tasks from initial value %f to endding value %f\n' %(macro_steps+1, init_value, end_value), flush=True)
-    finite_points(cp2k_inp_file, init_value, end_value, macro_steps, micro_steps, \
-                  restart_step, colvar_id, cp2k_exe, cp2k_mpi_num, work_dir)
+    print ('%d tasks from initial value %f to endding value %f\n' %(max_interval+1, init_value, end_value), flush=True)
+    finite_points(cp2k_inp_file, init_value, end_value, max_interval, md_steps, \
+                  restart_step, colvar_id, cp2k_exe[0], cp2k_mpi_num, work_dir)

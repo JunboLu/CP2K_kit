@@ -9,10 +9,8 @@
     cp2k_inp_file ./cp2k-cmd.inp
     init_value 1.999999
     end_value -1.999999
-    macro_steps 10000
-    micro_steps 1
+    max_interval 10000
+    md_steps 1
     colvar_id 1
-    cp2k_exe /home/lujunbo/bin/cp2k-8.2/exe/local/cp2k.popt
-    cp2k_mpi_num 4
   &end constraint_md
 &end thermo_int

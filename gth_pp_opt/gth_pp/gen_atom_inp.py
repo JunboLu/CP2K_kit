@@ -3,7 +3,7 @@
 import copy
 from CP2K_kit.tools import data_op
 
-def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1):
+def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
 
   '''
   gen_atom_inp : generate atom input file used to optimize gth pp.
@@ -15,6 +15,8 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1):
       gth_pp_opt_param contains keywords used to generate atom input file.
     weight_1: 1-d float list
       weight_1 is the initial weight.
+    consider_wfn_0: bool
+      consider_wfn_0 is whether to consider wfn=0
   Returns :
     none
   '''
@@ -132,7 +134,10 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1):
   atom_file.write('    MAX_INIT   200\n')
   atom_file.write('    MAX_FUN    50\n')
   atom_file.write('    STEP_SIZE_SCALING  0.90\n')
-  atom_file.write('    WEIGHT_PSIR0 10.0\n')
+  if consider_wfn_0:
+    atom_file.write('    WEIGHT_PSIR0 10.0\n')
+  else:
+    atom_file.write('    WEIGHT_PSIR0 0.0\n')
   atom_file.write('    TARGET_POT_SEMICORE      [eV]      0.003000\n')
   atom_file.write('    TARGET_POT_VALENCE       [eV]      0.000300\n')
   atom_file.write('    TARGET_POT_VIRTUAL       [eV]      0.003000\n')
