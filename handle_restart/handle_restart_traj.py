@@ -3,7 +3,7 @@
 import os
 from CP2K_kit.tools import traj_tools
 from CP2K_kit.tools import traj_info
-from CP2K_Kit.tools import data_op
+from CP2K_kit.tools import data_op
 
 mulliken_pop_file_pre_num = 5
 mulliken_pop_file_late_num = 3

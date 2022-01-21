@@ -2,7 +2,7 @@
 
 from CP2K_kit.tools import data_op
 
-def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
+def write_restart(work_dir, gth_pp_opt_dic, restart_stage, gth_pp_file):
 
   '''
   write_restart: write restarting input file.
@@ -14,8 +14,8 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
       gth_pp_opt_dic contains keywords used to generate atom input file.
     restart_stage: int
       restart_stage is the stage of restarting
-    restart_index: int
-      restart_index is the index of restarting directory.
+    gth_pp_file: string
+      gth_pp_file is the name of gth pp file.
   Returns:
     none
   '''
@@ -39,7 +39,8 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
          key != 'weight_pertub_1' and \
          key != 'weight_pertub_2' and \
          key != 'weight_pertub_3' and \
-         key != 'weight_pertub_4'):
+         key != 'weight_pertub_4' and \
+         key != 'init_gth_pp_file' ):
       restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
     if ( key == 'elec_config' or key == 'elec_core_config' ):
       if ( isinstance(gth_pp_opt_dic[key], list) ):
@@ -55,8 +56,7 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, restart_index=0):
          key == 'weight_pertub_4'):
       key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
       restart_file.write('  %s %s\n' %(key, key_str))
+  restart_file.write('  init_gth_pp_file %s\n' %(gth_pp_file))
   restart_file.write('  restart_stage %d\n' %(restart_stage))
-  if ( restart_index != 0 ):
-    restart_file.write('  restart_index %d\n' %(restart_index))
   restart_file.write('&end gth_pp_opt\n')
   restart_file.close()

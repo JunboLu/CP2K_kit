@@ -77,7 +77,6 @@ parallel_exe = gth_opt_param['parallel_exe']
 gth_pp_file = gth_opt_param['init_gth_pp_file']
 restart_stage = gth_opt_param['restart_stage']
 r_loc_conv = gth_opt_param['r_loc_conv']
-restart_index = gth_opt_param['restart_index']
 micro_max_cycle = gth_opt_param['micro_max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
@@ -89,6 +88,7 @@ proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
 consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
 consider_r_loc = data_op.str_to_bool(gth_opt_param['consider_r_loc'])
+opt_from_init = data_op.str_to_bool(gth_opt_param['opt_from_init'])
 
 #Generate atom input file
 element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1, consider_wfn_0)
@@ -113,7 +113,88 @@ if ( restart_stage == 0 ):
     end = end+parallel_num
     if ( end > 129 ):
       end = 129
-  write_data.write_restart(work_dir, gth_opt_param, 1)
+
+  #Choose the lowest value of process_1
+  step_index = []
+  value = []
+  r_loc = []
+  wfn_state_1 = []
+  process_1_dir = ''.join((work_dir, '/process_1'))
+  for i in range(129):
+    cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
+    return_func = call.call_returns_shell(process_1_dir, cmd)
+    if ( len(return_func) != 0 and 'No such file' not in return_func[0] ):
+      return_func_split = data_op.split_str(return_func[0], ' ')
+      cmd = "grep %s step_%s/atom.out" %("'s-states N=    1'", str(i+1))
+      return_wfn = call.call_returns_shell(process_1_dir, cmd)
+      return_wfn_split = data_op.split_str(return_wfn[0], ' ')
+      if ( len(return_func_split) > 5 ):
+        value.append(float(return_func_split[5]))
+        wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
+        step_index.append(i+1)
+        opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(i+1), '/GTH-PARAMETER'))
+        line = linecache.getline(opt_gth_pp_file, 3)
+        line_split = data_op.split_str(line, ' ')
+        r_loc.append(float(line_split[0]))
+
+  if ( len(step_index) == 0 ):
+    log_info.log_error('Running error: no optimized paramter in %s, please check cp2k running in this directory' %(process_1_dir))
+    exit()
+  elif ( len(step_index) > 0 and len(step_index) < 129 ):
+    step_index_res = data_op.gen_list(1,129,1)
+    step_index_res_copy = copy.deepcopy(step_index_res)
+    for i in step_index:
+      if i in step_index_res_copy:
+        step_index_res.remove(i)
+    str_print = 'Warning: uncompleted steps are: %s' %(data_op.comb_list_2_str(step_index_res, ' '))
+    str_print = data_op.str_wrap(str_print, 80, '  ')
+    print (str_print, flush=True)
+
+  value_proc = []
+  wfn_state_1_proc = []
+  step_index_proc = []
+  if consider_r_loc:
+    for i in range(len(value)):
+      if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
+        value_proc.append(value[i])
+        wfn_state_1_proc.append(wfn_state_1[i])
+        step_index_proc.append(step_index[i])
+  else:
+    for i in range(len(value)):
+      if ( value[i] < proc_1_func_conv ):
+        value_proc.append(value[i])
+        wfn_state_1_proc.append(wfn_state_1[i])
+        step_index_proc.append(step_index[i])
+
+  if ( len(value_proc) == 0 ):
+    log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
+    exit()
+
+  if consider_wfn_0:
+    wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
+    value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
+    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    for scale in wfn_scale:
+      for i in asc_order:
+        if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
+          choosed_index = step_index_proc[i]
+          break
+      if ( 'choosed_index' in locals() ):
+        break
+  else:
+    min_value = min(value_proc)
+    min_value_index = value_proc.index(min_value)
+    choosed_index = step_index_proc[min_value_index]
+
+  if ( 'choosed_index' not in locals() ):
+    log_info.log_error('Running error: no good parameter in process_1')
+    exit()
+  gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
+  str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
+  str_print = data_op.str_wrap(str_print, 80, '  ')
+  print (str_print, flush=True)
+
+  write_data.write_restart(work_dir, gth_opt_param, 1, gth_pp_file)
 
 if ( restart_stage == 0 or restart_stage == 1 ):
   process_2_dir = ''.join((work_dir, '/process_2'))
@@ -121,90 +202,10 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     restart_num = len(call.call_returns_shell(process_2_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
-  if ( os.path.exists(process_2_dir) and restart_num > 1 ):
+  if ( os.path.exists(process_2_dir) and restart_num > 1 and not opt_from_init ):
     process_2_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_num-1)))
     min_step = get_min_step(process_2_restart_dir)
     gth_pp_file = ''.join((process_2_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
-  else:
-    #Choose the lowest value of process_1
-    step_index = []
-    value = []
-    r_loc = []
-    wfn_state_1 = []
-    process_1_dir = ''.join((work_dir, '/process_1'))
-    for i in range(129):
-      cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
-      return_func = call.call_returns_shell(process_1_dir, cmd)
-      if ( len(return_func) != 0 and 'No such file' not in return_func[0] ):
-        return_func_split = data_op.split_str(return_func[0], ' ')
-        cmd = "grep %s step_%s/atom.out" %("'s-states N=    1'", str(i+1))
-        return_wfn = call.call_returns_shell(process_1_dir, cmd)
-        return_wfn_split = data_op.split_str(return_wfn[0], ' ')
-        if ( len(return_func_split) > 5 ):
-          value.append(float(return_func_split[5]))
-          wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
-          step_index.append(i+1)
-          opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(i+1), '/GTH-PARAMETER'))
-          line = linecache.getline(opt_gth_pp_file, 3)
-          line_split = data_op.split_str(line, ' ')
-          r_loc.append(float(line_split[0]))
-
-    if ( len(step_index) == 0 ):
-      log_info.log_error('Running error: no optimized paramter in %s, please check cp2k running in this directory' %(process_1_dir))
-      exit()
-    elif ( len(step_index) > 0 and len(step_index) < 129 ):
-      step_index_res = data_op.gen_list(1,129,1)
-      step_index_res_copy = copy.deepcopy(step_index_res)
-      for i in step_index:
-        if i in step_index_res_copy:
-          step_index_res.remove(i)
-      str_print = 'Warning: uncompleted steps are: %s' %(data_op.comb_list_2_str(step_index_res, ' '))
-      str_print = data_op.str_wrap(str_print, 80, '  ')
-      print (str_print, flush=True)
-
-    value_proc = []
-    wfn_state_1_proc = []
-    step_index_proc = []
-    if consider_r_loc:
-      for i in range(len(value)):
-        if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
-          value_proc.append(value[i])
-          wfn_state_1_proc.append(wfn_state_1[i])
-          step_index_proc.append(step_index[i])
-    else:
-      for i in range(len(value)):
-        if ( value[i] < proc_1_func_conv ):
-          value_proc.append(value[i])
-          wfn_state_1_proc.append(wfn_state_1[i])
-          step_index_proc.append(step_index[i])
-
-    if ( len(value_proc) == 0 ):
-      log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
-      exit()
-
-    if consider_wfn_0:
-      wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
-      value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
-      wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-      for scale in wfn_scale:
-        for i in asc_order:
-          if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
-            choosed_index = step_index_proc[i]
-            break
-        if ( 'choosed_index' in locals() ):
-          break
-    else:
-      min_value = min(value_proc)
-      min_value_index = value_proc.index(min_value)
-      choosed_index = step_index_proc[min_value_index]
-
-    if ( 'choosed_index' not in locals() ):
-      log_info.log_error('Running error: no good parameter in process_1')
-      exit()
-    gth_pp_file = ''.join((work_dir, '/process_1/step_', str(choosed_index), '/GTH-PARAMETER'))
-    str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
-    str_print = data_op.str_wrap(str_print, 80, '  ')
-    print (str_print, flush=True)
 
   #Run process_2
   print ('Process_2: automated step size optimization', flush=True)
@@ -216,7 +217,16 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
     restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                   method, val_elec_num, python_exe, get_min_index, weight_1)
-  write_data.write_restart(work_dir, gth_opt_param, 2, restart_index)
+
+  #Choose the lowest value of process_2
+  process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
+  min_step = get_min_step(process_2_min_restart_dir)
+  gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+  str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
+  str_print = data_op.str_wrap(str_print, 80, '  ')
+  print (str_print, flush=True)
+
+  write_data.write_restart(work_dir, gth_opt_param, 2, gth_pp_file)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
@@ -224,18 +234,10 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
     restart_num = len(call.call_returns_shell(process_3_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
-  if ( os.path.exists(process_3_dir) and restart_num > 1 ):
+  if ( os.path.exists(process_3_dir) and restart_num > 1 and not opt_from_init ):
     process_3_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_num-1)))
     min_step = get_min_step(process_3_restart_dir)
     gth_pp_file = ''.join((process_3_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
-  else:
-    #Choose the lowest value of process_2
-    process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
-    min_step = get_min_step(process_2_min_restart_dir)
-    gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
-    str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
-    str_print = data_op.str_wrap(str_print, 80, '  ')
-    print (str_print, flush=True)
 
   #Run process_3
   print ('Process_3: weight pertubation optimization', flush=True)
@@ -248,7 +250,16 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                       method, val_elec_num, python_exe, get_min_index, weight_1, \
                                                       weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4)
-  write_data.write_restart(work_dir, gth_opt_param, 3, restart_index)
+
+  #Choose the lowest value of process_3
+  process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
+  min_step = get_min_step(process_3_min_restart_dir)
+  gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+  str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
+  str_print = data_op.str_wrap(str_print, 80, '  ')
+  print (str_print, flush=True)
+
+  write_data.write_restart(work_dir, gth_opt_param, 3, gth_pp_file)
 
 if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
   process_4_dir = ''.join((work_dir, '/process_4'))
@@ -256,18 +267,10 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
     restart_num = len(call.call_returns_shell(process_4_dir, "ls | grep 'restart'"))
   else:
     restart_num = 0
-  if ( os.path.exists(process_4_dir) and restart_num > 1 ):
+  if ( os.path.exists(process_4_dir) and restart_num > 1 and not opt_from_init ):
     process_4_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_num-1)))
     min_step = get_min_step(process_4_restart_dir)
     gth_pp_file = ''.join((process_4_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
-  else:
-    #Choose the lowest value of process_3
-    process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
-    min_step = get_min_step(process_3_min_restart_dir)
-    gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
-    str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
-    str_print = data_op.str_wrap(str_print, 80, '  ')
-    print (str_print, flush=True)
 
   #Run process_4
   print ('Process_4: convergence value pertubation optimization', flush=True)

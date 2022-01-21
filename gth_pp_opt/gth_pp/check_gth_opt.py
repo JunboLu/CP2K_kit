@@ -19,7 +19,7 @@ def check_gth_opt(gth_opt_param):
 
   valid_keyword = ['element', 'elec_config', 'elec_core_config', 'all_elec_method', 'xc_func', \
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
-                   'restart_index', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
+                   'opt_from_init', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
                    'proc_1_step_start', 'proc_1_func_conv', 'weight_pertub_1', 'weight_pertub_2', \
                    'weight_pertub_3', 'weight_pertub_4', 'consider_wfn_0', 'consider_r_loc']
 
@@ -84,6 +84,16 @@ def check_gth_opt(gth_opt_param):
   else:
     gth_opt_param['consider_r_loc'] = 'true'
 
+  if ( 'opt_from_init' in gth_opt_param.keys() ):
+    opt_from_init = gth_opt_param['opt_from_init']
+    if opt_from_init.upper() == 'TRUE' or opt_from_init.upper() == 'FALSE' :
+      pass
+    else:
+      log_info.log_error('Input error: opt_from_init should be bool, please check or reset gth_pp_opt/opt_from_init')
+      exit()
+  else:
+    gth_opt_param['opt_from_init'] = 'false'
+
   if ( 'cp2k_exe' in gth_opt_param.keys() ):
     cp2k_exe = gth_opt_param['cp2k_exe']
     if ( os.path.exists(os.path.abspath(cp2k_exe)) ):
@@ -126,16 +136,6 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['restart_stage'] = 0
-
-  if ( 'restart_index' in gth_opt_param.keys() ):
-    restart_index = gth_opt_param['restart_index']
-    if ( data_op.eval_str(restart_index) == 1 ):
-      gth_opt_param['restart_index'] = int(restart_index)
-    else:
-      log_info.log_error('Input error: restart_index should be integer, please check or reset gth_pp_opt/restart_index')
-      exit()
-  else:
-    gth_opt_param['restart_index'] = 0
 
   if ( 'proc_1_step_start' in gth_opt_param.keys() ):
     proc_1_step_start = gth_opt_param['proc_1_step_start']
