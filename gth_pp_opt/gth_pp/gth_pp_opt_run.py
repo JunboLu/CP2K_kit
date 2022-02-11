@@ -104,8 +104,21 @@ if ( restart_stage == 0 ):
   init_step.gen_init_step(work_dir, gth_pp_file)
 
   start = proc_1_step_start
+  for i in range(129):
+    output_file = ''.join((work_dir, '/process_1/step_', str(i+1), '/atom.out'))
+    cmd = "grep %s %s" %("'Final value of function'", output_file)
+    return_func = call.call_returns_shell(''.join((work_dir, '/process_1')), cmd)
+    gth_file = ''.join((work_dir, '/process_1/step_', str(i+1), '/GTH-PARAMETER'))
+    line_num = len(open(gth_file).readlines())
+    if ( len(return_func) == 0 or 'No such file' in return_func[0] or line_num < 3 ):
+      break
+    else:
+      start = i+1
+
   end = start+parallel_num-1
-  cycle = math.ceil((129-proc_1_step_start+1)/parallel_num)
+  if ( end > 129 ):
+    end = 129
+  cycle = math.ceil((129-start+1)/parallel_num)
 
   for i in range(cycle):
     init_step.run_init_step(work_dir, cp2k_exe, parallel_exe, element, val_elec_num, method, parallel_num, start, end)
@@ -121,11 +134,11 @@ if ( restart_stage == 0 ):
   wfn_state_1 = []
   process_1_dir = ''.join((work_dir, '/process_1'))
   for i in range(129):
-    cmd = "grep %s step_%s/atom.out" %("'Final value of function'", str(i+1))
+    cmd = "grep %s %s/step_%s/atom.out" %("'Final value of function'", process_1_dir, str(i+1))
     return_func = call.call_returns_shell(process_1_dir, cmd)
     if ( len(return_func) != 0 and 'No such file' not in return_func[0] ):
       return_func_split = data_op.split_str(return_func[0], ' ')
-      cmd = "grep %s step_%s/atom.out" %("'s-states N=    1'", str(i+1))
+      cmd = "grep %s %s/step_%s/atom.out" %("'s-states N=    1'", process_1_dir, str(i+1))
       return_wfn = call.call_returns_shell(process_1_dir, cmd)
       return_wfn_split = data_op.split_str(return_wfn[0], ' ')
       if ( len(return_func_split) > 5 ):
