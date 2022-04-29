@@ -71,7 +71,7 @@ contains
     end do
 
     average_value=s_value/m
-    sigma = sqrt(sq_value/m-s_value*s_value/(m*m))
+    sigma = sqrt(sq_value/m-(s_value/m)*(s_value/m))
 
     return
 

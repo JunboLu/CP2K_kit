@@ -33,6 +33,16 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, gth_pp_file):
     if ( key != 'restart_stage' and \
          key != 'elec_config' and \
          key != 'elec_core_config' and \
+         key != 'elec_config_0' and \
+         key != 'elec_config_1' and \
+         key != 'elec_config_2' and \
+         key != 'elec_config_3' and \
+         key != 'elec_config_4' and \
+         key != 'elec_config_5' and \
+         key != 'elec_config_perturb_choice_1' and \
+         key != 'elec_config_perturb_choice_2' and \
+         key != 'elec_config_perturb_choice_3' and \
+         key != 'elec_config_perturb_choice_4' and \
          key != 'restart_index' and \
          key != 'weight_1' and \
          key != 'weight_2' and \
@@ -40,9 +50,24 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, gth_pp_file):
          key != 'weight_pertub_2' and \
          key != 'weight_pertub_3' and \
          key != 'weight_pertub_4' and \
-         key != 'init_gth_pp_file' ):
+         key != 'init_gth_pp_file' and \
+         key != 'mix_weight_1' and \
+         key != 'mix_weight_2' and \
+         'converge_perturb_choice_' not in key ):
+
       restart_file.write('  %s %s\n' %(key, gth_pp_opt_dic[key]))
-    if ( key == 'elec_config' or key == 'elec_core_config' ):
+    if ( key == 'elec_config' or \
+         key == 'elec_config_0' or \
+         key == 'elec_config_1' or \
+         key == 'elec_config_2' or \
+         key == 'elec_config_3' or \
+         key == 'elec_config_4' or \
+         key == 'elec_config_5' or \
+         key == 'elec_config_perturb_choice_1' or \
+         key == 'elec_config_perturb_choice_2' or \
+         key == 'elec_config_perturb_choice_3' or \
+         key == 'elec_config_perturb_choice_4' or \
+         key == 'elec_core_config' ):
       if ( isinstance(gth_pp_opt_dic[key], list) ):
         key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
         restart_file.write('  %s %s\n' %(key, key_str))
@@ -53,7 +78,10 @@ def write_restart(work_dir, gth_pp_opt_dic, restart_stage, gth_pp_file):
          key == 'weight_pertub_1' or \
          key == 'weight_pertub_2' or \
          key == 'weight_pertub_3' or \
-         key == 'weight_pertub_4'):
+         key == 'weight_pertub_4' or \
+         key == 'mix_weight_1' or \
+         key == 'mix_weight_2' or \
+         'converge_perturb_choice_' in key ):
       key_str = data_op.comb_list_2_str(gth_pp_opt_dic[key], ' ')
       restart_file.write('  %s %s\n' %(key, key_str))
   restart_file.write('  init_gth_pp_file %s\n' %(gth_pp_file))

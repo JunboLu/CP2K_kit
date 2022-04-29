@@ -17,11 +17,19 @@ def check_gth_opt(gth_opt_param):
       gth_opt_param is the revised gth_opt_param.
   '''
 
-  valid_keyword = ['element', 'elec_config', 'elec_core_config', 'all_elec_method', 'xc_func', \
+  valid_keyword = ['element', 'elec_config', 'elec_config_0', 'elec_config_1', 'elec_config_2', 'elec_config_3', \
+                   'elec_config_4', 'elec_config_5', 'elec_core_config', 'all_elec_method', 'xc_func', \
                    'relat_method', 'cp2k_exe', 'parallel_exe', 'init_gth_pp_file', 'restart_stage', \
                    'opt_from_init', 'micro_max_cycle', 'r_loc_conv', 'weight_1', 'weight_2', \
                    'proc_1_step_start', 'proc_1_func_conv', 'weight_pertub_1', 'weight_pertub_2', \
-                   'weight_pertub_3', 'weight_pertub_4', 'consider_wfn_0', 'consider_r_loc']
+                   'weight_pertub_3', 'weight_pertub_4', 'consider_wfn_0', 'consider_r_loc', \
+                   'converge_perturb_choice_1', 'converge_perturb_choice_2', 'converge_perturb_choice_3', \
+                   'converge_perturb_choice_4', 'converge_perturb_choice_5', 'converge_perturb_choice_6', \
+                   'converge_perturb_choice_7', 'converge_perturb_choice_8', 'converge_perturb_choice_9', \
+                   'converge_perturb_choice_10', 'converge_perturb_choice_11', 'converge_perturb_choice_12', \
+                   'elec_config_perturb_choice_1', 'elec_config_perturb_choice_2', 'elec_config_perturb_choice_3', \
+                   'elec_config_perturb_choice_4', 'mix_weight_1', 'mix_weight_2', 'mix_max_cycle', 'target_semi', \
+                   'target_val', 'target_vir', 'weight_psir0', 'weight_pot_node']
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -32,13 +40,21 @@ def check_gth_opt(gth_opt_param):
     log_info.log_error('Input error: no element found, please set gth_pp_opt/element')
     exit()
 
-  if ( 'elec_config' not in gth_opt_param.keys() ):
-    log_info.log_error('Input error: no electron configuration found, please set gth_pp_opt/elec_config')
-    exit()
-
   if ( 'elec_core_config' not in gth_opt_param.keys() ):
     log_info.log_error('Input error: no core electron configuration found, please set gth_pp_opt/elec_core_config')
     exit()
+
+  if ( 'elec_config_perturb_choice_1' not in gth_opt_param.keys() ):
+    gth_opt_param['elec_config_perturb_choice_1'] = 'none'
+
+  if ( 'elec_config_perturb_choice_2' not in gth_opt_param.keys() ):
+    gth_opt_param['elec_config_perturb_choice_2'] = 'none'
+
+  if ( 'elec_config_perturb_choice_3' not in gth_opt_param.keys() ):
+    gth_opt_param['elec_config_perturb_choice_3'] = 'none'
+
+  if ( 'elec_config_perturb_choice_4' not in gth_opt_param.keys() ):
+    gth_opt_param['elec_config_perturb_choice_4'] = 'none'
 
   if ( 'all_elec_method' in gth_opt_param.keys() ):
     all_elec_method = gth_opt_param['all_elec_method']
@@ -124,7 +140,7 @@ def check_gth_opt(gth_opt_param):
       log_info.log_error('Input error: initial gth pp file does not exist, please check or reset gth_pp_opt/init_gth_pp_file')
       exit()
   else:
-    log_info('Input error: no initial gth pp file found, please set gth_pp_opt/init_gth_pp_file')
+    log_info.log_error('Input error: no initial gth pp file found, please set gth_pp_opt/init_gth_pp_file')
     exit()
 
   if ( 'restart_stage' in gth_opt_param.keys() ):
@@ -156,6 +172,66 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['micro_max_cycle'] = 1
+
+  if ( 'mix_max_cycle' in gth_opt_param.keys() ):
+    mix_max_cycle = gth_opt_param['mix_max_cycle']
+    if ( data_op.eval_str(mix_max_cycle) == 1 ):
+      gth_opt_param['mix_max_cycle'] = int(mix_max_cycle)
+    else:
+      log_info.log_error('Input error: mix_max_cycle should be integer, please check or reset gth_pp_opt/mix_max_cycle')
+      exit()
+  else:
+    gth_opt_param['mix_max_cycle'] = 8
+
+  if ( 'target_semi' in gth_opt_param.keys() ):
+    target_semi = gth_opt_param['target_semi']
+    if ( data_op.eval_str(target_semi) == 2 ):
+      gth_opt_param['target_semi'] = float(target_semi)
+    else:
+      log_info.log_error('Input error: target_semi should be float or integer, please check or reset gth_pp_opt/target_semi')
+      exit()
+  else:
+    gth_opt_param['target_semi'] = 0.003
+
+  if ( 'target_val' in gth_opt_param.keys() ):
+    target_val = gth_opt_param['target_val']
+    if ( data_op.eval_str(target_val) == 2 ):
+      gth_opt_param['target_val'] = float(target_val)
+    else:
+      log_info.log_error('Input error: target_val should be float or integer, please check or reset gth_pp_opt/target_val')
+      exit()
+  else:
+    gth_opt_param['target_val'] = 0.0003
+
+  if ( 'target_vir' in gth_opt_param.keys() ):
+    target_vir = gth_opt_param['target_vir']
+    if ( data_op.eval_str(target_vir) == 2 ):
+      gth_opt_param['target_vir'] = float(target_vir)
+    else:
+      log_info.log_error('Input error: target_vir should be float or integer, please check or reset gth_pp_opt/target_vir')
+      exit()
+  else:
+    gth_opt_param['target_vir'] = 0.003
+
+  if ( 'weight_psir0' in gth_opt_param.keys() ):
+    weight_psir0 = gth_opt_param['weight_psir0']
+    if ( data_op.eval_str(weight_psir0) == 2 ):
+      gth_opt_param['weight_psir0'] = float(weight_psir0)
+    else:
+      log_info.log_error('Input error: weight_psir0 should be float or integer, please check or reset gth_pp_opt/weight_psir0')
+      exit()
+  else:
+    gth_opt_param['weight_psir0'] = 0.0
+
+  if ( 'weight_pot_node' in gth_opt_param.keys() ):
+    weight_pot_node = gth_opt_param['weight_pot_node']
+    if ( data_op.eval_str(weight_pot_node) == 2 ):
+      gth_opt_param['weight_pot_node'] = float(weight_pot_node)
+    else:
+      log_info.log_error('Input error: weight_pot_node should be float or integer, please check or reset gth_pp_opt/weight_pot_node')
+      exit()
+  else:
+    gth_opt_param['weight_pot_node'] = 10.0
 
   if ( 'r_loc_conv' in gth_opt_param.keys() ):
     r_loc_conv = gth_opt_param['r_loc_conv']
@@ -197,6 +273,26 @@ def check_gth_opt(gth_opt_param):
   else:
     gth_opt_param['weight_2'] = [2.0, 5.0, 1.0]
 
+  if ( 'mix_weight_1' in gth_opt_param.keys() ):
+    mix_weight_1 = gth_opt_param['mix_weight_1']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in mix_weight_1):
+      gth_opt_param['mix_weight_1'] = [float(x) for x in mix_weight_1]
+    else:
+      log_info.log_error('Input error: weight value in mix_weight_1 should be integer or float, please check or reset gth_pp_opt/mix_weight_1')
+      exit()
+  else:
+    gth_opt_param['mix_weight_1'] = [2.0, 5.0, 1.0]
+
+  if ( 'mix_weight_2' in gth_opt_param.keys() ):
+    mix_weight_2 = gth_opt_param['mix_weight_2']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in mix_weight_2):
+      gth_opt_param['mix_weight_2'] = [float(x) for x in mix_weight_2]
+    else:
+      log_info.log_error('Input error: weight value in mix_weight_2 should be integer or float, please check or reset gth_pp_opt/mix_weight_2')
+      exit()
+  else:
+    gth_opt_param['mix_weight_2'] = [2.0, 1.0, 5.0]
+
   if ( 'weight_pertub_1' in gth_opt_param.keys() ):
     weight_pertub_1 = gth_opt_param['weight_pertub_1']
     if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in weight_pertub_1):
@@ -236,5 +332,125 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['weight_pertub_4'] = [1.0, 5.0, 2.0]
+
+  if ( 'converge_perturb_choice_1' in gth_opt_param.keys() ):
+    converge_perturb_choice_1 = gth_opt_param['converge_perturb_choice_1']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_1):
+      gth_opt_param['converge_perturb_choice_1'] = [float(x) for x in converge_perturb_choice_1]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_1 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_1')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_1'] = [0.0003, 0.0003, 0.0003]
+
+  if ( 'converge_perturb_choice_2' in gth_opt_param.keys() ):
+    converge_perturb_choice_2 = gth_opt_param['converge_perturb_choice_2']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_2):
+      gth_opt_param['converge_perturb_choice_2'] = [float(x) for x in converge_perturb_choice_2]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_2 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_2')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_2'] = [0.003, 0.003, 0.003]
+
+  if ( 'converge_perturb_choice_3' in gth_opt_param.keys() ):
+    converge_perturb_choice_3 = gth_opt_param['converge_perturb_choice_3']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_3):
+      gth_opt_param['converge_perturb_choice_3'] = [float(x) for x in converge_perturb_choice_3]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_3 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_3')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_3'] = [0.0003, 0.00003, 0.0003]
+
+  if ( 'converge_perturb_choice_4' in gth_opt_param.keys() ):
+    converge_perturb_choice_4 = gth_opt_param['converge_perturb_choice_4']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_4):
+      gth_opt_param['converge_perturb_choice_4'] = [float(x) for x in converge_perturb_choice_4]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_4 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_4')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_4'] = [0.002, 0.002, 0.002]
+
+  if ( 'converge_perturb_choice_5' in gth_opt_param.keys() ):
+    converge_perturb_choice_5 = gth_opt_param['converge_perturb_choice_5']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_5):
+      gth_opt_param['converge_perturb_choice_5'] = [float(x) for x in converge_perturb_choice_5]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_5 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_5')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_5'] = [0.001, 0.001, 0.001]
+
+  if ( 'converge_perturb_choice_6' in gth_opt_param.keys() ):
+    converge_perturb_choice_6 = gth_opt_param['converge_perturb_choice_6']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_6):
+      gth_opt_param['converge_perturb_choice_6'] = [float(x) for x in converge_perturb_choice_6]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_6 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_6')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_6'] = [0.0002, 0.0002, 0.0002]
+
+  if ( 'converge_perturb_choice_7' in gth_opt_param.keys() ):
+    converge_perturb_choice_7 = gth_opt_param['converge_perturb_choice_7']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_7):
+      gth_opt_param['converge_perturb_choice_7'] = [float(x) for x in converge_perturb_choice_7]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_7 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_7')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_7'] = [0.0001, 0.0001, 0.0001]
+
+  if ( 'converge_perturb_choice_8' in gth_opt_param.keys() ):
+    converge_perturb_choice_8 = gth_opt_param['converge_perturb_choice_8']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_8):
+      gth_opt_param['converge_perturb_choice_8'] = [float(x) for x in converge_perturb_choice_8]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_8 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_8')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_8'] = [0.0003, 0.00003, 0.0003]
+
+  if ( 'converge_perturb_choice_9' in gth_opt_param.keys() ):
+    converge_perturb_choice_9 = gth_opt_param['converge_perturb_choice_9']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_9):
+      gth_opt_param['converge_perturb_choice_9'] = [float(x) for x in converge_perturb_choice_9]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_9 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_9')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_9'] = [0.0002, 0.00002, 0.0002]
+
+  if ( 'converge_perturb_choice_10' in gth_opt_param.keys() ):
+    converge_perturb_choice_10 = gth_opt_param['converge_perturb_choice_10']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_10):
+      gth_opt_param['converge_perturb_choice_10'] = [float(x) for x in converge_perturb_choice_10]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_10 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_10')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_10'] = [0.0001, 0.00001, 0.0001]
+
+  if ( 'converge_perturb_choice_11' in gth_opt_param.keys() ):
+    converge_perturb_choice_11 = gth_opt_param['converge_perturb_choice_11']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_11):
+      gth_opt_param['converge_perturb_choice_11'] = [float(x) for x in converge_perturb_choice_11]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_11 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_11')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_11'] = [0.01, 0.01, 0.01]
+
+  if ( 'converge_perturb_choice_12' in gth_opt_param.keys() ):
+    converge_perturb_choice_12 = gth_opt_param['converge_perturb_choice_12']
+    if all(data_op.eval_str(x) == 1 or data_op.eval_str(x) == 2 for x in converge_perturb_choice_12):
+      gth_opt_param['converge_perturb_choice_12'] = [float(x) for x in converge_perturb_choice_12]
+    else:
+      log_info.log_error('Input error: convergence value in converge_perturb_choice_12 should be integer or float, please check or reset gth_pp_opt/converge_perturb_choice_12')
+      exit()
+  else:
+    gth_opt_param['converge_perturb_choice_12'] = [0.01, 0.001, 0.01]
 
   return gth_opt_param

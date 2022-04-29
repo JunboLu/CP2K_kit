@@ -686,9 +686,10 @@ def geometry_run(geometry_param, work_dir):
 
     log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    atom_pair = bond_length_param['atom_pair']
-    atom_1 = atom_pair[0]
-    atom_2 = atom_pair[1]
+    atom_pair_num = 0
+    for key in bond_length_param.keys():
+      if ( 'atom_pair' in key ):
+        atom_pair_num = atom_pair_num+1
 
     init_step = bond_length_param['init_step']
     end_step = bond_length_param['end_step']
@@ -698,22 +699,32 @@ def geometry_run(geometry_param, work_dir):
     c_vec = geometry_param['bond_length']['box']['C']
 
     print ('GEOMETRY'.center(80, '*'), flush=True)
-    print ('Analyze bond length between %d and %d' %(atom_1, atom_2), flush=True)
+    for i in range(atom_pair_num):
+      if ( atom_pair_num > 1 ):
+        atom_pair = bond_length_param[''.join(('atom_pair', str(i)))]
+      else:
+        atom_pair = bond_length_param['atom_pair']
+      atom_1 = atom_pair[0]
+      atom_2 = atom_pair[1]
+      print ('Analyze bond length between %d and %d' %(atom_1, atom_2), flush=True)
 
-    time, distance, distance_avg, sigma = \
-    bond_length_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, each, init_step, \
+      time, distance, distance_avg, sigma = \
+      bond_length_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, each, init_step, \
                      end_step, time_step, traj_coord_file, a_vec, b_vec, c_vec, atom_1, atom_2, work_dir)
 
-    dist_file = ''.join((work_dir, '/distance.csv'))
-    with open(dist_file, 'w') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(['time(fs)', 'distance(Ang)'])
-      for i in range(len(distance)):
-        writer.writerow([time[i], distance[i]])
+      if ( atom_pair_num > 1 ):
+        dist_file = ''.join((work_dir, '/distance', str(i), '.csv'))
+      else:
+        dist_file = ''.join((work_dir, '/distance.csv'))
+      with open(dist_file, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['time(fs)', 'distance(Ang)'])
+        for j in range(len(distance)):
+          writer.writerow([time[j], distance[j]])
 
-    str_print = 'The file containing bond length (unit: angstrom) vs time (unit: fs) is written in %s' %(dist_file)
-    print (data_op.str_wrap(str_print, 80), flush=True)
-    print ("The averaged bond length is %f (A) and standard error is %f (A)" %(distance_avg, sigma), flush=True)
+      str_print = 'The file containing bond length (unit: angstrom) vs time (unit: fs) is written in %s' %(dist_file)
+      print (data_op.str_wrap(str_print, 80), flush=True)
+      print ("The averaged bond length is %f (A) and standard error is %f (A)" %(distance_avg, sigma), flush=True)
 
   elif ( 'bond_angle' in geometry_param ):
     bond_angle_param = geometry_param['bond_angle']
@@ -724,32 +735,45 @@ def geometry_run(geometry_param, work_dir):
 
     log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
 
-    atom_pair = bond_angle_param['atom_pair']
-    atom_1 = atom_pair[0]
-    atom_2 = atom_pair[1]
-    atom_3 = atom_pair[2]
+    atom_pair_num = 0
+    for key in bond_angle_param.keys():
+      if ( 'atom_pair' in key ):
+        atom_pair_num = atom_pair_num+1
 
     init_step = bond_angle_param['init_step']
 
     end_step = bond_angle_param['end_step']
 
     print ('GEOMETRY'.center(80, '*'), flush=True)
-    print ('Analyze bond angle between %d and %d and %d' %(atom_1, atom_2, atom_3), flush=True)
 
-    time, angle, angle_avg, sigma = \
-    bond_angle_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, \
-                    each, init_step, end_step, time_step, traj_coord_file, atom_1, atom_2, atom_3)
+    for i in range(atom_pair_num):
+      if ( atom_pair_num > 1 ):
+        atom_pair = bond_angle_param[''.join(('atom_pair', str(i)))]
+      else:
+        atom_pair = bond_angle_param['atom_pair']
+      atom_1 = atom_pair[0]
+      atom_2 = atom_pair[1]
+      atom_3 = atom_pair[2]
 
-    angle_file = ''.join((work_dir, '/angle.csv'))
-    with open(angle_file, 'w') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(['time(fs)', 'angle(rad)'])
-      for i in range(len(angle)):
-        writer.writerow([time[i], angle[i]])
+      print ('Analyze bond angle between %d and %d and %d' %(atom_1, atom_2, atom_3), flush=True)
 
-    str_print = 'The file containing bond angle (unit: rad) vs time (unit: fs) is written in %s' %(angle_file)
-    print (data_op.str_wrap(str_print, 80), flush=True)
-    print ("The averaged angle is %f (rad) and standard error is %f (rad)" %(angle_avg, sigma), flush=True)
+      time, angle, angle_avg, sigma = \
+      bond_angle_stat(atoms_num, pre_base_block, end_base_block, pre_base, start_frame_id, frames_num, \
+                      each, init_step, end_step, time_step, traj_coord_file, atom_1, atom_2, atom_3)
+
+      if ( atom_pair_num > 1 ):
+        angle_file = ''.join((work_dir, '/angle', str(i), '.csv'))
+      else:
+        angle_file = ''.join((work_dir, '/angle.csv'))
+      with open(angle_file, 'w') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['time(fs)', 'angle(rad)'])
+        for j in range(len(angle)):
+          writer.writerow([time[j], angle[j]])
+
+      str_print = 'The file containing bond angle (unit: rad) vs time (unit: fs) is written in %s' %(angle_file)
+      print (data_op.str_wrap(str_print, 80), flush=True)
+      print ("The averaged angle is %f (rad) and standard error is %f (rad)" %(angle_avg, sigma), flush=True)
 
   elif (  'first_shell' in geometry_param ):
     first_shell_param = geometry_param['first_shell']

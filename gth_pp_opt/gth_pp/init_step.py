@@ -1,6 +1,7 @@
 #! /usr/env/bin python
 
 import subprocess
+from CP2K_kit.tools import file_tools
 
 def gen_init_step(work_dir, gth_pp_file):
 
@@ -16,40 +17,46 @@ def gen_init_step(work_dir, gth_pp_file):
     none
   '''
 
+  atom_inp_file = ''.join((work_dir, '/atom.inp'))
+  line_num = file_tools.grep_line_num('STEP_SIZE', atom_inp_file, work_dir)
+
   gen_direc = '''
 #! /bin/bash
 
 direc=%s
+line_num=%d
 for i in {1..129}
 do
+if [ ! -f $direc/process_1/step_$i ]; then
 mkdir $direc/process_1/step_$i
+fi
 cp $direc/atom.inp $direc/process_1/step_$i
 done
 
 for i in {1..100}
 do
 step_size=`echo "scale=6; 10.1-$i*0.1" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
+sed -ie ''${line_num}'s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
 done
 
 for i in {101..110}
 do
 step_size=`echo "scale=6; 0.1-($i-100)*0.01" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
+sed -ie ''${line_num}'s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
 done
 
 for i in {111..120}
 do
 step_size=`echo "scale=6; 0.01-($i-110)*0.001" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
+sed -ie ''${line_num}'s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
 done
 
 for i in {121..129}
 do
 step_size=`echo "scale=6; 0.001-($i-120)*0.0001" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
+sed -ie ''${line_num}'s/.*/    STEP_SIZE  '$step_size'/' $direc/process_1/step_$i/atom.inp
 done
-''' % (work_dir)
+''' % (work_dir, line_num[0])
 
   #make process_1 directory, and copy initial gth file in process_1 directory
   #The initial gth file in process_1 is defined by user.
@@ -112,7 +119,6 @@ method=%s
 cp2k_exe=%s
 cd $direc/process_1/step_$x
 $cp2k_exe atom.inp 1> atom.out 2> atom.err
-sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' GTH-PARAMETER
 cd $direc/process_1
 }
 

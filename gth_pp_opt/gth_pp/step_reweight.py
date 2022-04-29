@@ -6,9 +6,11 @@ import tempfile
 import subprocess
 from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
+from CP2K_kit.tools import file_tools
 
 def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                    method, val_elec_num, python_exe, get_min_index, weight_1):
+                    method, val_elec_num, python_exe, get_min_index, weight_1, \
+                    target_semi, target_val, target_vir):
 
   '''
   run_step_weight : run step reweight process.
@@ -58,6 +60,16 @@ def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
     cmd = "mv restart* %s" %(''.join(('bak_', str(bak_num+1))))
     call.call_simple_shell(process_2_dir, cmd)
 
+  atom_inp_file = ''.join((work_dir, '/atom.inp'))
+  line_step_size = file_tools.grep_line_num('STEP_SIZE', atom_inp_file, work_dir)
+  line_wt_semi = file_tools.grep_line_num('WEIGHT_POT_SEMICORE', atom_inp_file, work_dir)
+  line_wt_val = file_tools.grep_line_num('WEIGHT_POT_VALENCE', atom_inp_file, work_dir)
+  line_wt_vir = file_tools.grep_line_num('WEIGHT_POT_VIRTUAL', atom_inp_file, work_dir)
+  line_tg_semi = file_tools.grep_line_num('TARGET_POT_SEMICORE', atom_inp_file, work_dir)
+  line_tg_val = file_tools.grep_line_num('TARGET_POT_VALENCE', atom_inp_file, work_dir)
+  line_tg_vir = file_tools.grep_line_num('TARGET_POT_VIRTUAL', atom_inp_file, work_dir)
+  line_pot_file = file_tools.grep_line_num('POTENTIAL_FILE_NAME', atom_inp_file, work_dir)
+
   run_step = '''
 #! /bin/bash
 
@@ -65,7 +77,7 @@ direc=%s
 
 conv=0.001
 weight_standard='%f %f %f'
-converge_standard='0.003 0.0003 0.003'
+converge_standard='%f %f %f'
 
 m=2
 n=2
@@ -107,7 +119,7 @@ echo $i $value_2
 echo $i $value_2 >> $direc/$filename
 fi
 done
-''' % (process_2_dir, weight_1[0], weight_1[1], weight_1[2])
+''' % (process_2_dir, weight_1[0], weight_1[1], weight_1[2], target_semi, target_val, target_vir)
 
   optimize = '''
 #! /bin/bash
@@ -119,6 +131,15 @@ method=%s
 elec_num=%d
 python_exe=%s
 get_index_py=%s
+
+line_step_size=%d
+line_wt_semi=%d
+line_wt_val=%d
+line_wt_vir=%d
+line_tg_semi=%d
+line_tg_val=%d
+line_tg_vir=%d
+line_pot_file=%d
 
 produce() {
 x=$1
@@ -163,14 +184,14 @@ done
 for j in $(seq 1 10)
 do
 step_size=`echo "scale=6; 0.011-$j*0.001" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
 for j in $(seq 11 19)
 do
 step_size=`echo "scale=6; 0.001-($j-10)*0.0001" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
-sed -ie '36s/.*/    STEP_SIZE  0.00009/' $direc/restart$i/step_20/atom.inp
+sed -ie ''${step_size}'s/.*/    STEP_SIZE  0.00009/' $direc/restart$i/step_20/atom.inp
 fi
 if [[ $i != 1 && $i != 2 && $check_direc == old ]]; then
 for j in $(seq 1 $normal_total_step)
@@ -180,18 +201,18 @@ cp $direc/../atom.inp $direc/restart$i/step_$j
 done
 fi
 
-sed -ie '45s/.*/     WEIGHT_POT_SEMICORE               '$weight_semi'/' $direc/restart$i/step*/atom.inp
-sed -ie '46s/.*/     WEIGHT_POT_VALENCE                '$weight_val'/' $direc/restart$i/step*/atom.inp
-sed -ie '47s/.*/     WEIGHT_POT_VIRTUAL                '$weight_vir'/' $direc/restart$i/step*/atom.inp
-sed -ie '41s/.*/     TARGET_POT_SEMICORE      [eV]      '$conv_semi'/' $direc/restart$i/step*/atom.inp
-sed -ie '42s/.*/     TARGET_POT_VALENCE       [eV]      '$conv_val'/' $direc/restart$i/step*/atom.inp
-sed -ie '43s/.*/     TARGET_POT_VIRTUAL       [eV]      '$conv_vir'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_wt_semi}'s/.*/     WEIGHT_POT_SEMICORE               '$weight_semi'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_wt_val}'s/.*/     WEIGHT_POT_VALENCE                '$weight_val'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_wt_vir}'s/.*/     WEIGHT_POT_VIRTUAL                '$weight_vir'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_tg_semi}'s/.*/     TARGET_POT_SEMICORE      [eV]      '$conv_semi'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_tg_val}'s/.*/     TARGET_POT_VALENCE       [eV]      '$conv_val'/' $direc/restart$i/step*/atom.inp
+sed -ie ''${line_tg_vir}'s/.*/     TARGET_POT_VIRTUAL       [eV]      '$conv_vir'/' $direc/restart$i/step*/atom.inp
 rm $direc/restart$i/step*/*e
 
 if [[ $i == 1 || $kk == 0 ]]; then
 for j in $(seq 1 $initial_total_step)
 do
-sed -ie '29s/.*/    POTENTIAL_FILE_NAME  ..\/..\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_pot_file}'s/.*/    POTENTIAL_FILE_NAME  ..\/..\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
 done
 
 seq 1 $initial_total_step | $parallel_exe -j $initial_parallel_num produce {} $i $direc
@@ -200,11 +221,11 @@ elif [[ $i == 2 || $kk == 1 ]]; then
 ((k=$i-1))
 cd $direc/restart$k
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k/kk`
+m=`$python_exe $get_index_py $direc/restart$k`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 for j in $(seq 1 $initial_total_step)
 do
-sed -ie '29s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
+sed -ie '${line_pot_file}s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
 done
 
 seq 1 $initial_total_step | $parallel_exe -j $initial_parallel_num produce {} $i $direc
@@ -213,7 +234,7 @@ elif [[ $i != 1 && $i != 2 ]]; then
 k_1=$kk
 cd $direc/restart$k_1
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k_1/kk`
+m=`$python_exe $get_index_py $direc/restart$k_1`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 if [ $check_direc == new ]; then
 total_step=$initial_total_step
@@ -222,16 +243,16 @@ total_step=$normal_total_step
 fi
 for j in $(seq 1 $total_step)
 do
-sed -ie '29s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k_1'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_pot_file}'s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k_1'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
 done
 if [ $check_direc == old ]; then
-a=`sed -n '36p' step_$m/atom.inp`
+a=`sed -n ''${line_step_size}'p' step_$m/atom.inp`
 step_size_pre=`echo $a | tr -cd "[0-9,.]"`
 for j in $(seq 1 $total_step)
 do
 scalling=`echo "scale=6; 0.4+0.1*$j" | bc`
 step_size=`echo "scale=6; $step_size_pre*$scalling" | bc`
-sed -ie '36s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
 fi
 
@@ -245,12 +266,14 @@ fi
 
 cd $direc/restart$i
 for z in {1..20}; do grep -H "Final value of function" step_$z/atom.out; done > kk
-m=`$python_exe $get_index_py $direc/restart$i/kk`
+m=`$python_exe $get_index_py $direc/restart$i`
 str=`grep -H "Final value of function" step_$m/atom.out`
 value=`echo ${str:20:100} | tr -cd "[0-9,.]"`
 echo $value
 cd $direc
-''' %(process_2_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, cp2k_exe)
+''' %(process_2_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, \
+      line_step_size[0], line_wt_semi[0], line_wt_val[0], line_wt_vir[0], line_tg_semi[0], \
+      line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
 
   optimize_file = ''.join((process_2_dir, '/optimize.sh'))
   with open(optimize_file, 'w') as f:

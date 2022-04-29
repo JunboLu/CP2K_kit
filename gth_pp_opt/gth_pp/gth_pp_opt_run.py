@@ -77,21 +77,49 @@ parallel_exe = gth_opt_param['parallel_exe']
 gth_pp_file = gth_opt_param['init_gth_pp_file']
 restart_stage = gth_opt_param['restart_stage']
 r_loc_conv = gth_opt_param['r_loc_conv']
+target_semi = gth_opt_param['target_semi']
+target_val = gth_opt_param['target_val']
+target_vir = gth_opt_param['target_vir']
 micro_max_cycle = gth_opt_param['micro_max_cycle']
 weight_1 = gth_opt_param['weight_1']
 weight_2 = gth_opt_param['weight_2']
+mix_max_cycle = gth_opt_param['mix_max_cycle']
+mix_weight_1 = gth_opt_param['mix_weight_1']
+mix_weight_2 = gth_opt_param['mix_weight_2']
 weight_pertub_1 = gth_opt_param['weight_pertub_1']
 weight_pertub_2 = gth_opt_param['weight_pertub_2']
 weight_pertub_3 = gth_opt_param['weight_pertub_3']
 weight_pertub_4 = gth_opt_param['weight_pertub_4']
+converge_perturb_choice_1 = gth_opt_param['converge_perturb_choice_1']
+converge_perturb_choice_2 = gth_opt_param['converge_perturb_choice_2']
+converge_perturb_choice_3 = gth_opt_param['converge_perturb_choice_3']
+converge_perturb_choice_4 = gth_opt_param['converge_perturb_choice_4']
+converge_perturb_choice_5 = gth_opt_param['converge_perturb_choice_5']
+converge_perturb_choice_6 = gth_opt_param['converge_perturb_choice_6']
+converge_perturb_choice_7 = gth_opt_param['converge_perturb_choice_7']
+converge_perturb_choice_8 = gth_opt_param['converge_perturb_choice_8']
+converge_perturb_choice_9 = gth_opt_param['converge_perturb_choice_9']
+converge_perturb_choice_10 = gth_opt_param['converge_perturb_choice_10']
+converge_perturb_choice_11 = gth_opt_param['converge_perturb_choice_11']
+converge_perturb_choice_12 = gth_opt_param['converge_perturb_choice_12']
+elec_config_perturb_choice_1 = gth_opt_param['elec_config_perturb_choice_1']
+elec_config_perturb_choice_2 = gth_opt_param['elec_config_perturb_choice_2']
+elec_config_perturb_choice_3 = gth_opt_param['elec_config_perturb_choice_3']
+elec_config_perturb_choice_4 = gth_opt_param['elec_config_perturb_choice_4']
+
 proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
+weight_psir0 = gth_opt_param['weight_psir0']
+weight_pot_node = gth_opt_param['weight_pot_node']
 consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
 consider_r_loc = data_op.str_to_bool(gth_opt_param['consider_r_loc'])
 opt_from_init = data_op.str_to_bool(gth_opt_param['opt_from_init'])
 
+if ( 'elec_config_0' in gth_opt_param.keys()):
+  elec_config = gth_opt_param['elec_config_0']
+
 #Generate atom input file
-element, val_elec_num, method = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param, weight_1, consider_wfn_0)
+element, val_elec_num, method, elec_config_num = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param)
 
 #Get defined r_loc
 line = linecache.getline(gth_pp_file, 3)
@@ -101,6 +129,7 @@ r_loc_def = float(line_split[0])
 #Run process_1
 if ( restart_stage == 0 ):
   print ('Process_1: initial optimization', flush=True)
+  write_data.write_restart(work_dir, gth_opt_param, 0, gth_pp_file)
   init_step.gen_init_step(work_dir, gth_pp_file)
 
   start = proc_1_step_start
@@ -109,7 +138,10 @@ if ( restart_stage == 0 ):
     cmd = "grep %s %s" %("'Final value of function'", output_file)
     return_func = call.call_returns_shell(''.join((work_dir, '/process_1')), cmd)
     gth_file = ''.join((work_dir, '/process_1/step_', str(i+1), '/GTH-PARAMETER'))
-    line_num = len(open(gth_file).readlines())
+    if ( os.path.exists(gth_file) ):
+      line_num = len(open(gth_file).readlines())
+    else:
+      line_num = 0
     if ( len(return_func) == 0 or 'No such file' in return_func[0] or line_num < 3 ):
       break
     else:
@@ -127,25 +159,54 @@ if ( restart_stage == 0 ):
     if ( end > 129 ):
       end = 129
 
+if ( restart_stage == -1 ):
   #Choose the lowest value of process_1
   step_index = []
   value = []
   r_loc = []
   wfn_state_1 = []
+  vir_eigen_d = []
   process_1_dir = ''.join((work_dir, '/process_1'))
-  for i in range(129):
-    cmd = "grep %s %s/step_%s/atom.out" %("'Final value of function'", process_1_dir, str(i+1))
+  for step in range(129):
+    cmd = "grep %s %s/step_%s/atom.out" %("'Final value of function'", process_1_dir, str(step+1))
     return_func = call.call_returns_shell(process_1_dir, cmd)
     if ( len(return_func) != 0 and 'No such file' not in return_func[0] ):
       return_func_split = data_op.split_str(return_func[0], ' ')
-      cmd = "grep %s %s/step_%s/atom.out" %("'s-states N=    1'", process_1_dir, str(i+1))
+      cmd = "grep %s %s/step_%s/atom.out" %("'s-states N=    1'", process_1_dir, str(step+1))
       return_wfn = call.call_returns_shell(process_1_dir, cmd)
       return_wfn_split = data_op.split_str(return_wfn[0], ' ')
+      cmd = "grep %s %s/step_%s/atom.out" %('U1', process_1_dir, str(step+1))
+      return_vir_u1_line = call.call_returns_shell(process_1_dir, cmd)
+      return_vir_u1 = []
+      for i in range(elec_config_num*4*2):
+        return_vir_u1_split = data_op.split_str(return_vir_u1_line[i], ' ')
+        return_vir_u1.append(float(return_vir_u1_split[5].split('[')[0]))
+      vir_eigen_u1_d = 0.0
+      for i in range(4*elec_config_num):
+        if ( return_vir_u1[i+4*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
+          vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+4*elec_config_num] + return_vir_u1[i]
+        else:
+          vir_eigen_u1_d = vir_eigen_u1_d + return_vir_u1[i+4*elec_config_num] - return_vir_u1[i]
+
+      cmd = "grep %s %s/step_%s/atom.out" %('U2', process_1_dir, str(step+1))
+      return_vir_u2_line = call.call_returns_shell(process_1_dir, cmd)
+      return_vir_u2 = []
+      for i in range(elec_config_num*4*2):
+        return_vir_u2_split = data_op.split_str(return_vir_u2_line[i], ' ')
+        return_vir_u2.append(float(return_vir_u2_split[5].split('[')[0]))
+      vir_eigen_u2_d = 0.0
+      for i in range(4*elec_config_num):
+        if ( return_vir_u2[i+4*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
+          vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+4*elec_config_num] + return_vir_u2[i]
+        else:
+          vir_eigen_u2_d = vir_eigen_u2_d + return_vir_u2[i+4*elec_config_num] - return_vir_u2[i]
+
       if ( len(return_func_split) > 5 ):
         value.append(float(return_func_split[5]))
         wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
-        step_index.append(i+1)
-        opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(i+1), '/GTH-PARAMETER'))
+        vir_eigen_d.append(vir_eigen_u1_d+vir_eigen_u2_d)
+        step_index.append(step+1)
+        opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(step+1), '/GTH-PARAMETER'))
         line = linecache.getline(opt_gth_pp_file, 3)
         line_split = data_op.split_str(line, ' ')
         r_loc.append(float(line_split[0]))
@@ -166,38 +227,45 @@ if ( restart_stage == 0 ):
   value_proc = []
   wfn_state_1_proc = []
   step_index_proc = []
+  vir_eigen_d_proc = []
   if consider_r_loc:
     for i in range(len(value)):
       if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
         value_proc.append(value[i])
         wfn_state_1_proc.append(wfn_state_1[i])
+        vir_eigen_d_proc.append(vir_eigen_d[i])
         step_index_proc.append(step_index[i])
   else:
     for i in range(len(value)):
       if ( value[i] < proc_1_func_conv ):
         value_proc.append(value[i])
         wfn_state_1_proc.append(wfn_state_1[i])
+        vir_eigen_d_proc.append(vir_eigen_d[i])
         step_index_proc.append(step_index[i])
 
   if ( len(value_proc) == 0 ):
     log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
     exit()
 
-  if consider_wfn_0:
-    wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
-    value_proc_asc, asc_order = data_op.get_list_order(value_proc, 'ascend', True)
-    wfn_scale = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-    for scale in wfn_scale:
-      for i in asc_order:
-        if ( wfn_state_1_proc_abs[i] <= scale*min(wfn_state_1_proc_abs) ):
-          choosed_index = step_index_proc[i]
+  vir_eigen_d_asc, asc_order = data_op.get_list_order(vir_eigen_d_proc, 'ascend', True)
+  wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
+  wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+  value_scale_list = [1.02, 1.04, 1.06, 1.08, 1.10, 1.12, 1.14, 1.16, 1.18, 1.20, \
+                      1.22, 1.24, 1.26, 1.28, 1.30, 1.32, 1.34, 1.36, 1.38, 1.40, 1.42]
+  for i in range(21):
+    for j in asc_order:
+      if consider_wfn_0:
+        print (wfn_scale_list[i], value_scale_list[i], vir_eigen_d[j])
+        if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) and \
+             value_proc[j] <= value_scale_list[i]*min(value_proc) ):
+          choosed_index = step_index_proc[j]
           break
-      if ( 'choosed_index' in locals() ):
-        break
-  else:
-    min_value = min(value_proc)
-    min_value_index = value_proc.index(min_value)
-    choosed_index = step_index_proc[min_value_index]
+      else:
+        if ( value_proc[j] <= value_scale_list[i]*min(value_proc) ):
+          choosed_index = step_index_proc[j]
+          break
+    if ( 'choosed_index' in locals() ):
+      break
 
   if ( 'choosed_index' not in locals() ):
     log_info.log_error('Running error: no good parameter in process_1')
@@ -229,7 +297,8 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                  method, val_elec_num, python_exe, get_min_index, weight_1)
+                                                  method, val_elec_num, python_exe, get_min_index, weight_1, \
+                                                  target_semi, target_val, target_vir)
 
   #Choose the lowest value of process_2
   process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
@@ -262,7 +331,8 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
 
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                       method, val_elec_num, python_exe, get_min_index, weight_1, \
-                                                      weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4)
+                                                      weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
+                                                      target_semi, target_val, target_vir)
 
   #Choose the lowest value of process_3
   process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
@@ -294,7 +364,86 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
       gth_pp_file = ''.join((process_4_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                        method, val_elec_num, python_exe, get_min_index, weight_2)
+                                                        method, val_elec_num, python_exe, get_min_index, weight_2, \
+                                                        converge_perturb_choice_1, converge_perturb_choice_2, \
+                                                        converge_perturb_choice_3, converge_perturb_choice_4, \
+                                                        converge_perturb_choice_5, converge_perturb_choice_6, \
+                                                        converge_perturb_choice_7, converge_perturb_choice_8, \
+                                                        converge_perturb_choice_9, converge_perturb_choice_10, \
+                                                        converge_perturb_choice_11, converge_perturb_choice_12, \
+                                                        target_semi, target_val, target_vir)
+
+if ( restart_stage == 4 ):
+
+  elec_config_perturb = []
+  elec_config_str = data_op.comb_list_2_str(elec_config, ' ')
+  elec_config_perturb_choice_1_str = data_op.comb_list_2_str(elec_config_perturb_choice_1, ' ')
+  elec_config_perturb_choice_2_str = data_op.comb_list_2_str(elec_config_perturb_choice_2, ' ')
+  elec_config_perturb_choice_3_str = data_op.comb_list_2_str(elec_config_perturb_choice_3, ' ')
+  elec_config_perturb_choice_4_str = data_op.comb_list_2_str(elec_config_perturb_choice_4, ' ')
+  elec_config_perturb.append(elec_config_perturb_choice_1)
+  elec_config_perturb.append(elec_config_perturb_choice_2)
+  elec_config_perturb.append(elec_config_perturb_choice_3)
+  elec_config_perturb.append(elec_config_perturb_choice_4)
+  choice_num = 0
+  for i in range(4):
+    if ( elec_config_perturb[i] != 'none' ):
+      choice_num = choice_num+1
+
+  if ( choice_num >= 1 ):
+    restart_index = elec_config_perturb.run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                                method, val_elec_num, python_exe, get_min_index, choice_num, elec_config_str, \
+                                                                elec_config_perturb_choice_1_str, elec_config_perturb_choice_2_str, \
+                                                                elec_config_perturb_choice_3_str, elec_config_perturb_choice_4_str, \
+                                                                target_semi, target_val, target_vir)
+
+
+if ( restart_stage == 5 ):
+  for i in range(100):
+    #Run process_4
+    restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                        method, val_elec_num, python_exe, get_min_index, mix_weight_1, \
+                                                        converge_perturb_choice_1, converge_perturb_choice_2, \
+                                                        converge_perturb_choice_3, converge_perturb_choice_4, \
+                                                        converge_perturb_choice_5, converge_perturb_choice_6, \
+                                                        converge_perturb_choice_7, converge_perturb_choice_8, \
+                                                        converge_perturb_choice_9, converge_perturb_choice_10, \
+                                                        converge_perturb_choice_11, converge_perturb_choice_12, \
+                                                        target_semi, target_val, target_vir, mix_max_cycle)
+    min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
+    min_step = get_min_step(min_restart_dir)
+    gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+    #Run process_3
+    restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                      method, val_elec_num, python_exe, get_min_index, mix_weight_2, \
+                                                      mix_weight_1, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
+                                                      target_semi, target_val, target_vir, mix_max_cycle)
+    min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
+    min_step = get_min_step(min_restart_dir)
+    gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+    #Run process_4
+    restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                        method, val_elec_num, python_exe, get_min_index, mix_weight_2,
+                                                        converge_perturb_choice_1, converge_perturb_choice_2, \
+                                                        converge_perturb_choice_3, converge_perturb_choice_4, \
+                                                        converge_perturb_choice_5, converge_perturb_choice_6, \
+                                                        converge_perturb_choice_7, converge_perturb_choice_8, \
+                                                        converge_perturb_choice_9, converge_perturb_choice_10, \
+                                                        converge_perturb_choice_11, converge_perturb_choice_12, \
+                                                        target_semi, target_val, target_vir, mix_max_cycle)
+
+    min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
+    min_step = get_min_step(min_restart_dir)
+    gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
+    #Run process_3
+    restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+                                                      method, val_elec_num, python_exe, get_min_index, mix_weight_1, \
+                                                      mix_weight_2, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
+                                                      target_semi, target_val, target_vir, mix_max_cycle)
+
+    min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
+    min_step = get_min_step(min_restart_dir)
+    gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
   process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
   min_step = get_min_step(process_4_min_restart_dir)

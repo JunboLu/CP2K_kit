@@ -40,7 +40,8 @@ def ti_method(force_cmd_file):
       sum_value = 0.0
     else:
       for j in range(i):
-        sum_value = sum_value+(force_value[j]+force_value[j+1])/2*increment
+        #sum_value = sum_value+(force_value[j]+force_value[j+1])/2.0*increment
+        sum_value = sum_value+force_value[j]*increment
     #The unit of energy is kcal/mol
     free_energy_value.append((0.0-sum_value)*627.5094*1.8897259886)
 
@@ -67,12 +68,15 @@ def free_energy_run(free_energy_param, work_dir):
 
   method = free_energy_param['method']
 
+  print ('FREE_ENERGY'.center(80, '*'), flush=True)
+
   if ( method == 'ti' ):
     ti_file = free_energy_param['ti_file']
-    target, free_energy_value = free_energy.cmd_method(ti_file)
+    target, free_energy_value = ti_method(ti_file)
     ti_free_energy_file = ''.join((work_dir, '/ti_free_energy.csv'))
     with open(ti_free_energy_file, 'w') as csvfile:
       writer = csv.writer(csvfile)
       writer.writerow(['target_value', 'free_energy'])
       for i in range(len(target)):
-        writer.writerow([garget[i],free_energy_value[i]])
+        writer.writerow([target[i],free_energy_value[i]])
+    print (data_op.str_wrap('Free energies are stored in %s file.' %(ti_free_energy_file), 80), flush=True)

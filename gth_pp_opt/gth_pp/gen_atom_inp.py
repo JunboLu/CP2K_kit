@@ -3,7 +3,7 @@
 import copy
 from CP2K_kit.tools import data_op
 
-def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
+def gen_atom_inp(work_dir, gth_pp_opt_param):
 
   '''
   gen_atom_inp : generate atom input file used to optimize gth pp.
@@ -21,12 +21,25 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
     none
   '''
 
+  weight_1 = gth_pp_opt_param['weight_1']
+  consider_wfn_0 = data_op.str_to_bool(gth_pp_opt_param['consider_wfn_0'])
+  target_semi = gth_pp_opt_param['target_semi']
+  target_val = gth_pp_opt_param['target_val']
+  target_vir = gth_pp_opt_param['target_vir']
+  weight_psir0 = gth_pp_opt_param['weight_psir0']
+  weight_pot_node = gth_pp_opt_param['weight_pot_node']
   element = gth_pp_opt_param['element']
-  elec_config = gth_pp_opt_param['elec_config']
   elec_core_config = gth_pp_opt_param['elec_core_config']
   all_elec_method = gth_pp_opt_param['all_elec_method']
   xc_func = gth_pp_opt_param['xc_func']
   relat_method = gth_pp_opt_param['relat_method']
+
+  elec_config_num = 0
+  elec_config_tot = []
+  for key in gth_pp_opt_param.keys():
+    if ( 'elec_config' in key and 'elec_config_perturb' not in key ):
+      elec_config_num = elec_config_num+1
+      elec_config_tot.append(gth_pp_opt_param[key])
 
   inp_file = ''.join((work_dir, '/atom.inp'))
   atom_file = open(inp_file, 'w')
@@ -41,12 +54,21 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
   atom_file.write(element_line)
   atom_file.write('  RUN_TYPE PSEUDOPOTENTIAL_OPTIMIZATION\n')
 
-  config = ''
-  for i in range(len(elec_config)):
-    config = ' '.join((config, elec_config[i]))
+  if ( elec_config_num == 1 ):
+    config = ''
+    for i in range(len(elec_config)):
+      config = ' '.join((config, elec_config[i]))
 
-  elec_config_line = ''.join(('  ELECTRON_CONFIGURATION', config, '\n'))
-  atom_file.write(elec_config_line)
+    elec_config_line = ''.join(('  ELECTRON_CONFIGURATION', config, '\n'))
+    atom_file.write(elec_config_line)
+  elif ( elec_config_num > 1 ):
+    for i in range(elec_config_num):
+      config = ''
+      for j in range(len(elec_config_tot[i])):
+        config = ' '.join((config, elec_config_tot[i][j]))
+
+      elec_config_line = ''.join(('  ELECTRON_CONFIGURATION', config, '\n'))
+      atom_file.write(elec_config_line)
 
   if ( isinstance(elec_core_config, list) ):
     core_config = ''
@@ -57,8 +79,8 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
     core_config_line = ''.join(('  CORE  ', elec_core_config, '\n'))
   atom_file.write(core_config_line)
 
-  val_config = copy.deepcopy(elec_config)
-  for i in elec_config:
+  val_config = copy.deepcopy(elec_config_tot[0])
+  for i in elec_config_tot[0]:
    if ( i in elec_core_config ):
      val_config.remove(i)
 
@@ -66,7 +88,7 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
   val_orbit_occ = []
   for i in range(len(val_config)):
     val_orbit.append(val_config[i][1])
-    val_orbit_occ.append(int(val_config[i][2:len(val_config[i])]))
+    val_orbit_occ.append(float(val_config[i][2:len(val_config[i])]))
 
   val_orbit_type = data_op.list_replicate(val_orbit)
 
@@ -117,9 +139,9 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
   atom_file.write('    POTENTIAL_FILE_NAME  ../GTH-PARAMETER\n')
 
   if ( all_elec_method == 'kohn-sham' ):
-    pot_name = ''.join(('GTH-', xc_func.upper(), '-q', str(sum(val_orbit_occ))))
+    pot_name = ''.join(('GTH-', xc_func.upper(), '-q', str(round(sum(val_orbit_occ)))))
   else:
-    pot_name = ''.join(('GTH-', all_elec_method, '-q', str(sum(val_orbit_occ))))
+    pot_name = ''.join(('GTH-', all_elec_method, '-q', str(round(sum(val_orbit_occ)))))
 
   pot_name_line = ''.join(('    POTENTIAL_NAME ', pot_name, '\n'))
   atom_file.write(pot_name_line)
@@ -135,13 +157,13 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
   atom_file.write('    MAX_FUN    50\n')
   atom_file.write('    STEP_SIZE_SCALING  0.90\n')
   if consider_wfn_0:
-    atom_file.write('    WEIGHT_PSIR0 10.0\n')
+    atom_file.write('    WEIGHT_PSIR0 %f\n' %(weight_psir0))
   else:
     atom_file.write('    WEIGHT_PSIR0 0.0\n')
-  atom_file.write('    TARGET_POT_SEMICORE      [eV]      0.003000\n')
-  atom_file.write('    TARGET_POT_VALENCE       [eV]      0.000300\n')
-  atom_file.write('    TARGET_POT_VIRTUAL       [eV]      0.003000\n')
-  atom_file.write('    WEIGHT_POT_NODE                    10.0\n')
+  atom_file.write('    TARGET_POT_SEMICORE      [eV]      %f\n' %(target_semi))
+  atom_file.write('    TARGET_POT_VALENCE       [eV]      %f\n' %(target_val))
+  atom_file.write('    TARGET_POT_VIRTUAL       [eV]      %f\n' %(target_vir))
+  atom_file.write('    WEIGHT_POT_NODE                    %f\n' %(weight_pot_node))
   atom_file.write('    WEIGHT_POT_SEMICORE                %f\n' %(weight_1[0]))
   atom_file.write('    WEIGHT_POT_VALENCE                 %f\n' %(weight_1[1]))
   atom_file.write('    WEIGHT_POT_VIRTUAL                 %f\n' %(weight_1[2]))
@@ -152,6 +174,6 @@ def gen_atom_inp(work_dir, gth_pp_opt_param, weight_1, consider_wfn_0):
   atom_file.close()
 
   if ( all_elec_method == 'kohn-sham' ):
-    return element, sum(val_orbit_occ), xc_func.upper()
+    return element, round(sum(val_orbit_occ)), xc_func.upper(), elec_config_num
   else:
-    return element, sum(val_orbit_occ), all_elec_method.upper()
+    return element, round(sum(val_orbit_occ)), all_elec_method.upper(), elec_config_num

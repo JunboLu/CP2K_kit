@@ -30,6 +30,7 @@ def upper_file(file_name, save_dir):
       break
 
   rev_file.close()
+  origin_file.close()
 
   return rev_file_name
 

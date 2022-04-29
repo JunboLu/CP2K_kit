@@ -77,3 +77,6 @@ elif ( analyze_job == 'v_hartree' ):
 elif ( analyze_job == 'file_trans' ):
   file_trans.file_trans_run(job_type_param[0], work_dir)
 
+elif ( analyze_job == 'free_energy' ):
+  free_energy.free_energy_run(job_type_param[0], work_dir)
+

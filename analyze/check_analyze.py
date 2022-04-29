@@ -417,7 +417,20 @@ def check_geometry_inp(geometry_dic):
       log_info.log_error('Input error: no coordination trajectory file, please set analyze/geometry/bond_length/traj_coord_file')
       exit()
 
-    if ( 'atom_pair' in bond_length_dic.keys() ):
+    atom_pair_num = 0
+    for key in bond_length_dic.keys():
+      if ( 'atom_pair' in key ):
+        atom_pair_num = atom_pair_num+1
+
+    if ( atom_pair_num > 1 ):
+      for i in range(atom_pair_num):
+        atom_pair = bond_length_dic[''.join(('atom_pair', str(i)))]
+        if ( len(atom_pair) == 2 and all(data_op.eval_str(x) == 1 for x in atom_pair) ):
+          geometry_dic['bond_length'][''.join(('atom_pair', str(i)))] = [int (x) for x in atom_pair]
+        else:
+          log_info.log_error('Input error: atom_pair should be 2 integer, please check or reset analyze/geometry/bond_length/atom_pair')
+          exit()
+    elif ( atom_pair_num == 1 ):
       atom_pair = bond_length_dic['atom_pair']
       if ( len(atom_pair) == 2 and all(data_op.eval_str(x) == 1 for x in atom_pair) ):
         geometry_dic['bond_length']['atom_pair'] = [int (x) for x in atom_pair]
@@ -503,7 +516,20 @@ def check_geometry_inp(geometry_dic):
       log_info.log_error('Input error: no coordination trajectory file, please set analyze/geometry/bond_angle/traj_coord_file')
       exit()
 
-    if ( 'atom_pair' in bond_angle_dic.keys() ):
+    atom_pair_num = 0
+    for key in bond_angle_dic.keys():
+      if ( 'atom_pair' in key ):
+        atom_pair_num = atom_pair_num+1
+
+    if ( atom_pair_num > 1 ):
+      for i in range(atom_pair_num):
+        atom_pair = bond_angle_dic[''.join(('atom_pair', str(i)))]
+        if ( len(atom_pair) == 3 and all(data_op.eval_str(x) == 1 for x in atom_pair) ):
+          geometry_dic['bond_angle'][''.join(('atom_pair', str(i)))] = [int(x) for x in atom_pair]
+        else:
+          log_info.log_error('Input error: atom_pair should be 3 integers, please check or reset analyze/geometry/bond_angle/atom_pair')
+          exit()
+    elif ( atom_pair_num == 1 ):
       atom_pair = bond_angle_dic['atom_pair']
       if ( len(atom_pair) == 3 and all(data_op.eval_str(x) == 1 for x in atom_pair) ):
         geometry_dic['bond_angle']['atom_pair'] = [int(x) for x in atom_pair]
