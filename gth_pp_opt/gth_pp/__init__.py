@@ -6,3 +6,4 @@ from CP2K_kit.gth_pp_opt.gth_pp import step_reweight
 from CP2K_kit.gth_pp_opt.gth_pp import weight_perturb
 from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
 from CP2K_kit.gth_pp_opt.gth_pp import get_index
+from CP2K_kit.gth_pp_opt.gth_pp import elec_conf_perturb

@@ -55,7 +55,7 @@ def run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, eleme
   subprocess.run('cp %s %s' % (gth_pp_file, process_5_dir), cwd=work_dir, shell=True)
 
   cmd = "sed -ie '1s/.*/%s GTH-%s-q%d/' GTH-PARAMETER" % (element, method, val_elec_num)
-  call.call_simple_shell(process_4_dir, cmd)
+  call.call_simple_shell(process_5_dir, cmd)
 
   cmd = "ls | grep %s" %('restart')
   restart_num = len(call.call_returns_shell(process_5_dir, cmd))
@@ -70,6 +70,7 @@ def run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, eleme
 
   atom_inp_file = ''.join((work_dir, '/atom.inp'))
   line_step_size = file_tools.grep_line_num('STEP_SIZE', atom_inp_file, work_dir)
+  line_elec_config = file_tools.grep_line_num('ELECTRON_CONFIGURATION', atom_inp_file, work_dir)
   line_tg_semi = file_tools.grep_line_num('TARGET_POT_SEMICORE', atom_inp_file, work_dir)
   line_tg_val = file_tools.grep_line_num('TARGET_POT_VALENCE', atom_inp_file, work_dir)
   line_tg_vir = file_tools.grep_line_num('TARGET_POT_VIRTUAL', atom_inp_file, work_dir)
@@ -106,7 +107,7 @@ value_2=`$direc/optimize.sh "${elec_standard}" "${converge_standard}" 4 new 3`
 echo 4 $value_2 $choice
 echo 4 $value_2 >> $direc/$filename
 
-for i in {1..2000}
+for i in {1..%d}
 do
 if [[ `echo "$(echo "scale=4; $value_1 - $value_2" | bc) > $conv" | bc` == 1 ]]; then
 choice=$choice
@@ -152,26 +153,33 @@ echo $k $value_2 $choice
 echo $k $value_2 >> $direc/$filename
 fi
 done
-''' % (process_5_dir, elec_config, target_semi, target_val, target_vir, elec_config_perturb_choice_1_str, \
-       elec_config_perturb_choice_2_str, elec_config_perturb_choice_3_str, elec_config_perturb_choice_4_str, choice_num, max_cycle)
+''' % (process_5_dir, elec_config, target_semi, target_val, target_vir, elec_config_perturb_choice_1, \
+       elec_config_perturb_choice_2, elec_config_perturb_choice_3, elec_config_perturb_choice_4, choice_num, max_cycle)
 
   optimize = '''
 #! /bin/bash
 
-direc=/home/lujunbo/WORK/4f_in_core/PSP_GEN/Nd/weight_2/stage_12
-parallel_exe=/home/lujunbo/bin/parallel/bin/parallel
-element=Nd
-method=PBE
-elec_num=11
-python_exe=/home/lujunbo/bin/deepmd-kit/bin/python3.9
-get_index_py=/home/lujunbo/bin/CP2K_kit/gth_pp_opt/gth_pp/get_index.py
+direc='%s'
+parallel_exe='%s'
+element='%s'
+method='%s'
+elec_num=%d
+python_exe='%s'
+get_index_py='%s'
+
+line_step_size=%d
+line_elec_config=%d
+line_tg_semi=%d
+line_tg_val=%d
+line_tg_vir=%d
+line_pot_file=%d
 
 produce() {
 x=$1
 y=$2
 direc=$3
 cd $direc/restart$y/step_$x
-cp2k_exe=/home/lujunbo/bin/cp2k-6.1/cp2k-6.1-Linux-x86_64.sopt
+cp2k_exe='%s'
 $cp2k_exe atom.inp 1> atom.out 2> atom.err
 }
 export -f produce
@@ -199,7 +207,7 @@ if [[ $i == 1 || $i == 2 || $check_direc == new ]]; then
 for j in $(seq 1 $initial_total_step)
 do
 mkdir $direc/restart$i/step_$j
-cp $direc/atom.inp $direc/restart$i/step_$j
+cp $direc/../atom.inp $direc/restart$i/step_$j
 done
 for j in $(seq 1 10)
 do
@@ -217,7 +225,7 @@ if [[ $i != 1 && $i != 2 && $check_direc == old ]]; then
 for j in $(seq 1 $normal_total_step)
 do
 mkdir $direc/restart$i/step_$j
-cp $direc/atom.inp $direc/restart$i/step_$j
+cp $direc/../atom.inp $direc/restart$i/step_$j
 done
 fi
 
@@ -293,9 +301,8 @@ str=`grep -H "Final value of function" step_$m/atom.out`
 value=`echo ${str:20:100} | tr -cd "[0-9,.]"`
 echo $value
 cd $direc
-''' %(process_4_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, \
-      line_step_size[0], line_wt_semi[0], line_wt_val[0], line_wt_vir[0], line_tg_semi[0], \
-      line_tg_val[0], line_tg_vir[0], line_pot_file[0],cp2k_exe)
+''' %(process_5_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, line_step_size[0], \
+      line_elec_config[0], line_tg_semi[0], line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
 
   #run shell script, and then get returns
   optimize_file = ''.join((process_5_dir, '/optimize.sh'))

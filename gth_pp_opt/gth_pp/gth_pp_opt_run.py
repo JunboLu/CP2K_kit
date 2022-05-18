@@ -17,6 +17,7 @@ from CP2K_kit.gth_pp_opt.gth_pp import init_step
 from CP2K_kit.gth_pp_opt.gth_pp import step_reweight
 from CP2K_kit.gth_pp_opt.gth_pp import weight_perturb
 from CP2K_kit.gth_pp_opt.gth_pp import converg_perturb
+from CP2K_kit.gth_pp_opt.gth_pp import elec_conf_perturb
 
 #We know that this module is not beautiful enough, but we have to...
 
@@ -117,6 +118,8 @@ opt_from_init = data_op.str_to_bool(gth_opt_param['opt_from_init'])
 
 if ( 'elec_config_0' in gth_opt_param.keys()):
   elec_config = gth_opt_param['elec_config_0']
+else:
+  elec_config = gth_opt_param['elec_config']
 
 #Generate atom input file
 element, val_elec_num, method, elec_config_num = gen_atom_inp.gen_atom_inp(work_dir, gth_opt_param)
@@ -159,13 +162,15 @@ if ( restart_stage == 0 ):
     if ( end > 129 ):
       end = 129
 
-if ( restart_stage == -1 ):
+  write_data.write_restart(work_dir, gth_opt_param, 1, gth_pp_file)
+
   #Choose the lowest value of process_1
+if ( restart_stage == 0 or restart_stage == 1 ):
   step_index = []
   value = []
   r_loc = []
   wfn_state_1 = []
-  vir_eigen_d = []
+  eigen_dcharge_d = []
   process_1_dir = ''.join((work_dir, '/process_1'))
   for step in range(129):
     cmd = "grep %s %s/step_%s/atom.out" %("'Final value of function'", process_1_dir, str(step+1))
@@ -186,7 +191,7 @@ if ( restart_stage == -1 ):
         if ( return_vir_u1[i+4*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
           vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+4*elec_config_num] + return_vir_u1[i]
         else:
-          vir_eigen_u1_d = vir_eigen_u1_d + return_vir_u1[i+4*elec_config_num] - return_vir_u1[i]
+          vir_eigen_u1_d = vir_eigen_u1_d + abs(return_vir_u1[i+4*elec_config_num]) - abs(return_vir_u1[i])
 
       cmd = "grep %s %s/step_%s/atom.out" %('U2', process_1_dir, str(step+1))
       return_vir_u2_line = call.call_returns_shell(process_1_dir, cmd)
@@ -199,12 +204,42 @@ if ( restart_stage == -1 ):
         if ( return_vir_u2[i+4*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
           vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+4*elec_config_num] + return_vir_u2[i]
         else:
-          vir_eigen_u2_d = vir_eigen_u2_d + return_vir_u2[i+4*elec_config_num] - return_vir_u2[i]
+          vir_eigen_u2_d = vir_eigen_u2_d + abs(return_vir_u2[i+4*elec_config_num]) - abs(return_vir_u2[i])
+
+      cmd = "grep %s %s/step_%s/atom.out" %("' SC '", process_1_dir, str(step+1))
+      return_sc_line = call.call_returns_shell(process_1_dir, cmd)
+      return_sc = []
+      for i in range(len(return_sc_line)):
+        return_sc_split_1 = data_op.split_str(return_sc_line[i], '[')
+        return_sc_split = data_op.split_str(return_sc_split_1[1], ' ')
+        return_sc.append(float(return_sc_split[1]))
+      sc_dcharge_d = 0.0
+      sc_num = int(len(return_sc)/(elec_config_num*2))
+      for i in range(sc_num*elec_config_num):
+        if ( return_sc[i+sc_num*elec_config_num] < 1.0E-10 and return_sc[i] < 1.0E-10 ):
+          sc_dcharge_d = sc_dcharge_d - return_sc[i+sc_num*elec_config_num] + return_sc[i]
+        else:
+          sc_dcharge_d = sc_dcharge_d + abs(return_sc[i+sc_num*elec_config_num]) - abs(return_sc[i])
+
+      cmd = "grep %s %s/step_%s/atom.out" %("' VA '", process_1_dir, str(step+1))
+      return_val_line = call.call_returns_shell(process_1_dir, cmd)
+      return_val = []
+      for i in range(len(return_val_line)):
+        return_val_split_1 = data_op.split_str(return_val_line[i], '[')
+        return_val_split = data_op.split_str(return_val_split_1[1], ' ')
+        return_val.append(float(return_val_split[1]))
+      val_num = int(len(return_val)/(elec_config_num*2))
+      val_dcharge_d = 0.0
+      for i in range(val_num*elec_config_num):
+        if ( return_val[i+val_num*elec_config_num] < 1.0E-10 and return_val[i] < 1.0E-10 ):
+          val_dcharge_d = val_dcharge_d - return_val[i+val_num*elec_config_num] + return_val[i]
+        else:
+          val_dcharge_d = val_dcharge_d + abs(return_val[i+val_num*elec_config_num]) - abs(return_val[i])
 
       if ( len(return_func_split) > 5 ):
         value.append(float(return_func_split[5]))
         wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
-        vir_eigen_d.append(vir_eigen_u1_d+vir_eigen_u2_d)
+        eigen_dcharge_d.append(vir_eigen_u1_d+vir_eigen_u2_d+sc_dcharge_d+val_dcharge_d)
         step_index.append(step+1)
         opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(step+1), '/GTH-PARAMETER'))
         line = linecache.getline(opt_gth_pp_file, 3)
@@ -227,35 +262,39 @@ if ( restart_stage == -1 ):
   value_proc = []
   wfn_state_1_proc = []
   step_index_proc = []
-  vir_eigen_d_proc = []
+  eigen_dcharge_d_proc = []
   if consider_r_loc:
     for i in range(len(value)):
       if ( value[i] < proc_1_func_conv and abs(r_loc[i]-r_loc_def) < r_loc_conv ):
         value_proc.append(value[i])
         wfn_state_1_proc.append(wfn_state_1[i])
-        vir_eigen_d_proc.append(vir_eigen_d[i])
+        eigen_dcharge_d_proc.append(eigen_dcharge_d[i])
         step_index_proc.append(step_index[i])
   else:
     for i in range(len(value)):
       if ( value[i] < proc_1_func_conv ):
         value_proc.append(value[i])
         wfn_state_1_proc.append(wfn_state_1[i])
-        vir_eigen_d_proc.append(vir_eigen_d[i])
+        eigen_dcharge_d_proc.append(eigen_d_charged[i])
         step_index_proc.append(step_index[i])
 
   if ( len(value_proc) == 0 ):
     log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
     exit()
 
-  vir_eigen_d_asc, asc_order = data_op.get_list_order(vir_eigen_d_proc, 'ascend', True)
+  eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d_proc, 'ascend', True)
+  value_proc_asc = data_op.get_list_order(value_proc, 'ascend')
+  value_scale_init = float(value_proc_asc[1]/value_proc_asc[0])
   wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
   wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-  value_scale_list = [1.02, 1.04, 1.06, 1.08, 1.10, 1.12, 1.14, 1.16, 1.18, 1.20, \
-                      1.22, 1.24, 1.26, 1.28, 1.30, 1.32, 1.34, 1.36, 1.38, 1.40, 1.42]
+  value_scale_list = []
+  print (value_scale_list)
+  for i in range(21):
+    value_scale_list.append(value_scale_init+0.02*(i+1))
+
   for i in range(21):
     for j in asc_order:
       if consider_wfn_0:
-        print (wfn_scale_list[i], value_scale_list[i], vir_eigen_d[j])
         if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) and \
              value_proc[j] <= value_scale_list[i]*min(value_proc) ):
           choosed_index = step_index_proc[j]
@@ -275,9 +314,9 @@ if ( restart_stage == -1 ):
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)
 
-  write_data.write_restart(work_dir, gth_opt_param, 1, gth_pp_file)
+  write_data.write_restart(work_dir, gth_opt_param, 2, gth_pp_file)
 
-if ( restart_stage == 0 or restart_stage == 1 ):
+if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
   process_2_dir = ''.join((work_dir, '/process_2'))
   if ( os.path.exists(process_2_dir) ):
     restart_num = len(call.call_returns_shell(process_2_dir, "ls | grep 'restart'"))
@@ -308,9 +347,9 @@ if ( restart_stage == 0 or restart_stage == 1 ):
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)
 
-  write_data.write_restart(work_dir, gth_opt_param, 2, gth_pp_file)
+  write_data.write_restart(work_dir, gth_opt_param, 3, gth_pp_file)
 
-if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
+if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
   process_3_dir = ''.join((work_dir, '/process_3'))
   if ( os.path.exists(process_3_dir) ):
     restart_num = len(call.call_returns_shell(process_3_dir, "ls | grep 'restart'"))
@@ -342,9 +381,9 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 ):
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)
 
-  write_data.write_restart(work_dir, gth_opt_param, 3, gth_pp_file)
+  write_data.write_restart(work_dir, gth_opt_param, 4, gth_pp_file)
 
-if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 ):
+if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_stage == 3 or restart_stage == 4 ):
   process_4_dir = ''.join((work_dir, '/process_4'))
   if ( os.path.exists(process_4_dir) ):
     restart_num = len(call.call_returns_shell(process_4_dir, "ls | grep 'restart'"))
@@ -373,7 +412,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
                                                         converge_perturb_choice_11, converge_perturb_choice_12, \
                                                         target_semi, target_val, target_vir)
 
-if ( restart_stage == 4 ):
+if ( restart_stage == 5 ):
 
   elec_config_perturb = []
   elec_config_str = data_op.comb_list_2_str(elec_config, ' ')
@@ -391,14 +430,14 @@ if ( restart_stage == 4 ):
       choice_num = choice_num+1
 
   if ( choice_num >= 1 ):
-    restart_index = elec_config_perturb.run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
+    restart_index = elec_conf_perturb.run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                                 method, val_elec_num, python_exe, get_min_index, choice_num, elec_config_str, \
                                                                 elec_config_perturb_choice_1_str, elec_config_perturb_choice_2_str, \
                                                                 elec_config_perturb_choice_3_str, elec_config_perturb_choice_4_str, \
                                                                 target_semi, target_val, target_vir)
 
 
-if ( restart_stage == 5 ):
+if ( restart_stage == 6 ):
   for i in range(100):
     #Run process_4
     restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \

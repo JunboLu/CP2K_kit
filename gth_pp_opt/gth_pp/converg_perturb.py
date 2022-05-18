@@ -254,7 +254,7 @@ done
 for j in $(seq 11 19)
 do
 step_size=`echo "scale=6; 0.001-($j-10)*0.0001" | bc`
-sed -ie ''${step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
 sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  0.00009/' $direc/restart$i/step_20/atom.inp
 fi

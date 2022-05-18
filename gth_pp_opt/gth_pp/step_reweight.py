@@ -189,9 +189,9 @@ done
 for j in $(seq 11 19)
 do
 step_size=`echo "scale=6; 0.001-($j-10)*0.0001" | bc`
-sed -ie ''${step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
-sed -ie ''${step_size}'s/.*/    STEP_SIZE  0.00009/' $direc/restart$i/step_20/atom.inp
+sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  0.00009/' $direc/restart$i/step_20/atom.inp
 fi
 if [[ $i != 1 && $i != 2 && $check_direc == old ]]; then
 for j in $(seq 1 $normal_total_step)
@@ -225,7 +225,7 @@ m=`$python_exe $get_index_py $direc/restart$k`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 for j in $(seq 1 $initial_total_step)
 do
-sed -ie '${line_pot_file}s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_pot_file}'s/.*/    POTENTIAL_FILE_NAME  ..\/..\/restart'$k'\/step_'$m'\/GTH-PARAMETER/' $direc/restart$i/step_$j/atom.inp
 done
 
 seq 1 $initial_total_step | $parallel_exe -j $initial_parallel_num produce {} $i $direc
@@ -252,7 +252,7 @@ for j in $(seq 1 $total_step)
 do
 scalling=`echo "scale=6; 0.4+0.1*$j" | bc`
 step_size=`echo "scale=6; $step_size_pre*$scalling" | bc`
-sed -ie ''${step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
+sed -ie ''${line_step_size}'s/.*/    STEP_SIZE  '$step_size'/' $direc/restart$i/step_$j/atom.inp
 done
 fi
 
