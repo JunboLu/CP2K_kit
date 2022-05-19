@@ -288,7 +288,6 @@ if ( restart_stage == 0 or restart_stage == 1 ):
   wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
   wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
   value_scale_list = []
-  print (value_scale_list)
   for i in range(21):
     value_scale_list.append(value_scale_init+0.02*(i+1))
 
