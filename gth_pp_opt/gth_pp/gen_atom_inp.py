@@ -56,8 +56,8 @@ def gen_atom_inp(work_dir, gth_pp_opt_param):
 
   if ( elec_config_num == 1 ):
     config = ''
-    for i in range(len(elec_config[0])):
-      config = ' '.join((config, elec_config[0][i]))
+    for i in range(len(elec_config_tot[0])):
+      config = ' '.join((config, elec_config_tot[0][i]))
 
     elec_config_line = ''.join(('  ELECTRON_CONFIGURATION', config, '\n'))
     atom_file.write(elec_config_line)
