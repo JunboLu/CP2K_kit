@@ -1,8 +1,9 @@
 &global
-  run_type free_energy
+  run_type analyze
+  analyze_job free_energy
 &end global
 
 &free_energy
   method ti
-  ti_file force_cmd
+  ti_file ti_force
 &end free_energy

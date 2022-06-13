@@ -40,8 +40,8 @@ def ti_method(force_cmd_file):
       sum_value = 0.0
     else:
       for j in range(i):
-        #sum_value = sum_value+(force_value[j]+force_value[j+1])/2.0*increment
-        sum_value = sum_value+force_value[j]*increment
+        sum_value = sum_value+(force_value[j]+force_value[j+1])/2.0*increment
+        #sum_value = sum_value+force_value[j]*increment
     #The unit of energy is kcal/mol
     free_energy_value.append((0.0-sum_value)*627.5094*1.8897259886)
 
@@ -51,8 +51,8 @@ def redox_pka_slow_growth(vertical_ene,increment):
 
   integral = 0.0
   for i in range(len(vertical_ene)-1):
-#    integral = integral+(vertical_ene[i+1]+vertical_ene[i])/2.0*increment
-    integral = integral+vertical_ene[i]*increment
+    integral = integral+(vertical_ene[i+1]+vertical_ene[i])/2.0*increment
+    #integral = integral+vertical_ene[i]*increment
 
   with open("mix_ene.csv","w") as csvfile:
     writer = csv.writer(csvfile)
