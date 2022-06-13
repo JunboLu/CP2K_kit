@@ -80,7 +80,8 @@ def get_index(file_dir):
 
       if ( len(return_func_split) > 5 ):
         value.append(float(return_func_split[5]))
-        eigen_dcharge_d.append(vir_eigen_u1_d + vir_eigen_u2_d + sc_dcharge_d + val_dcharge_d)
+        eigen_dcharge_d.append(sc_dcharge_d+val_dcharge_d)
+#        eigen_dcharge_d.append(vir_eigen_u1_d + vir_eigen_u2_d + sc_dcharge_d + val_dcharge_d)
         step_index.append(step+1)
 
   eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d, 'ascend', True)

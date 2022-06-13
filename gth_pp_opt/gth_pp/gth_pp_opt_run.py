@@ -215,7 +215,8 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       if ( len(return_func_split) > 5 ):
         value.append(float(return_func_split[5]))
         wfn_state_1.append(float(return_wfn_split[len(return_wfn_split)-2].strip('[')))
-        eigen_dcharge_d.append(vir_eigen_u1_d+vir_eigen_u2_d+sc_dcharge_d+val_dcharge_d)
+        eigen_dcharge_d.append(sc_dcharge_d+val_dcharge_d)
+#        eigen_dcharge_d.append(vir_eigen_u1_d+vir_eigen_u2_d+sc_dcharge_d+val_dcharge_d)
         step_index.append(step+1)
         opt_gth_pp_file = ''.join((process_1_dir, '/step_', str(step+1), '/GTH-PARAMETER'))
         line = linecache.getline(opt_gth_pp_file, 3)
