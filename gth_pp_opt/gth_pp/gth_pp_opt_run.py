@@ -159,28 +159,29 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       cmd = "grep %s %s/step_%s/atom.out" %('U1', process_1_dir, str(step+1))
       return_vir_u1_line = call.call_returns_shell(process_1_dir, cmd)
       return_vir_u1 = []
-      for i in range(elec_config_num*4*2):
+      ang_state_num = int(len(return_vir_u1_line)/elec_config_num/2)
+      for i in range(elec_config_num*ang_state_num*2):
         return_vir_u1_split = data_op.split_str(return_vir_u1_line[i], ' ')
         return_vir_u1.append(float(return_vir_u1_split[5].split('[')[0]))
       vir_eigen_u1_d = 0.0
-      for i in range(4*elec_config_num):
-        if ( return_vir_u1[i+4*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
-          vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+4*elec_config_num] + return_vir_u1[i]
+      for i in range(ang_state_num*elec_config_num):
+        if ( return_vir_u1[i+ang_state_num*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
+          vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+ang_state_num*elec_config_num] + return_vir_u1[i]
         else:
-          vir_eigen_u1_d = vir_eigen_u1_d + abs(return_vir_u1[i+4*elec_config_num]) - abs(return_vir_u1[i])
+          vir_eigen_u1_d = vir_eigen_u1_d + abs(return_vir_u1[i+ang_state_num*elec_config_num]) - abs(return_vir_u1[i])
 
       cmd = "grep %s %s/step_%s/atom.out" %('U2', process_1_dir, str(step+1))
       return_vir_u2_line = call.call_returns_shell(process_1_dir, cmd)
       return_vir_u2 = []
-      for i in range(elec_config_num*4*2):
+      for i in range(elec_config_num*ang_state_num*2):
         return_vir_u2_split = data_op.split_str(return_vir_u2_line[i], ' ')
         return_vir_u2.append(float(return_vir_u2_split[5].split('[')[0]))
       vir_eigen_u2_d = 0.0
-      for i in range(4*elec_config_num):
-        if ( return_vir_u2[i+4*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
-          vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+4*elec_config_num] + return_vir_u2[i]
+      for i in range(ang_state_num*elec_config_num):
+        if ( return_vir_u2[i+ang_state_num*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
+          vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+ang_state_num*elec_config_num] + return_vir_u2[i]
         else:
-          vir_eigen_u2_d = vir_eigen_u2_d + abs(return_vir_u2[i+4*elec_config_num]) - abs(return_vir_u2[i])
+          vir_eigen_u2_d = vir_eigen_u2_d + abs(return_vir_u2[i+ang_state_num*elec_config_num]) - abs(return_vir_u2[i])
 
       cmd = "grep %s %s/step_%s/atom.out" %("' SC '", process_1_dir, str(step+1))
       return_sc_line = call.call_returns_shell(process_1_dir, cmd)
@@ -261,7 +262,10 @@ if ( restart_stage == 0 or restart_stage == 1 ):
 
   eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d_proc, 'ascend', True)
   value_proc_asc = data_op.get_list_order(value_proc, 'ascend')
-  value_scale_init = float(value_proc_asc[1]/value_proc_asc[0])
+  if ( len(value_proc_asc) > 1 ):
+    value_scale_init = float(value_proc_asc[1]/value_proc_asc[0])
+  else:
+    value_scale_init = 1.1
   wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
   wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
   value_scale_list = []

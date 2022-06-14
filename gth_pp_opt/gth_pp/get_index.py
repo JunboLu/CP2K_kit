@@ -25,28 +25,29 @@ def get_index(file_dir):
       cmd = "grep %s %s/step_%s/atom.out" %('U1', file_dir, str(step+1))
       return_vir_u1_line = call.call_returns_shell(file_dir, cmd)
       return_vir_u1 = []
-      for i in range(elec_config_num*4*2):
+      ang_state_num = int(len(return_vir_u1_line)/elec_config_num/2)
+      for i in range(elec_config_num*ang_state_num*2):
         return_vir_u1_split = data_op.split_str(return_vir_u1_line[i], ' ')
         return_vir_u1.append(float(return_vir_u1_split[5].split('[')[0]))
       vir_eigen_u1_d = 0.0
-      for i in range(4*elec_config_num):
-        if ( return_vir_u1[i+4*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
-          vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+4*elec_config_num] + return_vir_u1[i]
+      for i in range(ang_state_num*elec_config_num):
+        if ( return_vir_u1[i+ang_state_num*elec_config_num] < 1.0E-10 and return_vir_u1[i] < 1.0E-10 ):
+          vir_eigen_u1_d = vir_eigen_u1_d - return_vir_u1[i+ang_state_num*elec_config_num] + return_vir_u1[i]
         else:
-          vir_eigen_u1_d = vir_eigen_u1_d + abs(return_vir_u1[i+4*elec_config_num]) - abs(return_vir_u1[i])
+          vir_eigen_u1_d = vir_eigen_u1_d + abs(return_vir_u1[i+ang_state_num*elec_config_num]) - abs(return_vir_u1[i])
 
       cmd = "grep %s %s/step_%s/atom.out" %('U2', file_dir, str(step+1))
       return_vir_u2_line = call.call_returns_shell(file_dir, cmd)
       return_vir_u2 = []
-      for i in range(elec_config_num*4*2):
+      for i in range(elec_config_num*ang_state_num*2):
         return_vir_u2_split = data_op.split_str(return_vir_u2_line[i], ' ')
         return_vir_u2.append(float(return_vir_u2_split[5].split('[')[0]))
       vir_eigen_u2_d = 0.0
-      for i in range(4*elec_config_num):
-        if ( return_vir_u2[i+4*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
-          vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+4*elec_config_num] + return_vir_u2[i]
+      for i in range(ang_state_num*elec_config_num):
+        if ( return_vir_u2[i+ang_state_num*elec_config_num] < 1.0E-10 and return_vir_u2[i] < 1.0E-10 ):
+          vir_eigen_u2_d = vir_eigen_u2_d - return_vir_u2[i+ang_state_num*elec_config_num] + return_vir_u2[i]
         else:
-          vir_eigen_u2_d = vir_eigen_u2_d + abs(return_vir_u2[i+4*elec_config_num]) - abs(return_vir_u2[i])
+          vir_eigen_u2_d = vir_eigen_u2_d + abs(return_vir_u2[i+ang_state_num*elec_config_num]) - abs(return_vir_u2[i])
 
       cmd = "grep %s %s/step_%s/atom.out" %("' SC '", file_dir, str(step+1))
       return_sc_line = call.call_returns_shell(file_dir, cmd)
