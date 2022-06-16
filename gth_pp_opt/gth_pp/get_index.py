@@ -5,7 +5,7 @@ from CP2K_kit.tools import call
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import log_info
 
-def get_index(file_dir):
+def get_index(file_dir, consider_charge=True):
 
   cmd = "ls | grep %s" % ('step_')
   step_num = len(call.call_returns_shell(file_dir, cmd))
@@ -85,15 +85,19 @@ def get_index(file_dir):
 #        eigen_dcharge_d.append(vir_eigen_u1_d + vir_eigen_u2_d + sc_dcharge_d + val_dcharge_d)
         step_index.append(step+1)
 
-  eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d, 'ascend', True)
-  scale_list = [1.02, 1.04, 1.06, 1.08, 1.10, 1.12, 1.14, 1.16, 1.18]
-  for scale in scale_list:
-    for i in asc_order:
-      if ( value[i] <= scale*min(value) ):
-        choosed_index = step_index[i]
+  if consider_charge:
+    eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d, 'ascend', True)
+    scale_list = [1.02, 1.04, 1.06, 1.08, 1.10, 1.12, 1.14, 1.16, 1.18]
+    for scale in scale_list:
+      for i in asc_order:
+        if ( value[i] <= scale*min(value) ):
+          choosed_index = step_index[i]
+          break
+      if ( 'choosed_index' in locals() ):
         break
-    if ( 'choosed_index' in locals() ):
-      break
+  else:
+    min_index = value.index(min(value))
+    choosed_index = step_index[min_index]
 
   if ( 'choosed_index' not in locals() ):
     log_info.log_error('Running error: no good parameter in %s' %(file_dir))
@@ -103,6 +107,8 @@ def get_index(file_dir):
 
 if __name__ == '__main__':
   import sys
-  file_name = str(sys.argv[1])
-  m=get_index(file_name)
+  from CP2K_kit.tools import data_op
+  direc_name = str(sys.argv[1])
+  consider_charge = data_op.str_to_bool(str(sys.argv[2]))
+  m=get_index(direc_name, consider_charge)
   print (m)

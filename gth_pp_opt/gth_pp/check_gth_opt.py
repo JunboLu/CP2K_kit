@@ -29,7 +29,7 @@ def check_gth_opt(gth_opt_param):
                    'converge_perturb_choice_10', 'converge_perturb_choice_11', 'converge_perturb_choice_12', \
                    'elec_config_perturb_choice_1', 'elec_config_perturb_choice_2', 'elec_config_perturb_choice_3', \
                    'elec_config_perturb_choice_4', 'mix_weight_1', 'mix_weight_2', 'mix_max_cycle', 'target_semi', \
-                   'target_val', 'target_vir', 'weight_psir0', 'weight_pot_node']
+                   'target_val', 'target_vir', 'weight_psir0', 'weight_pot_node', 'consider_charge']
 
   for key in gth_opt_param.keys():
     if key not in valid_keyword:
@@ -99,6 +99,16 @@ def check_gth_opt(gth_opt_param):
       exit()
   else:
     gth_opt_param['consider_r_loc'] = 'true'
+
+  if ( 'consider_charge' in gth_opt_param.keys() ):
+    consider_charge = gth_opt_param['consider_charge']
+    if consider_charge.upper() == 'TRUE' or consider_charge.upper() == 'FALSE' :
+      pass
+    else:
+      log_info.log_error('Input error: consider_charge should be bool, please check or reset gth_pp_opt/consider_charge')
+      exit()
+  else:
+    gth_opt_param['consider_charge'] = 'true'
 
   if ( 'opt_from_init' in gth_opt_param.keys() ):
     opt_from_init = gth_opt_param['opt_from_init']

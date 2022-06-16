@@ -88,6 +88,7 @@ proc_1_func_conv = gth_opt_param['proc_1_func_conv']
 proc_1_step_start = gth_opt_param['proc_1_step_start']
 weight_psir0 = gth_opt_param['weight_psir0']
 weight_pot_node = gth_opt_param['weight_pot_node']
+consider_charge = gth_opt_param['consider_charge']
 consider_wfn_0 = data_op.str_to_bool(gth_opt_param['consider_wfn_0'])
 consider_r_loc = data_op.str_to_bool(gth_opt_param['consider_r_loc'])
 opt_from_init = data_op.str_to_bool(gth_opt_param['opt_from_init'])
@@ -260,7 +261,6 @@ if ( restart_stage == 0 or restart_stage == 1 ):
     log_info.log_error('Running error: no good parameters, maybe users need to reset proc_1_func_conv and r_loc_conv')
     exit()
 
-  eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d_proc, 'ascend', True)
   value_proc_asc = data_op.get_list_order(value_proc, 'ascend')
   if ( len(value_proc_asc) > 1 ):
     value_scale_init = float(value_proc_asc[1]/value_proc_asc[0])
@@ -272,19 +272,32 @@ if ( restart_stage == 0 or restart_stage == 1 ):
   for i in range(21):
     value_scale_list.append(value_scale_init+0.02*(i+1))
 
-  for i in range(21):
-    for j in asc_order:
-      if consider_wfn_0:
-        if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) and \
-             value_proc[j] <= value_scale_list[i]*min(value_proc) ):
-          choosed_index = step_index_proc[j]
-          break
-      else:
-        if ( value_proc[j] <= value_scale_list[i]*min(value_proc) ):
-          choosed_index = step_index_proc[j]
-          break
-    if ( 'choosed_index' in locals() ):
-      break
+  if consider_charge:
+    eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d_proc, 'ascend', True)
+    for i in range(21):
+      for j in asc_order:
+        if consider_wfn_0:
+          if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) and \
+               value_proc[j] <= value_scale_list[i]*min(value_proc) ):
+            choosed_index = step_index_proc[j]
+            break
+        else:
+          if ( value_proc[j] <= value_scale_list[i]*min(value_proc) ):
+            choosed_index = step_index_proc[j]
+            break
+      if ( 'choosed_index' in locals() ):
+        break
+  else:
+    wfn_state_1_proc_abs_asc, asc_order = data_op.get_list_order(wfn_state_1_proc_abs, 'ascend', True)
+    if consider_wfn:
+      for i in range(21):
+        for j in asc_order:
+          if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) ):
+            choosed_index = step_index_proc[j]
+            break
+    else:
+      min_index = value_proc.index(min(value_proc))
+      choosed_index = step_index_proc[min_index]
 
   if ( 'choosed_index' not in locals() ):
     log_info.log_error('Running error: no good parameter in process_1')
@@ -304,7 +317,7 @@ if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
     restart_num = 0
   if ( os.path.exists(process_2_dir) and restart_num > 1 and not opt_from_init ):
     process_2_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_num-1)))
-    min_step = get_index.get_index(process_2_restart_dir)
+    min_step = get_index.get_index(process_2_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((process_2_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
   #Run process_2
@@ -312,16 +325,16 @@ if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 ):
   for i in range(micro_max_cycle):
     if ( i != 0 ):
       process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
-      min_step = get_index.get_index(process_2_min_restart_dir)
+      min_step = get_index.get_index(process_2_min_restart_dir, data_op.str_to_bool(consider_charge))
       gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = step_reweight.run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                  method, val_elec_num, python_exe, get_min_index, weight_1, \
-                                                  target_semi, target_val, target_vir)
+                                                  method, val_elec_num, python_exe, get_min_index, \
+                                                  weight_1, target_semi, target_val, target_vir, consider_charge)
 
   #Choose the lowest value of process_2
   process_2_min_restart_dir = ''.join((work_dir, '/process_2/restart', str(restart_index)))
-  min_step = get_index.get_index(process_2_min_restart_dir)
+  min_step = get_index.get_index(process_2_min_restart_dir, data_op.str_to_bool(consider_charge))
   gth_pp_file = ''.join((process_2_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
   str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
   str_print = data_op.str_wrap(str_print, 80, '  ')
@@ -337,7 +350,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
     restart_num = 0
   if ( os.path.exists(process_3_dir) and restart_num > 1 and not opt_from_init ):
     process_3_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_num-1)))
-    min_step = get_index.get_index(process_3_restart_dir)
+    min_step = get_index.get_index(process_3_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((process_3_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
   #Run process_3
@@ -345,17 +358,17 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
   for i in range(micro_max_cycle):
     if ( i != 0 ):
       process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
-      min_step = get_index.get_index(process_3_min_restart_dir)
+      min_step = get_index.get_index(process_3_min_restart_dir, data_op.str_to_bool(consider_charge))
       gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                       method, val_elec_num, python_exe, get_min_index, weight_1, \
                                                       weight_pertub_1, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
-                                                      target_semi, target_val, target_vir)
+                                                      target_semi, target_val, target_vir, consider_charge)
 
   #Choose the lowest value of process_3
   process_3_min_restart_dir = ''.join((work_dir, '/process_3/restart', str(restart_index)))
-  min_step = get_index.get_index(process_3_min_restart_dir)
+  min_step = get_index.get_index(process_3_min_restart_dir, data_op.str_to_bool(consider_charge))
   gth_pp_file = ''.join((process_3_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
   str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
   str_print = data_op.str_wrap(str_print, 80, '  ')
@@ -371,7 +384,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
     restart_num = 0
   if ( os.path.exists(process_4_dir) and restart_num > 1 and not opt_from_init ):
     process_4_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_num-1)))
-    min_step = get_index.get_index(process_4_restart_dir)
+    min_step = get_index.get_index(process_4_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((process_4_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
   #Run process_4
@@ -379,7 +392,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
   for i in range(micro_max_cycle):
     if ( i != 0 ):
       process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
-      min_step = get_index.get_index(process_4_min_restart_dir)
+      min_step = get_index.get_index(process_4_min_restart_dir, data_op.str_to_bool(consider_charge))
       gth_pp_file = ''.join((process_4_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
     restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
@@ -390,7 +403,7 @@ if ( restart_stage == 0 or restart_stage ==1 or restart_stage == 2 or restart_st
                                                         converge_perturb_choice_7, converge_perturb_choice_8, \
                                                         converge_perturb_choice_9, converge_perturb_choice_10, \
                                                         converge_perturb_choice_11, converge_perturb_choice_12, \
-                                                        target_semi, target_val, target_vir)
+                                                        target_semi, target_val, target_vir, consider_charge)
 
 if ( restart_stage == 5 ):
 
@@ -411,10 +424,10 @@ if ( restart_stage == 5 ):
 
   if ( choice_num >= 1 ):
     restart_index = elec_conf_perturb.run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                                                                method, val_elec_num, python_exe, get_min_index, choice_num, elec_config_str, \
-                                                                elec_config_perturb_choice_1_str, elec_config_perturb_choice_2_str, \
-                                                                elec_config_perturb_choice_3_str, elec_config_perturb_choice_4_str, \
-                                                                target_semi, target_val, target_vir)
+                                                                method, val_elec_num, python_exe, get_min_index, \
+                                                                choice_num, elec_config_str, elec_config_perturb_choice_1_str, \
+                                                                elec_config_perturb_choice_2_str, elec_config_perturb_choice_3_str, \
+                                                                elec_config_perturb_choice_4_str, target_semi, target_val, target_vir, consider_charge)
 
 
 if ( restart_stage == 6 ):
@@ -428,17 +441,17 @@ if ( restart_stage == 6 ):
                                                         converge_perturb_choice_7, converge_perturb_choice_8, \
                                                         converge_perturb_choice_9, converge_perturb_choice_10, \
                                                         converge_perturb_choice_11, converge_perturb_choice_12, \
-                                                        target_semi, target_val, target_vir, mix_max_cycle)
+                                                        target_semi, target_val, target_vir, consider_charge, mix_max_cycle)
     min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
-    min_step = get_index.get_index(min_restart_dir)
+    min_step = get_index.get_index(min_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
     #Run process_3
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                       method, val_elec_num, python_exe, get_min_index, mix_weight_2, \
                                                       mix_weight_1, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
-                                                      target_semi, target_val, target_vir, mix_max_cycle)
+                                                      target_semi, target_val, target_vir, consider_charge, mix_max_cycle)
     min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
-    min_step = get_index.get_index(min_restart_dir)
+    min_step = get_index.get_index(min_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
     #Run process_4
     restart_index = converg_perturb.run_converg_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
@@ -449,23 +462,23 @@ if ( restart_stage == 6 ):
                                                         converge_perturb_choice_7, converge_perturb_choice_8, \
                                                         converge_perturb_choice_9, converge_perturb_choice_10, \
                                                         converge_perturb_choice_11, converge_perturb_choice_12, \
-                                                        target_semi, target_val, target_vir, mix_max_cycle)
+                                                        target_semi, target_val, target_vir, consider_charge, mix_max_cycle)
 
     min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
-    min_step = get_index.get_index(min_restart_dir)
+    min_step = get_index.get_index(min_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
     #Run process_3
     restart_index = weight_perturb.run_weight_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                                                       method, val_elec_num, python_exe, get_min_index, mix_weight_1, \
                                                       mix_weight_2, weight_pertub_2, weight_pertub_3, weight_pertub_4, \
-                                                      target_semi, target_val, target_vir, mix_max_cycle)
+                                                      target_semi, target_val, target_vir, consider_charge, mix_max_cycle)
 
     min_restart_dir = ''.join((work_dir, '/process_mix/restart', str(restart_index)))
-    min_step = get_index.get_index(min_restart_dir)
+    min_step = get_index.get_index(min_restart_dir, data_op.str_to_bool(consider_charge))
     gth_pp_file = ''.join((min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
 
   process_4_min_restart_dir = ''.join((work_dir, '/process_4/restart', str(restart_index)))
-  min_step = get_index.get_index(process_4_min_restart_dir)
+  min_step = get_index.get_index(process_4_min_restart_dir, data_op.str_to_bool(consider_charge))
   gth_pp_file = ''.join((process_4_min_restart_dir, '/step_', str(min_step), '/GTH-PARAMETER'))
   str_print = 'Success: choose the GTH paramter in %s' %(gth_pp_file)
   str_print = data_op.str_wrap(str_print, 80, '  ')

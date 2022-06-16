@@ -10,7 +10,7 @@ from CP2K_kit.tools import file_tools
 
 def run_step_weight(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
                     method, val_elec_num, python_exe, get_min_index, weight_1, \
-                    target_semi, target_val, target_vir):
+                    target_semi, target_val, target_vir, consider_charge):
 
   '''
   run_step_weight : run step reweight process.
@@ -131,6 +131,7 @@ method=%s
 elec_num=%d
 python_exe=%s
 get_index_py=%s
+consider_charge=%s
 
 line_step_size=%d
 line_wt_semi=%d
@@ -221,7 +222,7 @@ elif [[ $i == 2 || $kk == 1 ]]; then
 ((k=$i-1))
 cd $direc/restart$k
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k`
+m=`$python_exe $get_index_py $direc/restart$k $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 for j in $(seq 1 $initial_total_step)
 do
@@ -234,7 +235,7 @@ elif [[ $i != 1 && $i != 2 ]]; then
 k_1=$kk
 cd $direc/restart$k_1
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k_1`
+m=`$python_exe $get_index_py $direc/restart$k_1 $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 if [ $check_direc == new ]; then
 total_step=$initial_total_step
@@ -266,14 +267,14 @@ fi
 
 cd $direc/restart$i
 for z in {1..20}; do grep -H "Final value of function" step_$z/atom.out; done > kk
-m=`$python_exe $get_index_py $direc/restart$i`
+m=`$python_exe $get_index_py $direc/restart$i $consider_charge`
 str=`grep -H "Final value of function" step_$m/atom.out`
 value=`echo ${str:20:100} | tr -cd "[0-9,.]"`
 echo $value
 cd $direc
 ''' %(process_2_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, \
-      line_step_size[0], line_wt_semi[0], line_wt_val[0], line_wt_vir[0], line_tg_semi[0], \
-      line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
+      consider_charge, line_step_size[0], line_wt_semi[0], line_wt_val[0], line_wt_vir[0], \
+      line_tg_semi[0], line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
 
   optimize_file = ''.join((process_2_dir, '/optimize.sh'))
   with open(optimize_file, 'w') as f:

@@ -9,7 +9,7 @@ from CP2K_kit.tools import data_op
 from CP2K_kit.tools import file_tools
 
 def run_elec_config_perturb(work_dir, gth_pp_file, cp2k_exe, parallel_exe, element, \
-                            method, val_elec_num, python_exe, get_min_index, choice_num, elec_config, \
+                            method, val_elec_num, python_exe, get_min_index, consider_charge, choice_num, elec_config, \
                             elec_config_perturb_choice_1, elec_config_perturb_choice_2, \
                             elec_config_perturb_choice_3, elec_config_perturb_choice_4, \
                             target_semi, target_val, target_vir, max_cycle=2000):
@@ -166,6 +166,7 @@ method='%s'
 elec_num=%d
 python_exe='%s'
 get_index_py='%s'
+consider_charge=%s
 
 line_step_size=%d
 line_elec_config=%d
@@ -247,7 +248,7 @@ elif [[ $i == 2 || $kk == 1 ]]; then
 ((k=$i-1))
 cd $direc/restart$k
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k`
+m=`$python_exe $get_index_py $direc/restart$k $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 for j in $(seq 1 $initial_total_step)
 do
@@ -260,7 +261,7 @@ elif [[ $i != 1 && $i != 2 ]]; then
 k_1=$kk
 cd $direc/restart$k_1
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k_1`
+m=`$python_exe $get_index_py $direc/restart$k_1 $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 if [ $check_direc == new ]; then
 total_step=$initial_total_step
@@ -275,7 +276,7 @@ if [ $check_direc == old ]; then
 ((k_2=$kk-1))
 cd $direc/restart$k_2
 grep -H "Final value of function" step*/atom.out > kk
-m=`$python_exe $get_index_py $direc/restart$k_2`
+m=`$python_exe $get_index_py $direc/restart$k_2 $consider_charge`
 a=`sed -n ''${line_step_size}'p' step_$m/atom.inp`
 step_size_pre=`echo $a | tr -cd "[0-9,.]"`
 for j in $(seq 1 $total_step)
@@ -296,13 +297,13 @@ fi
 
 cd $direc/restart$i
 for z in {1..20}; do grep -H "Final value of function" step_$z/atom.out; done > kk
-m=`$python_exe $get_index_py $direc/restart$i`
+m=`$python_exe $get_index_py $direc/restart$i $consider_charge`
 str=`grep -H "Final value of function" step_$m/atom.out`
 value=`echo ${str:20:100} | tr -cd "[0-9,.]"`
 echo $value
 cd $direc
-''' %(process_5_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, line_step_size[0], \
-      line_elec_config[0], line_tg_semi[0], line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
+''' %(process_5_dir, parallel_exe, element, method, val_elec_num, python_exe, get_min_index, consider_charge, \
+      line_step_size[0], line_elec_config[0], line_tg_semi[0], line_tg_val[0], line_tg_vir[0], line_pot_file[0], cp2k_exe)
 
   #run shell script, and then get returns
   optimize_file = ''.join((process_5_dir, '/optimize.sh'))
