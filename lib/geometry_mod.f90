@@ -784,4 +784,39 @@ contains
 
   end subroutine rdf
 
+  subroutine adf(angle, increment, data_num, rho_a, u, v)
+
+    integer::data_num
+    integer::u, v
+    integer::i, j, k
+    integer::num_a
+    real(kind=4)::increment
+    real(kind=4),dimension(data_num)::rho_a
+    real(kind=4),dimension(u,v)::angle
+
+    !f2py intent(in)::u, v, data_num
+    !f2py intent(in)::angle
+    !f2py intent(in)::increment
+    !f2py intent(out)::rho_a
+
+    i = 0
+    j = 0
+    k = 0
+
+    do i=1,data_num
+      num_a = 0
+      do j=1,u
+        do k=1,v
+          if ( angle(j,k)*180.0/3.1415926 > i*increment .and. angle(j,k)*180.0/3.1415926 <= (i+1)*increment ) then
+            num_a = num_a+1
+          end if
+        end do
+      end do
+      rho_a(i) = num_a
+    end do
+
+  return
+
+  end subroutine adf
+
 end module geometry

@@ -7,7 +7,7 @@
   &geometry
     &choose_structure
       traj_file ./UO22+_aimd-pos-1.xyz
-      file_type coord
+      file_type coord_xyz
       atom_id 1-5
       init_step 0
       end_step 69792

@@ -1,0 +1,14 @@
+&global
+  run_type analyze
+  analyze_job adf
+&end global
+
+&analyze
+  &adf
+    traj_coord_file ./choose.xyz
+    atom_type_pair O Er O
+    r_increment 0.1
+    init_step 20000
+    end_step 60000
+  &end adf
+&end analyze

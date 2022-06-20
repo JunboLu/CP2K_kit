@@ -6,6 +6,7 @@ from CP2K_kit.tools import read_input
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.analyze import rdf
+from CP2K_kit.analyze import adf
 from CP2K_kit.analyze import rmsd
 from CP2K_kit.analyze import center
 from CP2K_kit.analyze import geometry
@@ -58,6 +59,9 @@ elif ( analyze_job == 'diffusion' ):
 
 elif ( analyze_job == 'rdf' ):
   rdf.rdf_run(job_type_param[0], work_dir)
+
+elif ( analyze_job == 'adf' ):
+  adf.adf_run(job_type_param[0], work_dir)
 
 elif ( analyze_job == 'rmsd' ):
   rmsd.rmsd_run(job_type_param[0], work_dir)

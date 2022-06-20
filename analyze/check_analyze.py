@@ -678,7 +678,7 @@ def check_geometry_inp(geometry_dic):
       if ( file_type in valid_file_type ):
         pass
       else:
-        log_info.log_error('Input error: only coord, vel, and frc are supported for file_type,\
+        log_info.log_error('Input error: only coord_xyz, vel, and frc are supported for file_type,\
                             please check or reset analyze/geometry/choose_structure/file_type')
         exit()
     else:
@@ -937,7 +937,7 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
 def check_rdf_inp(rdf_dic):
 
   '''
-  check_lmp2cp2k_inp: check the input of rdf.
+  check_rdf_inp: check the input of rdf.
 
   Args:
     rdf_dic: dictionary
@@ -1039,6 +1039,78 @@ def check_rdf_inp(rdf_dic):
     exit()
 
   return rdf_dic
+
+def check_adf_inp(adf_dic):
+
+  '''
+  check_adf_inp: check the input of adf.
+
+  Args:
+    adf_dic: dictionary
+      adf_dic contains parameters for adf.
+  Returns:
+    adf_dic: dictionary
+      adf_dic is the revised adf_dic.
+  '''
+
+  adf_dic = copy.deepcopy(adf_dic)
+
+  if ( 'traj_coord_file' in adf_dic.keys() ):
+    traj_coord_file = adf_dic['traj_coord_file']
+    if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
+      adf_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+      traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+    else:
+      log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
+      exit()
+  else:
+    log_info.log_error('Input error: no coordination trajectroy file, please set analyze/adf/traj_coord_file')
+    exit()
+
+  if ( 'atom_type_pair' in adf_dic.keys() ):
+    atom_type_pair = adf_dic['atom_type_pair']
+    if ( len(atom_type_pair) == 3 and all(data_op.eval_str(x) == 0 for x in atom_type_pair) ):
+      pass
+    else:
+      log_info.log_error('Input error: atom_type_pair should be 2 string, please check or reset analyze/adf/atom_type_pair')
+      exit()
+  else:
+    log_info.log_error('Input error: no atom type, please set analyze/adf/atom_type_pair')
+    exit()
+
+  if ( 'init_step' in adf_dic.keys() ):
+    init_step = adf_dic['init_step']
+    if ( data_op.eval_str(init_step) == 1 ):
+      adf_dic['init_step'] = int(init_step)
+    else:
+      log_info.log_error('Input error: init_step should be integer, please check or reset analyze/adf/init_step')
+  else:
+    adf_dic['init_step'] = start_frame_id
+
+  if ( 'end_step' in adf_dic.keys() ):
+    end_step = adf_dic['end_step']
+    if ( data_op.eval_str(end_step) == 1 ):
+      adf_dic['end_step'] = int(end_step)
+    else:
+      log_info.log_error('Input error: end_step should be integer, please check or reset analyze/adf/end_step')
+  else:
+    adf_dic['end_step'] = end_frame_id
+
+  init_step = adf_dic['init_step']
+  end_step = adf_dic['end_step']
+  check_step(init_step, end_step, start_frame_id, end_frame_id)
+
+  if ( 'a_increment' in adf_dic.keys() ):
+    a_increment = adf_dic['a_increment']
+    if ( data_op.eval_str(a_increment) == 2 ):
+      adf_dic['a_increment'] = float(a_increment)
+    else:
+      log_info.log_error('Input error: a_increment should be float, please check or reset analyze/adf/a_increment')
+  else:
+    adf_dic['a_increment'] = 0.1
+
+  return adf_dic
 
 def check_spectrum_inp(spectrum_dic):
 

@@ -1,4 +1,5 @@
 from CP2K_kit.analyze import rdf
+from CP2K_kit.analyze import adf
 from CP2K_kit.analyze import rmsd
 from CP2K_kit.analyze import center
 from CP2K_kit.analyze import geometry
