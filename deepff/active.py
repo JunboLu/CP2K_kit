@@ -81,6 +81,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
                           %(work_dir, work_dir), 'Warning')
       exit()
 
+  atom_mass_dic = deepmd_dic['model']['atom_mass']
   numb_test = deepmd_dic['training']['numb_test']
   model_type = deepmd_dic['training']['model_type']
   neuron = deepmd_dic['training']['neuron']
@@ -172,7 +173,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       #Perform lammps calculations
       print ('Step 2: lammps tasks', flush=True)
 
-      gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, tot_atoms_type_dic)
+      gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, atom_mass_dic, tot_atoms_type_dic)
       lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
                            lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
       write_data.write_restart_inp(inp_file, i, 2, data_num, work_dir)
@@ -182,7 +183,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       if ( restart_stage == 2 ):
         print ('Step 2: lammps tasks', flush=True)
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
-      gen_lammps_task.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'model_devi')
+      gen_lammps_task.gen_lmpfrc_file(work_dir, i, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'model_devi')
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, lmp_exe, mpi_path, parallel_exe, \
                             proc_num_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'model_devi')
       write_data.write_restart_inp(inp_file, i, 3, data_num, work_dir)
@@ -320,6 +321,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   with open(deepmd_inp_file, 'r') as f:
     deepmd_dic_json = json.load(f)
 
+  atom_mass_dic = deepmd_dic['model']['atom_mass']
   shuffle_data = deepmd_dic['shuffle_data']
   numb_test = deepmd_dic_json['training']['numb_test']
   tot_atoms_type = deepmd_dic_json['model']['type_map']
@@ -343,7 +345,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   dp_version = environ_dic['dp_version']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
   lmp_job_per_node = environ_dic['lmp_job_per_node']
-  dp_job_per_node = envrion_dic['dp_job_per_node']
+  dp_job_per_node = environ_dic['dp_job_per_node']
   lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
   lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
 
@@ -374,7 +376,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
         deepmd_run.run_deepmd(work_dir, i, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
       else:
         str_print = 'Success: the initial deep potential file is copied in %s' %(''.join((work_dir, '/iter_0/01.train/0')))
-        str_print = data_op.str_wrap(str_print, 80, '')
+        str_print = data_op.str_wrap(str_print, 80, '  ')
         print (str_print, flush=True)
       write_data.write_restart_inp(inp_file, i, 1, data_num, work_dir)
       if ( i>0 ):
@@ -392,7 +394,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
     if ( restart_stage == 0 or restart_stage == 1 ):
       #Perform lammps calculations
       print ('Step 2: lammps tasks', flush=True)
-      gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, tot_atoms_type_dic)
+      gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, atom_mass_dic, tot_atoms_type_dic)
       lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
                            lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
       write_data.write_restart_inp(inp_file, i, 2, data_num, work_dir)
@@ -403,7 +405,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
         print ('Step 2: lammps tasks', flush=True)
 
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
-      gen_lammps_task.gen_lmpfrc_file(work_dir, i, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'dp_test')
+      gen_lammps_task.gen_lmpfrc_file(work_dir, i, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'dp_test')
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, lmp_exe, mpi_path, parallel_exe, \
                             proc_num_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'dp_test')
       write_data.write_restart_inp(inp_file, i, 3, data_num, work_dir)
@@ -427,7 +429,9 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
                            cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
 
+    if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 or restart_stage == 4 ):
       print ('Step 4: deep potential test', flush=True)
+      sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       struct_index, success_ratio_sys, success_ratio  = \
       dp_test.active_learning_test(work_dir, i, atoms_type_multi_sys, \
                                    use_mtd_tot, force_conv, energy_conv)
@@ -472,6 +476,10 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
           choosed_index_array = np.array(choosed_index)
           np.random.shuffle(choosed_index_array)
           choosed_index = list(choosed_index_array[0:choosed_index_num[j]])
+          sys_task_index = data_op.comb_list_2_str(sorted(choosed_index), ' ')
+          str_print = 'Choosed index for system %d cp2k task %d: %s' %(key, choosed_task[j], sys_task_index)
+          str_print = data_op.str_wrap(str_print, 80, '  ')
+          print (str_print, flush=True)
 
           cp2k_sys_task_dir = ''.join((cp2k_sys_dir, '/task_', str(choosed_task[j])))
           data_dir = ''.join((cp2k_sys_task_dir, '/data'))
@@ -536,15 +544,17 @@ def kernel(work_dir, inp_file, deepff_type):
   environ_dic = check_deepff.check_environ(environ_dic, proc_num_per_node[0])
 
   if ( deepff_type == 'active_model_devi' ):
-    tot_atoms_type = process.get_atoms_type(deepmd_dic)
-    if ( data_op.reorder_atom_list(deepmd_dic['model']['type_map']) != data_op.reorder_atom_list(tot_atoms_type) ):
-      type_map_str = data_op.comb_list_2_str(tot_atoms_type, ' ')
-      log_info.log_error('Input error: missing elements in type_map, please reset deepff/deepmd/model/type_map')
-      exit()
+    if ( 'set_data_dir' not in deepmd_dic['training'].keys() ):
+      tot_atoms_type = process.get_atoms_type(deepmd_dic)
+      if ( data_op.reorder_atom_list(deepmd_dic['model']['type_map']) != data_op.reorder_atom_list(tot_atoms_type) ):
+        type_map_str = data_op.comb_list_2_str(tot_atoms_type, ' ')
+        log_info.log_error('Input error: missing elements in type_map, please reset deepff/deepmd/model/type_map')
+        exit()
     else:
-      tot_atoms_type_dic = OrderedDict()
-      for i in range(len(tot_atoms_type)):
-        tot_atoms_type_dic[tot_atoms_type[i]] = i
+      tot_atoms_type = deepmd_dic['model']['type_map']
+    tot_atoms_type_dic = OrderedDict()
+    for i in range(len(tot_atoms_type)):
+      tot_atoms_type_dic[tot_atoms_type[i]] = i
 
     if ( len(deepmd_dic['model']['descriptor']['sel']) != len(tot_atoms_type) ):
       log_info.log_error('Input error: sel should be %d integers, please reset deepff/deepmd/model/descriptor/sel' %(len(tot_atoms_type)))

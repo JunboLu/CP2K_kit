@@ -617,11 +617,11 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
             check_lmp_frc_gen.append(1)
 
   if ( len(check_lmp_frc_gen) != 0 and all(i == 0 for i in check_lmp_frc_gen) ):
-    str_print = 'Success: generating lammps model deviation file in %s' %(lmp_dir)
+    str_print = 'Success: generating lammps force calculation file in %s' %(lmp_dir)
     str_print = data_op.str_wrap(str_print, 80, '  ')
     print (str_print, flush=True)
   else:
-    log_info.log_error('Generating lammps model deviation tasks error, please check iteration %d' %(iter_id))
+    log_info.log_error('Generating lammps force calculation tasks error, please check iteration %d' %(iter_id))
     exit()
 
   #Run lammps force.
@@ -696,7 +696,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
     if ( len(lmp_frc_statu) !=0 and all(i == 0 for i in lmp_frc_statu) ):
       break
 
-  print ('  Success: model deviation calculations for %d systems by lammps' %(sys_num), flush=True)
+  print ('  Success: lammps force calculations for %d systems by lammps' %(sys_num), flush=True)
 
 if __name__ == '__main__':
   from CP2K_kit.tools import read_input

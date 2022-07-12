@@ -1,0 +1,13 @@
+&global
+  run_type analyze
+  analyze_job file_trans
+&end global
+
+&analyze
+  &file_trans
+    transd_file ./c2h6.coord
+    box_file ./box
+    atom_label 1:C 2:H
+    trans_type coord2lmp
+  &end file_trans
+&end analyze

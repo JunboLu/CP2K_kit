@@ -178,7 +178,7 @@ def gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, task_dir, file_name):
 
   data_file.close()
 
-def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
+def gen_lmpmd_task(lmp_dic, work_dir, iter_id, atom_mass_dic, tot_atoms_type_dic):
 
   '''
   gen_lmpmd_task: generate lammps md paramter file (.in file)
@@ -311,11 +311,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
         md_in_file.write('change_box   all triclinic\n')
 
         for l in range(len(atoms_type)):
-          atom_num, atom_mass = atom.get_atom_mass(atoms_type[l])
-          if ( 'mass' in lmp_dic[sys].keys() ):
-            for element in lmp_dic[sys]['mass'].keys():
-              if ( element.upper() == atoms_type[l].upper() ):
-                atom_mass = lmp_dic[sys]['mass'][element]
+          atom_mass = atom_mass_dic[atoms_type[l]]
           line_l = ''.join(('mass            ', str(l+1), ' ', str(atom_mass),'\n'))
           md_in_file.write(line_l)
 
@@ -347,7 +343,7 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, tot_atoms_type_dic):
 
         md_in_file.close()
 
-def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, active_type):
+def gen_lmpfrc_file(work_dir, iter_id, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, active_type):
 
   '''
   gen_lmpfrc_file: generate lammps parameter (.in file) for force calculations.
@@ -496,7 +492,7 @@ def gen_lmpfrc_file(work_dir, iter_id, atoms_num_tot, atoms_type_multi_sys, use_
 
               atoms_type_i = atoms_type_multi_sys[i]
               for key in atoms_type_i:
-                atom_num, atom_mass = atom.get_atom_mass(key)
+                atom_mass = atom_mass_dic[key]
                 line_key = ''.join(('mass            ', str(atoms_type_i[key]), ' ', str(atom_mass),'\n'))
                 frc_in_file.write(line_key)
 

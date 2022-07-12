@@ -6,6 +6,7 @@ import multiprocessing
 import numpy as np
 from collections import OrderedDict
 from CP2K_kit.tools import call
+from CP2K_kit.tools import atom
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.tools import traj_info
@@ -26,7 +27,7 @@ def check_deepmd_model(deepmd_dic):
   '''
 
   deepmd_valid_key = ['model', 'learning_rate', 'loss', 'training']
-  model_valid_key = ['type_map', 'descriptor']
+  model_valid_key = ['type_map', 'atom_mass', 'descriptor']
   descr_valid_key = ['type', 'sel', 'rcut_smth', 'rcut', 'neuron', 'axis_neuron']
   lr_valid_key = ['type', 'start_lr', 'decay_steps', 'stop_lr']
   loss_valid_key = ['start_pref_e', 'limit_pref_e', 'start_pref_f', 'limit_pref_f', 'start_pref_v', 'limit_pref_v']
@@ -56,6 +57,27 @@ def check_deepmd_model(deepmd_dic):
     else:
       log_info.log_error('Input error: no type_map, please set deepff/deepmd_model/model/type_map')
       exit()
+
+    if ( 'atom_mass' in deepmd_dic['model'].keys() ):
+      atom_mass = deepmd_dic['model']['atom_mass']
+      atom_type = deepmd_dic['model']['type_map']
+      if ( len(atom_mass) == len(atom_type) and \
+           all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in deepmd_dic['model']['atom_mass']) ):
+        atom_mass_dic = OrderedDict()
+        for i in range (len(atom_type)):
+          atom_mass_dic[atom_type[i]] = atom_mass[i]
+        deepmd_dic['model']['atom_mass'] = atom_mass_dic
+      else:
+        log_info.log_error('Input error: atom_mass should be %d integers, please check or reset deepff/deepmd_model/model/atom_mass' %(len(atom_type)))
+        exit()
+    else:
+      atom_type = deepmd_dic['model']['type_map']
+      atom_mass_dic = OrderedDict()
+      for i in range (len(atom_type)):
+        atom_num, atom_mass = atom.get_atom_mass(atom_type[i])
+        atom_mass_dic[atom_type[i]] = atom_mass
+      deepmd_dic['model']['atom_mass'] = atom_mass_dic
+
     if ( 'descriptor' not in deepmd_dic['model'].keys() ):
       log_info.log_error('Input error: no descriptor, please set deepff/deepmd_model/model/descriptor')
       exit()
@@ -812,15 +834,6 @@ def check_lammps(lmp_dic, active_learn_dic):
           log_info.log_error('Input error: %s file does not exist' %(coord_file))
           exit()
 
-      if ( 'mass' in lmp_dic[key].keys() ):
-        for element in lmp_dic[key]['mass']:
-          element_mass = lmp_dic[key]['mass'][element]
-          if ( data_op.eval_str(element) == 1 or data_op.eval_str(element) == 2 ):
-            lmp_dic[key]['mass'][element] = float(element_mass)
-          else:
-            log_info.log_error('Input error: mass of element should be int or float, please check or reset deepff/lammps/system/mass')
-            exit()
-
       valid_md_type = ['nve', 'nvt', 'npt']
       if ( 'md_type' in lmp_dic[key].keys() ):
         md_type = lmp_dic[key]['md_type']
@@ -874,8 +887,8 @@ def check_active_learn(active_learn_dic):
       active_learn_dic is the revised active_learn_dic.
   '''
 
-  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'max_iter', \
-                      'restart_iter', 'restart_index', 'data_num', 'restart_stage']
+  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'energy_conv', \
+                      'max_iter', 'restart_iter', 'restart_index', 'data_num', 'restart_stage']
 
   for key in active_learn_dic.keys():
     if key not in active_valid_key:

@@ -200,7 +200,7 @@ def write_active_data(work_dir, conv_iter, tot_atoms_type_dic):
     atoms = []
     type_raw = open(''.join((sys_dir, '/type.raw')), 'rb').read().split()
     for j in range(len(type_raw)):
-      atoms.append(data_op.get_dic_keys(tot_atoms_type_dic, int(type_raw[j].decode())))
+      atoms.append(data_op.get_dic_keys(tot_atoms_type_dic, int(type_raw[j].decode()))[0])
 
     traj_cell_file.write('#   Step   Time [fs]       Ax [Angstrom]       Ay [Angstrom]       Az [Angstrom]       Bx [Angstrom]       By [Angstrom]       Bz [Angstrom]       Cx [Angstrom]       Cy [Angstrom]       Cz [Angstrom]      Volume [Angstrom^3]\n')
     frames_num_tot = len(energy_array)

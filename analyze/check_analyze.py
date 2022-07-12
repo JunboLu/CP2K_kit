@@ -292,14 +292,38 @@ def check_file_trans_inp(file_trans_dic):
 
   if ( 'trans_type' in file_trans_dic.keys() ):
     trans_type = file_trans_dic['trans_type']
-    if ( trans_type == 'pdb2xyz' or trans_type == 'xyz2pdb' ):
+    if ( trans_type == 'pdb2xyz' or trans_type == 'xyz2pdb' or trans_type == 'coord2lmp' ):
       pass
     else:
-      log_info.log_error('Input error: only pbd2xyz and xyz2pdb are supported, please check or reset analyze/file_trans/trans_type')
+      log_info.log_error('Input error: only pbd2xyz, xyz2pdb and coord2lmp are supported, please check or reset analyze/file_trans/trans_type')
       exit()
   else:
     log_info.log_error('Input error: no transfer type, please set analyze/file_trans/trans_type')
     exit()
+
+  trans_type = file_trans_dic['trans_type']
+  if ( trans_type == 'coord2lmp' ):
+    if ( 'atom_label' in file_trans_dic.keys() ):
+      atom_label = file_trans_dic['atom_label']
+      atom_label_dic = OrderedDict()
+      for i in range (len(atom_label)):
+        label_split = data_op.split_str(atom_label[i], ':')
+        atom_label_dic[int(label_split[0])] = label_split[1]
+      file_trans_dic['atom_label'] = atom_label_dic
+    else:
+      log_info.log_error('Input error: no atom_label, please set analyze/file_trans/atom_label')
+      exit()
+
+    if ( 'box_file' in file_trans_dic.keys() ):
+      box_file = file_trans_dic['box_file']
+      if ( os.path.exists(os.path.abspath(box_file)) ):
+        file_trans_dic['box_file'] = os.path.abspath(box_file)
+      else:
+        log_info.log_error('Input error: %s does not exist' %(box_file))
+        exit()
+    else:
+      log_info.log_error('Input error: no box file, please set analzye/file_trans/box_file')
+      exit()
 
   return file_trans_dic
 

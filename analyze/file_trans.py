@@ -4,6 +4,36 @@ import linecache
 from CP2K_kit.tools import log_info
 from CP2K_kit.tools import data_op
 from CP2K_kit.analyze import check_analyze
+from CP2K_kit.deepff import gen_lammps_task
+
+def coord2lmp(transd_file, box_file, atom_label, work_dir, file_name):
+
+  '''
+  coord2lmp: transform xyz file to lammps data file
+
+  Args:
+    transd_file: string
+      transd_file is the name of transformed pdb file.
+    box_file: string
+      box_file is the name of box file.
+    work_dir: string
+      work_dir is the working directory of CP2K_kit.
+    file_name: string
+      file_name is the name of generated file.
+  Returns:
+    lmp_file_name: string
+      lmp_file_name is the name of transformed lammps data file.
+  '''
+
+  tri_cell_vec, atoms, x, y, z = gen_lammps_task.get_box_coord(box_file, transd_file)
+  atoms_type_index = []
+  for i in atoms:
+    atoms_type_index.append(int(data_op.get_dic_keys(atom_label, i)[0]))
+  gen_lammps_task.gen_data_file(tri_cell_vec, atoms_type_index, x, y, z, work_dir, file_name)
+
+  lmp_file_name = ''.join((work_dir, '/', file_name))
+
+  return lmp_file_name
 
 def xyz2pdb(transd_file, work_dir, file_name):
 
@@ -132,4 +162,15 @@ def file_trans_run(file_trans_param, work_dir):
     pdb_file_name  = xyz2pdb(transd_file, work_dir, 'coord.pdb')
 
     str_print = 'The pdb type file is written in %s' %(pdb_file_name)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+  elif ( trans_type == 'coord2lmp' ):
+    str_print = 'The %s coord file will be transfered to lammps data type file' %(transd_file)
+    print (data_op.str_wrap(str_print, 80), flush=True)
+
+    box_file = file_trans_param['box_file']
+    atom_label = file_trans_param['atom_label']
+    lmp_file_name  = coord2lmp(transd_file, box_file, atom_label, work_dir, 'data.lmp')
+
+    str_print = 'The lammps data type file is written in %s' %(lmp_file_name)
     print (data_op.str_wrap(str_print, 80), flush=True)

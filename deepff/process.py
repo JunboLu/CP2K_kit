@@ -341,7 +341,7 @@ def check_deepff_run(work_dir, iter_id):
     force_max = max(force_trn)
     force_min = min(force_trn)
     force_avg = np.mean(np.array(force_trn))
-    if ( ((force_max-force_min) >= 0.04 and force_max >= 0.08) or force_avg >= 0.08 ):
+    if ( ((force_max-force_min) >= 0.05 and force_max >= 0.09) or force_avg >= 0.09 ):
       failure_model.append(i)
 
   return failure_model
@@ -396,3 +396,7 @@ def get_md_sys_info(lmp_dic, tot_atoms_type_dic):
     use_mtd_tot.append(use_mtd)
 
   return sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot
+
+if __name__ == '__main__':
+  from CP2K_kit.deepff import process
+  check_deepff_run('/home/lujunbo/WORK/Deepmd/C2H6/TRAINING/train_md_mtd/active_mtd', 0)
