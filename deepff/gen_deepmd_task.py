@@ -167,6 +167,9 @@ def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_t
   deepmd_param['training']['systems'] = data_dir
   deepmd_param['training']['batch_size'] = [batch_size]*len(data_dir)
 
+  if ( 'atom_mass' in deepmd_param['model'].keys() ):
+    deepmd_param['model'].pop('atom_mass')
+
   for key in deepmd_dic['training'].keys():
     if ( 'system' in key ):
       deepmd_param['training'].pop(key)

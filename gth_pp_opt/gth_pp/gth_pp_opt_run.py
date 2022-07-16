@@ -267,12 +267,12 @@ if ( restart_stage == 0 or restart_stage == 1 ):
   else:
     value_scale_init = 1.1
   wfn_state_1_proc_abs = [abs(x) for x in wfn_state_1_proc]
-  wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+  wfn_scale_list = [1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 5.0, 8.0, 10.0, 15.0, 20.0, 50.0]
   value_scale_list = []
   for i in range(21):
     value_scale_list.append(value_scale_init+0.02*(i+1))
 
-  if consider_charge:
+  if data_op.str_to_bool(consider_charge):
     eigen_dcharge_d_asc, asc_order = data_op.get_list_order(eigen_dcharge_d_proc, 'ascend', True)
     for i in range(21):
       for j in asc_order:
@@ -288,13 +288,9 @@ if ( restart_stage == 0 or restart_stage == 1 ):
       if ( 'choosed_index' in locals() ):
         break
   else:
-    wfn_state_1_proc_abs_asc, asc_order = data_op.get_list_order(wfn_state_1_proc_abs, 'ascend', True)
-    if consider_wfn:
-      for i in range(21):
-        for j in asc_order:
-          if ( wfn_state_1_proc_abs[j] <= wfn_scale_list[i]*min(wfn_state_1_proc_abs) ):
-            choosed_index = step_index_proc[j]
-            break
+    if consider_wfn_0:
+      min_index = wfn_state_1_proc_abs.index(min(wfn_state_1_proc_abs))
+      choosed_index = step_index_proc[min_index]
     else:
       min_index = value_proc.index(min(value_proc))
       choosed_index = step_index_proc[min_index]
