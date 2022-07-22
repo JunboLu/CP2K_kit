@@ -325,6 +325,56 @@ def check_file_trans_inp(file_trans_dic):
       log_info.log_error('Input error: no box file, please set analzye/file_trans/box_file')
       exit()
 
+  if ( trans_type == 'pdb2xyz' ):
+    if ( 'pre_base' in file_trans_dic.keys() ):
+      pre_base = file_trans_dic['pre_base']
+      if ( data_op.eval_str(pre_base) == 1 ):
+        file_trans_dic['pre_base'] = int(pre_base)
+      else:
+        log_info.log_error('Input error: pre_base must be integer, please set analzye/file_trans/pre_base')
+    else:
+      file_trans_dic['pre_base'] = 0
+    if ( 'end_base' in file_trans_dic.keys() ):
+      end_base = file_trans_dic['end_base']
+      if ( data_op.eval_str(end_base) == 1 ):
+        file_trans_dic['end_base'] = int(end_base)
+      else:
+        log_info.log_error('Input error: end_base must be integer, please set analzye/file_trans/end_base')
+    else:
+      file_trans_dic['end_base'] = 0
+    if ( 'block_pre_base' in file_trans_dic.keys() ):
+      block_pre_base = file_trans_dic['block_pre_base']
+      if ( data_op.eval_str(block_pre_base) == 1 ):
+        file_trans_dic['block_pre_base'] = int(block_pre_base)
+      else:
+        log_info.log_error('Input error: block_pre_base must be integer, please set analzye/file_trans/block_pre_base')
+    else:
+      file_trans_dic['block_pre_base'] = 0
+    if ( 'block_end_base' in file_trans_dic.keys() ):
+      block_end_base = file_trans_dic['block_end_base']
+      if ( data_op.eval_str(block_end_base) == 1 ):
+        file_trans_dic['block_end_base'] = int(block_end_base)
+      else:
+        log_info.log_error('Input error: block_end_base must be integer, please set analzye/file_trans/block_end_base')
+    else:
+      file_trans_dic['block_end_base'] = 0
+    if ( 'time_step' in file_trans_dic.keys() ):
+      time_step = file_trans_dic['time_step']
+      if ( data_op.eval_str(time_step) == 1 or data_op.eval_str(time_step) == 2 ):
+        file_trans_dic['time_step'] = float(time_step)
+      else:
+        log_info.log_error('Input error: time_step must be integer, please set analzye/file_trans/time_step')
+    else:
+      file_trans_dic['time_step'] = 0.5
+    if ( 'print_freq' in file_trans_dic.keys() ):
+      print_freq = file_trans_dic['print_freq']
+      if ( data_op.eval_str(print_freq) == 1 ):
+        file_trans_dic['print_freq'] = int(print_freq)
+      else:
+        log_info.log_error('Input error: print_freq must be integer, please set analzye/file_trans/print_freq')
+    else:
+      file_trans_dic['print_freq'] = 1
+ 
   return file_trans_dic
 
 def check_geometry_inp(geometry_dic):

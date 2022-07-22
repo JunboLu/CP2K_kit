@@ -84,7 +84,7 @@ def time_corr_func(atoms_num, pre_base_block, end_base_block, pre_base, each, st
     elif ( normalize == 1 ):
       writer.writerow(['time(fs)', 'acf'])
     for i in range(len(data_tcf)):
-      writer.writerow([i*time_step,data_tcf[i]])
+      writer.writerow([i*time_step*each,data_tcf[i]])
 
   return data_tcf, tcf_file
 
@@ -205,21 +205,21 @@ def time_corr_mode_func(atoms_num, pre_base_block, end_base_block, pre_base, eac
     elif ( normalize == 1 ):
       writer.writerow(['time(fs)', 'acf'])
     for i in range(len(data_q1_tcf)):
-      writer.writerow([i*time_step,data_q1_tcf[i]])
+      writer.writerow([i*time_step*each,data_q1_tcf[i]])
 
   tcf_q2_file = ''.join((work_dir, '/tcf_q2.csv'))
   with open(tcf_q2_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['time', 'acf'])
     for i in range(len(data_q2_tcf)):
-      writer.writerow([i*time_step,data_q2_tcf[i]])
+      writer.writerow([i*time_step*each,data_q2_tcf[i]])
 
   tcf_q3_file = ''.join((work_dir, '/tcf_q3.csv'))
   with open(tcf_q3_file, 'w') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(['time', 'acf'])
     for i in range(len(data_q3_tcf)):
-      writer.writerow([i*time_step,data_q3_tcf[i]])
+      writer.writerow([i*time_step*each,data_q3_tcf[i]])
 
   return data_q1_tcf, data_q2_tcf, data_q3_tcf, tcf_q1_file, tcf_q2_file, tcf_q3_file
 

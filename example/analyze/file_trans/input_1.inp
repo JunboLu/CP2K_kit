@@ -5,7 +5,11 @@
 
 &analyze
   &file_trans
-    transd_file ./amcl3.pdb
+    transd_file ./atom.pdb
     trans_type pdb2xyz
+    pre_base 2
+    end_base 1
+    block_pre_base 1
+    block_end_base 2
   &end file_trans
 &end analyze

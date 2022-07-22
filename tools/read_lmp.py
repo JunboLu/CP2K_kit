@@ -88,6 +88,11 @@ def lmp_traj_info(lmp_traj_file, lmp_log_file, return_frames_num_fic=False):
 
   linecache.clearcache()
 
+  whole_line_num = len(open(os.path.abspath(lmp_traj_file), 'r').readlines())
+  frames_num_2 = int(whole_line_num/(atoms_num+9))
+
+  frames_num = min(frames_num, frames_num_2)
+
   if return_frames_num_fic:
     return atoms_num, frames_num, traj_frames_num, start_id, end_id, each
   else:

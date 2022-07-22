@@ -74,7 +74,7 @@ def xyz2pdb(transd_file, work_dir, file_name):
 
   return pdb_file_name
 
-def pdb2xyz(transd_file, work_dir, file_name):
+def pdb2xyz(transd_file, pre_base, end_base, block_pre_base, block_end_base, time_step, print_freq, work_dir, file_name):
 
   '''
   pdb2xyz: transform xyz file to pdb file
@@ -92,34 +92,31 @@ def pdb2xyz(transd_file, work_dir, file_name):
   '''
 
   line_num = len(open(transd_file).readlines())
-  for i in range(line_num):
-    line = linecache.getline(transd_file, i+1)
+  atoms_num = 0
+  for i in range(line_num-pre_base-block_pre_base):
+    line = linecache.getline(transd_file, i+1+pre_base+block_pre_base)
     line_split = data_op.split_str(line, ' ')
     if ( line_split[0] == 'ATOM' ):
-      line_start = i
+      atoms_num = atoms_num+1
+    else:
       break
 
+  frames_num = int((line_num-pre_base-end_base)/(block_pre_base+block_end_base+atoms_num))
   xyz_file_name = ''.join((work_dir, '/', file_name))
   xyz_file = open(xyz_file_name, 'w')
 
-  total_atom_num = 0
-  for i in range(line_num-line_start):
-    line = linecache.getline(transd_file, i+line_start+1)
-    line_split = data_op.split_str(line, ' ', '\n')
-    if ( len(line_split) == 11 ):
-      total_atom_num = total_atom_num + 1
-      xyz_file.write('%-3s%8s%8s%8s\n' %(line_split[10].strip('\n'), line_split[5], line_split[6], line_split[7]))
-    elif ( len(line_split) == 12 ):
-      total_atom_num = total_atom_num + 1
-      xyz_file.write('%-3s%8s%8s%8s\n' %(line_split[11].strip('\n'), line_split[6], line_split[7], line_split[8]))
+  for i in range(frames_num):
+    xyz_file.write('%d\n'%(atoms_num))
+    xyz_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', i*print_freq, ', time =', i*time_step*print_freq, ', E =', 0.0))
+    for j in range(atoms_num):
+      line = linecache.getline(transd_file, i*(block_pre_base+block_end_base+atoms_num)+j+1+pre_base+block_pre_base)
+      line_split = data_op.split_str(line, ' ', '\n')
+      if ( len(line_split) == 11 ):
+        xyz_file.write('%3s%21.10s%20.10s%20.10s\n' %(line_split[10].strip('\n'), line_split[5], line_split[6], line_split[7]))
+      elif ( len(line_split) == 12 ):
+        xyz_file.write('%3s%21.10s%20.10s%20.10s\n' %(line_split[11].strip('\n'), line_split[6], line_split[7], line_split[8]))
 
   linecache.clearcache()
-  xyz_file.close()
-
-  xyz_file = open(xyz_file_name, 'r+')
-  content = xyz_file.read()
-  xyz_file.seek(0, 0)
-  xyz_file.write('%d\n'%(total_atom_num) + '\n' + content)
   xyz_file.close()
 
   return xyz_file_name
@@ -149,7 +146,14 @@ def file_trans_run(file_trans_param, work_dir):
     str_print = 'The %s pdb file will be transfered to xyz type file' %(transd_file)
     print (data_op.str_wrap(str_print, 80), flush=True)
 
-    xyz_file_name = pdb2xyz(transd_file, work_dir, 'coord.xyz')
+    pre_base = file_trans_param['pre_base']
+    block_pre_base = file_trans_param['block_pre_base']
+    block_end_base = file_trans_param['block_end_base']
+    end_base = file_trans_param['end_base']
+    time_step = file_trans_param['time_step']
+    print_freq = file_trans_param['print_freq']
+    xyz_file_name = pdb2xyz(transd_file, pre_base, end_base, block_pre_base, \
+                            block_end_base, time_step, print_freq, work_dir, 'coord.xyz')
 
     str_print = 'The xyz type file is written in %s' %(xyz_file_name)
     print (data_op.str_wrap(str_print, 80), flush=True)

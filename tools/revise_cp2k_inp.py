@@ -143,6 +143,8 @@ def revise_basis_file_name(cp2k_inp_file, work_dir):
       basis_file_name_abs_trans = data_op.comb_list_2_str(basis_file_name_abs_split, '')
       cmd = "sed -i '%ds/.*/     BASIS_SET_FILE_NAME %s/' %s" %(basis_line_num, basis_file_name_abs_trans, cp2k_inp_file)
       call.call_simple_shell(work_dir, cmd)
+    else:
+      log_info.log_error('Input error: basis set file cannot be found in %s file' %(cp2k_inp_file))
   else:
     log_info.log_error('Input error: no basis_set_file_name keyword in %s file' %(cp2k_inp_file))
     exit()
@@ -180,6 +182,8 @@ def revise_pot_file_name(cp2k_inp_file, work_dir):
       pot_file_name_abs_trans = data_op.comb_list_2_str(pot_file_name_abs_split, '')
       cmd = "sed -i '%ds/.*/     POTENTIAL_FILE_NAME %s/' %s" %(pot_line_num, pot_file_name_abs_trans, cp2k_inp_file)
       call.call_simple_shell(work_dir, cmd)
+    else:
+      log_info.log_error('Input error: potential file cannot be found in %s file' %(cp2k_inp_file))
   else:
     log_info.log_error('Input error: no potential_file_name keyword in %s file' %(cp2k_inp_file))
     exit()
@@ -365,4 +369,9 @@ def delete_line(keyword, cp2k_inp_file, work_dir):
 
   cmd = 'rm %s' %(upper_file_name_abs)
   call.call_simple_shell(work_dir, cmd)
+
+if __name__ == '__main__':
+  from CP2K_kit.tools import revise_cp2k_inp
+  revise_cp2k_inp.revise_basis_file_name(cp2k_inp_file, work_dir)
+
 
