@@ -6,6 +6,8 @@ export python_exe=/home/lujunbo/bin/deepmd-kit/bin/python3.9
 work_dir=`pwd`
 inp_file="$1"
 
+dos2unix ${inp_file} 1> /dev/null 2> /dev/null
+
 if [ "$inp_file" ]; then
 string=`grep 'run_type' ${inp_file}`
 string_split=(${string// / })

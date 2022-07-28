@@ -180,6 +180,8 @@ def gen_deepmd_model_task(deepmd_dic, work_dir, iter_id, init_train_data, numb_t
     deepmd_param['training'].pop('epoch_num')
   if ( 'lr_scale' in deepmd_param['training'].keys() ):
     deepmd_param['training'].pop('lr_scale')
+  if ( 'set_data_dir' in deepmd_param['training'].keys() ):
+    deepmd_param['training'].pop('set_data_dir')
   deepmd_param['training'].pop('model_type')
   deepmd_param['training'].pop('neuron')
   deepmd_param['training'].pop('shuffle_data')
