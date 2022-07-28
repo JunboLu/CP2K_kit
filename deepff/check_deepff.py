@@ -887,8 +887,8 @@ def check_active_learn(active_learn_dic):
       active_learn_dic is the revised active_learn_dic.
   '''
 
-  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'force_conv', 'energy_conv', \
-                      'max_iter', 'restart_iter', 'restart_index', 'data_num', 'restart_stage']
+  active_valid_key = ['choose_new_data_num_limit', 'judge_freq', 'success_force_conv', 'energy_conv', \
+                      'max_force_conv', 'max_iter', 'restart_iter', 'restart_index', 'data_num', 'restart_stage']
 
   for key in active_learn_dic.keys():
     if key not in active_valid_key:
@@ -915,15 +915,25 @@ def check_active_learn(active_learn_dic):
   else:
     active_learn_dic['judge_freq'] = '10'
 
-  if ( 'force_conv' in active_learn_dic.keys() ):
-    force_conv = active_learn_dic['force_conv']
-    if ( data_op.eval_str(force_conv) == 1 or data_op.eval_str(force_conv) == 2 ):
-      active_learn_dic['force_conv'] = float(force_conv)
+  if ( 'success_force_conv' in active_learn_dic.keys() ):
+    success_force_conv = active_learn_dic['success_force_conv']
+    if ( data_op.eval_str(success_force_conv) == 1 or data_op.eval_str(success_force_conv) == 2 ):
+      active_learn_dic['success_force_conv'] = float(success_force_conv)
     else:
-      log_info.log_error('Input error: force_conv should be integer or float, please check or set deepff/model_devi/force_conv')
+      log_info.log_error('Input error: success_force_conv should be integer or float, please check or set deepff/model_devi/success_force_conv')
       exit()
   else:
-    active_learn_dic['force_conv'] = 0.05
+    active_learn_dic['success_force_conv'] = 0.05
+
+  if ( 'max_force_conv' in active_learn_dic.keys() ):
+    max_force_conv = active_learn_dic['max_force_conv']
+    if ( data_op.eval_str(max_force_conv) == 1 or data_op.eval_str(max_force_conv) == 2 ):
+      active_learn_dic['max_force_conv'] = float(max_force_conv)
+    else:
+      log_info.log_error('Input error: max_force_conv should be integer or float, please check or set deepff/model_devi/max_force_conv')
+      exit()
+  else:
+    active_learn_dic['max_force_conv'] = 0.40
 
   if ( 'energy_conv' in active_learn_dic.keys() ):
     energy_conv = active_learn_dic['energy_conv']

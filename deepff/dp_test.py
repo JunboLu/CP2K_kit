@@ -168,7 +168,7 @@ def supervised_test(cp2k_pos_file, cp2k_cell_file, cp2k_frc_file, lmp_exe, lmp_m
 
   write_data.write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir)
 
-def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, force_conv, energy_conv):
+def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, success_force_conv, max_force_conv, energy_conv):
 
   '''
   active_learning_test: Do test for active learning
@@ -182,8 +182,8 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
       Example: {0:{'O':1,'H':2}, 1:{'O':1,'H':2}}, The keys stands for system.
     use_mtd_tot: 1-d bool list
       use_mtd_tot is whether using metadynamics for different systems.
-    force_conv: float
-      force_conv is the maximum force convergence.
+    success_force_conv: float
+      success_force_conv is the maximum force convergence.
     energy_conv: float
       energy_conv is the maximum energy convergence.
   Returns:
@@ -300,12 +300,12 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, f
         min_dist_index = dist.index(min_dist)
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
-        if ( max(force_devi) < force_conv and abs(energy_cp2k_final[i]-energy_lmp_final[i]) < energy_conv):
+        if ( max(force_devi) < success_force_conv and abs(energy_cp2k_final[i]-energy_lmp_final[i]) < energy_conv):
           success_frames_ij = success_frames_ij+1
         else:
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
-          if ( min_dist > atom_cov_radii_plus*0.7 ):
+          if ( min_dist > atom_cov_radii_plus*0.7 and max(force_devi) < max_force_conv ):
             choosed_index.append(index_final[k])
       success_frames_i.append(success_frames_ij)
       struct_index_i[j] = choosed_index

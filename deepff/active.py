@@ -93,7 +93,8 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
   judge_freq = int(active_learn_dic['judge_freq'])
   conv_new_data_num = int(nsteps/judge_freq*0.04)
   choose_new_data_num_limit = active_learn_dic['choose_new_data_num_limit']
-  force_conv = active_learn_dic['force_conv']
+  success_force_conv = active_learn_dic['success_force_conv']
+  max_force_conv = active_learn_dic['max_force_conv']
   active_learn_steps = int(nsteps/judge_freq)+1
 
   cp2k_exe = environ_dic['cp2k_exe']
@@ -193,7 +194,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       print ('step 3: model deviation', flush=True)
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       struct_index, success_ratio_sys, success_ratio, success_devi_ratio = \
-      model_devi.choose_lmp_str(work_dir, i, atoms_type_multi_sys, force_conv)
+      model_devi.choose_lmp_str(work_dir, i, atoms_type_multi_sys, success_force_conv, max_force_conv)
 
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)
@@ -335,7 +336,8 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   conv_new_data_num = int(nsteps/judge_freq*0.04)
   choose_new_data_num_limit = active_learn_dic['choose_new_data_num_limit']
   data_num = active_learn_dic['data_num']
-  force_conv = active_learn_dic['force_conv']
+  success_force_conv = active_learn_dic['success_force_conv']
+  max_force_conv = active_learn_dic['max_force_conv']
   energy_conv = active_learn_dic['energy_conv']
 
   cp2k_exe = environ_dic['cp2k_exe']
@@ -433,8 +435,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       print ('Step 4: deep potential test', flush=True)
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       struct_index, success_ratio_sys, success_ratio  = \
-      dp_test.active_learning_test(work_dir, i, atoms_type_multi_sys, \
-                                   use_mtd_tot, force_conv, energy_conv)
+      dp_test.active_learning_test(work_dir, i, atoms_type_multi_sys, use_mtd_tot, success_force_conv, max_force_conv, energy_conv)
 
       for j in range(len(success_ratio_sys)):
         print ('  The accurate ratio for system %d in iteration %d is %.2f%%' %(j, i, success_ratio_sys[j]*100), flush=True)

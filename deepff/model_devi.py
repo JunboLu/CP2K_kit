@@ -7,7 +7,7 @@ from collections import OrderedDict
 from CP2K_kit.tools import *
 from CP2K_kit.lib.geometry_mod import geometry
 
-def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
+def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, success_force_conv, max_force_conv):
 
   '''
   choose_lmp_str: choose lammps structure based on force-force correlation.
@@ -20,8 +20,8 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
     atoms_type_multi_sys: 2-d dictionary, dim = (num of lammps systems) * (num of atom types)
       atoms_type_multi_sys is the atoms type for multi-systems.
       example: {0:{'O':1,'H':2,'N':3},1:{'O':1,'S':2,'N':3}}
-    force_conv: float
-      force_conv is the maximum force convergence.
+    success_force_conv: float
+      success_force_conv is the maximum force convergence.
   Returns:
     struct_index: dictionary
       example: {0:{0:[2,4,6...], 1:[2,3,4...]}, 1:{0:[3,4,6...], 1:[5,6,7...]}}
@@ -140,14 +140,14 @@ def choose_lmp_str(work_dir, iter_id, atoms_type_multi_sys, force_conv):
         min_dist_index = dist.index(min_dist)
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
-        if ( max_frc <= force_conv ):
+        if ( max_frc <= success_force_conv ):
           success_frames_ij = success_frames_ij + 1
         else:
-          if ( abs(max_frc-force_conv) <= 0.05 ):
+          if ( abs(max_frc-success_force_conv) <= 0.05 ):
             success_devi_frames_ij = success_devi_frames_ij + 1
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
-          if ( min_dist > atom_cov_radii_plus*0.7 and max_frc < 0.25 ):
+          if ( min_dist > atom_cov_radii_plus*0.7 and max_frc < max_force_conv ):
             choosed_index.append(k)
 
       linecache.clearcache()
