@@ -204,7 +204,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       print ('  The accurate deviation ratio for whole %d systems in iteration %d is %.2f%%' \
              %(sys_num, i, success_devi_ratio*100), flush=True)
 
-      if ( min(success_ratio_sys) >= 0.96 and success_ratio+success_devi_ratio >= 0.999 ):
+      if ( min(success_ratio_sys) >= 0.95 and success_ratio+success_devi_ratio > 0.99 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
@@ -353,7 +353,6 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
 
   dp_path = sys_info.get_dp_path(work_dir)
   lmp_exe, lmp_path = sys_info.get_lmp_path(work_dir)
-
   mpi_path = sys_info.get_mpi_path(work_dir)
 
   for i in range(restart_iter, max_iter, 1):
@@ -443,7 +442,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       print ('  The accurate ratio for whole %d systems in iteration %d is %.2f%%' \
              %(sys_num, i, success_ratio*100), flush=True)
 
-      if ( min(success_ratio_sys) >= 0.96 ):
+      if ( min(success_ratio_sys) >= 0.95 ):
         print (''.center(80,'*'), flush=True)
         print ('Cheers! deepff is converged!', flush=True)
         if ( i != 0 ):
@@ -544,6 +543,15 @@ def kernel(work_dir, inp_file, deepff_type):
   cp2k_dic = check_deepff.check_cp2k(cp2k_dic)
   environ_dic = check_deepff.check_environ(environ_dic, proc_num_per_node[0])
 
+  dp_path = sys_info.get_dp_path(work_dir)
+  lmp_exe, lmp_path = sys_info.get_lmp_path(work_dir)
+  mpi_path = sys_info.get_mpi_path(work_dir)
+  cp2k_exe = environ_dic['cp2k_exe']
+
+  print (data_op.str_wrap('DEEPFF| DEEPMD-KIT EXECUTABLE FILE IS %s' %(dp_path+'/dp'), 80), flush=True)
+  print (data_op.str_wrap('DEEPFF| LAMMPS EXECUTABLE FILE IS %s' %(lmp_exe), 80), flush=True)
+  print (data_op.str_wrap('DEEPFF| CP2K EXECUTABLE FILE IS %s' %(cp2k_exe), 80), flush=True)
+
   if ( deepff_type == 'active_model_devi' ):
     if ( 'set_data_dir' not in deepmd_dic['training'].keys() ):
       tot_atoms_type = process.get_atoms_type(deepmd_dic)
@@ -562,9 +570,12 @@ def kernel(work_dir, inp_file, deepff_type):
       exit()
     train_stress = deepmd_dic['training']['train_stress']
     init_train_data, init_data_num = process.dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic)
-    print ('Initial training data:', flush=True)
+    print ('DEEPFF| INITIAL TRAINING DATA:', flush=True)
     for i in range(len(init_train_data)):
-      print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
+      if ( i == len(init_train_data)-1 ):
+        print ('%s\n' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
+      else:
+        print ('%s' %(data_op.str_wrap(init_train_data[i], 80)), flush=True)
 
     model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active_learn_dic, \
                     environ_dic, init_train_data, init_data_num, tot_atoms_type_dic)

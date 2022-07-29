@@ -14,7 +14,7 @@ deepff_type = str(sys.argv[3])
 log_info.log_logo()
 
 print (data_op.str_wrap('DEEPFF| PROGRAM STARTED IN %s' %(work_dir), 80), flush=True)
-print ('DEEPFF| INPUT FILE NAME %s\n' %(inp_file), flush=True)
+print ('DEEPFF| INPUT FILE NAME %s' %(inp_file), flush=True)
 
 if ( deepff_type == 'active_model_devi' or deepff_type == 'active_dp_test' ):
   active.kernel(work_dir, inp_file, deepff_type)
