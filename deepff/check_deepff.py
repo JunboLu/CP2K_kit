@@ -1,6 +1,7 @@
 #! /usr/env/bin python
 
 import os
+import json
 import linecache
 import multiprocessing
 import numpy as np
@@ -62,7 +63,7 @@ def check_deepmd_model(deepmd_dic):
       atom_mass = deepmd_dic['model']['atom_mass']
       atom_type = deepmd_dic['model']['type_map']
       if ( len(atom_mass) == len(atom_type) and \
-           all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in deepmd_dic['model']['atom_mass']) ):
+           all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in atom_mass) ):
         atom_mass_dic = OrderedDict()
         for i in range (len(atom_type)):
           atom_mass_dic[atom_type[i]] = atom_mass[i]
@@ -597,7 +598,7 @@ def check_deepmd_test(deepmd_dic):
       deepmd_dic is the revised deepmd_dic.
   '''
 
-  deepmd_valid_key = ['init_dpff_dir', 'start_lr', 'lr_scale', 'fix_stop_batch', \
+  deepmd_valid_key = ['init_dpff_dir', 'start_lr', 'lr_scale', 'fix_stop_batch', 'atom_mass',\
                       'use_prev_model', 'train_stress', 'shuffle_data', 'epoch_num']
   for key in deepmd_dic.keys():
     if key not in deepmd_valid_key:
@@ -614,6 +615,29 @@ def check_deepmd_test(deepmd_dic):
   else:
     log_info.log_error('Input error: no init_dpff_dir, please set deepff/deepmd_test/init_dpff_dir')
     exit()
+
+  with open(''.join((init_dpff_dir, '/input.json')), 'r') as f:
+    deepmd_dic_json = json.load(f)
+
+  if ( 'atom_mass' in deepmd_dic.keys() ):
+    atom_mass = deepmd_dic['atom_mass']
+    atom_type = deepmd_dic_json['model']['type_map']
+    if ( len(atom_mass) == len(atom_type) and \
+         all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in atom_mass) ):
+      atom_mass_dic = OrderedDict()
+      for i in range (len(atom_type)):
+        atom_mass_dic[atom_type[i]] = atom_mass[i]
+      deepmd_dic['atom_mass'] = atom_mass_dic
+    else:
+      log_info.log_error('Input error: atom_mass should be %d integers, please check or reset deepff/deepmd_test/atom_mass' %(len(atom_type)))
+      exit()
+  else:
+    atom_type = deepmd_dic_json['model']['type_map']
+    atom_mass_dic = OrderedDict()
+    for i in range (len(atom_type)):
+      atom_num, atom_mass = atom.get_atom_mass(atom_type[i])
+      atom_mass_dic[atom_type[i]] = atom_mass
+    deepmd_dic['atom_mass'] = atom_mass_dic
 
   if ( 'start_lr' in deepmd_dic.keys() ):
     start_lr = deepmd_dic['start_lr']

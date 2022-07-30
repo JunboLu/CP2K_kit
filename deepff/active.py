@@ -322,7 +322,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   with open(deepmd_inp_file, 'r') as f:
     deepmd_dic_json = json.load(f)
 
-  atom_mass_dic = deepmd_dic['model']['atom_mass']
+  atom_mass_dic = deepmd_dic['atom_mass']
   shuffle_data = deepmd_dic['shuffle_data']
   numb_test = deepmd_dic_json['training']['numb_test']
   tot_atoms_type = deepmd_dic_json['model']['type_map']
