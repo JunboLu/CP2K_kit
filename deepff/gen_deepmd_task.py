@@ -304,6 +304,8 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms
         stop_batch = decay_steps*200
       deepmd_dic['learning_rate']['decay_steps'] = decay_steps
       deepmd_dic['training']['stop_batch'] = stop_batch
+    else:
+      deepmd_dic['training']['stop_batch'] = deepmd_test_dic['stop_batch']
 
     deepmd_dic['training']['systems'] = data_dir
     deepmd_dic['training']['batch_size'] = [batch_size[0]]*len(data_dir)
@@ -313,7 +315,7 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms
         deepmd_dic['learning_rate']['start_lr'] = start_lr/(100.0)
       else:
         deepmd_dic['learning_rate']['start_lr'] = start_lr/(lr_scale**iter_id)
-      deepmd_dic['training']['stop_batch'] = int(deepmd_dic['training']['stop_batch']/2)
+      deepmd_dic['training']['stop_batch'] = int(deepmd_test_dic['stop_batch']/2)
       prob_sys_1, prob_sys_2 = assign_prob(data_dir, final_data_dir, data_num, iter_id)
       auto_prob_style = data_op.comb_list_2_str(['prob_sys_size', prob_sys_1, prob_sys_2], ';')
       deepmd_dic['training']['auto_prob_style'] = auto_prob_style

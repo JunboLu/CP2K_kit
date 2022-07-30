@@ -599,7 +599,7 @@ def check_deepmd_test(deepmd_dic):
   '''
 
   deepmd_valid_key = ['init_dpff_dir', 'start_lr', 'lr_scale', 'fix_stop_batch', 'atom_mass',\
-                      'use_prev_model', 'train_stress', 'shuffle_data', 'epoch_num']
+                      'stop_batch', 'use_prev_model', 'train_stress', 'shuffle_data', 'epoch_num']
   for key in deepmd_dic.keys():
     if key not in deepmd_valid_key:
       log_info.log_error('Input error: %s is invalid key, please check or reset deepff/deepmd_test' %(key))
@@ -680,6 +680,16 @@ def check_deepmd_test(deepmd_dic):
         exit()
     else:
       deepmd_dic['epoch_num'] = 200
+  else:
+    if ( 'stop_batch' in deepmd_dic.keys() ):
+      stop_batch = deepmd_dic['stop_batch']
+      if ( data_op.eval_str(stop_batch) == 1 ):
+        deepmd_dic['stop_batch'] = int(stop_batch)
+      else:
+        log_info.log_error('Input error: the stop_batch should be integer, please check or reset deepff/deepmd_test/stop_batch')
+        exit()
+    else:
+      deepmd_dic['stop_batch'] = 1000000
 
   if ( 'use_prev_model' in deepmd_dic.keys() ):
     use_prev_model = deepmd_dic['use_prev_model']
