@@ -599,22 +599,26 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
   for i in range(sys_num):
     lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
     task_num = process.get_task_num(lmp_sys_dir)
-    for j in range(task_num):
-      lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
-      model_num = process.get_lmp_model_num(lmp_sys_task_dir)
-      for k in range(model_num):
-        model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
-        traj_num = process.get_traj_num(model_dir)
-        for l in range(traj_num):
-          traj_dir = ''.join((model_dir, '/traj_', str(l)))
-          if ( not use_mtd_tot[i] and k == 0 ) :
-            check_file_name_abs = ''.join((traj_dir, '/atom.dump'))
-          else:
-            check_file_name_abs = ''.join((traj_dir, '/frc_in.lammps'))
-          if ( os.path.exists(check_file_name_abs) and os.path.getsize(check_file_name_abs) != 0 ):
-            check_lmp_frc_gen.append(0)
-          else:
-            check_lmp_frc_gen.append(1)
+    if ( active_type == 'model_devi' or use_mtd_tot[i] ):
+      for j in range(task_num):
+        lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
+        model_num = process.get_lmp_model_num(lmp_sys_task_dir)
+        for k in range(model_num):
+          model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
+          traj_num = process.get_traj_num(model_dir)
+          for l in range(traj_num):
+            traj_dir = ''.join((model_dir, '/traj_', str(l)))
+            if ( not use_mtd_tot[i] and k == 0 ) :
+              check_file_name_abs = ''.join((traj_dir, '/atom.dump'))
+            else:
+              check_file_name_abs = ''.join((traj_dir, '/frc_in.lammps'))
+            if ( os.path.exists(check_file_name_abs) and os.path.getsize(check_file_name_abs) != 0 ):
+              check_lmp_frc_gen.append(0)
+            else:
+              check_lmp_frc_gen.append(1)
+    else:
+      for j in range(task_num):
+        check_lmp_frc_gen.append(0)
 
   if ( len(check_lmp_frc_gen) != 0 and all(i == 0 for i in check_lmp_frc_gen) ):
     str_print = 'Success: generating lammps force calculation file in %s' %(lmp_dir)
@@ -676,23 +680,29 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
     check_lmp_frc_run = check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot)
     lmp_frc_statu = []
     for i in range(sys_num):
-      for j in range(task_num):
-        for k in range(model_num):
-          if ( len(check_lmp_frc_run[i][j][k]) != 0 and all(m == 0 for m in check_lmp_frc_run[i][j][k]) ):
-            lmp_frc_statu.append(0)
-          else:
-            lmp_frc_statu.append(1)
-            failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
-            model_dir = ''.join((lmp_dir, '/sys_', str(i), '/task_', str(j), '/model_', str(k)))
-            cycle = math.ceil(len(failure_task_id)/int(sum(proc_num_per_node)/2))
-            start = 0
-            end = min(len(failure_task_id)-1, int(sum(proc_num_per_node)/2)-1)
-            for l in range(cycle):
-              task_index = failure_task_id[start:(end+1)]
-              lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
-                            mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
-              start = min(len(failure_task_id)-1, start+int(sum(proc_num_per_node)/2))
-              end = min(len(failure_task_id)-1, end+int(sum(proc_num_per_node)/2))
+      lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
+      task_num = process.get_task_num(lmp_sys_dir)
+      if ( active_type == 'model_devi' or use_mtd_tot[i] ):
+        for j in range(task_num):
+          for k in range(model_num):
+            if ( len(check_lmp_frc_run[i][j][k]) != 0 and all(m == 0 for m in check_lmp_frc_run[i][j][k]) ):
+              lmp_frc_statu.append(0)
+            else:
+              lmp_frc_statu.append(1)
+              failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
+              model_dir = ''.join((lmp_dir, '/sys_', str(i), '/task_', str(j), '/model_', str(k)))
+              cycle = math.ceil(len(failure_task_id)/int(sum(proc_num_per_node)/2))
+              start = 0
+              end = min(len(failure_task_id)-1, int(sum(proc_num_per_node)/2)-1)
+              for l in range(cycle):
+                task_index = failure_task_id[start:(end+1)]
+                lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
+                                mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+                start = min(len(failure_task_id)-1, start+int(sum(proc_num_per_node)/2))
+                end = min(len(failure_task_id)-1, end+int(sum(proc_num_per_node)/2))
+      else:
+        for j in range(task_num):
+          lmp_frc_statu.append(0)
     if ( len(lmp_frc_statu) !=0 and all(i == 0 for i in lmp_frc_statu) ):
       break
 
