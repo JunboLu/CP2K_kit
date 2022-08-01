@@ -93,11 +93,14 @@ def pdb2xyz(transd_file, pre_base, end_base, block_pre_base, block_end_base, tim
 
   line_num = len(open(transd_file).readlines())
   atoms_num = 0
+  ter_num = 0
   for i in range(line_num-pre_base-block_pre_base):
     line = linecache.getline(transd_file, i+1+pre_base+block_pre_base)
     line_split = data_op.split_str(line, ' ')
-    if ( line_split[0] == 'ATOM' ):
+    if ( line_split[0] == 'ATOM' and line_split[0] != 'TER' ):
       atoms_num = atoms_num+1
+    elif ( line_split[0] == 'TER' ):
+      ter_num = ter_num+1
     else:
       break
 
@@ -108,7 +111,7 @@ def pdb2xyz(transd_file, pre_base, end_base, block_pre_base, block_end_base, tim
   for i in range(frames_num):
     xyz_file.write('%d\n'%(atoms_num))
     xyz_file.write('%s%9d%s%13.3f%s%21.10f\n' %(' i =', i*print_freq, ', time =', i*time_step*print_freq, ', E =', 0.0))
-    for j in range(atoms_num):
+    for j in range(atoms_num+ter_num):
       line = linecache.getline(transd_file, i*(block_pre_base+block_end_base+atoms_num)+j+1+pre_base+block_pre_base)
       line_split = data_op.split_str(line, ' ', '\n')
       if ( len(line_split) == 11 ):
