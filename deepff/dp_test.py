@@ -300,12 +300,14 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
         min_dist_index = dist.index(min_dist)
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
-        if ( max(force_devi) < success_force_conv and abs(energy_cp2k_final[i]-energy_lmp_final[i]) < energy_conv):
+        #Different from model_devi, we use mean value of deviation of force.
+        mean_force = sum(force_devi)/len(force_devi)
+        if ( mean_force < success_force_conv and abs(energy_cp2k_final[k]-energy_lmp_final[k]) < energy_conv):
           success_frames_ij = success_frames_ij+1
         else:
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
-          if ( min_dist > atom_cov_radii_plus*0.7 and max(force_devi) < max_force_conv ):
+          if ( min_dist > atom_cov_radii_plus*0.7 and mean_force < max_force_conv ):
             choosed_index.append(index_final[k])
       success_frames_i.append(success_frames_ij)
       struct_index_i[j] = choosed_index

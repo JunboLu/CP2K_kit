@@ -6,9 +6,9 @@
 &analyze
   &geometry
     &coord_num
-      traj_coord_file ./WATER_64H2O-pos-1.xyz
-      r_cut 6.0
-      init_step 49999
+      traj_coord_file ./WATER-pos-1.xyz
+      r_cut 6
+      init_step 40000
       end_step 50000
       &box
         A 12.42 0.0 0.0

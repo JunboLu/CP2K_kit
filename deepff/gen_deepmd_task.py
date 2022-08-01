@@ -83,7 +83,7 @@ def assign_prob(data_dir, final_data_dir, data_num, iter_id):
   '''
 
   data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
-  prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/iter_id)
+  prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/(iter_id+1))
   prob_data_num_2 = 1.0-prob_data_num_1
   prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
   prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)

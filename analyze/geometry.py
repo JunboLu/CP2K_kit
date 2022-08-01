@@ -72,7 +72,7 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
 
   coord_num_avg = []
   for i in range(len(coord_num)):
-    coord_num_tmp = sum(coord_num[i])/len(coord_num[i])
+    coord_num_tmp = float(sum(coord_num[i])/len(coord_num[i]))
     coord_num_avg.append(coord_num_tmp)
 
   return atoms_type, coord_num_avg
@@ -643,7 +643,7 @@ def geometry_run(geometry_param, work_dir):
                                 a_vec, b_vec, c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
 
     print ('GEOMETRY'.center(80, '*'), flush=True)
-    print ('Coordination number of each atom type', flush=True)
+    print ('Analyze coordination number of each atom type', flush=True)
 
     frames_num_stat = int((end_step-init_step)/each+1)
 
@@ -665,14 +665,14 @@ def geometry_run(geometry_param, work_dir):
         line_ij_split = data_op.split_str(line_ij, ' ', '\n')
         atoms.append(line_ij_split[0])
         coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3])])
-      atoms_type_j, coord_num_j = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
+      atoms_type_i, coord_num_i = get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut)
       for j in range(len(atoms_type)):
-        coord_num_tot[j] = coord_num_tot[j] + coord_num_j[j]
+        coord_num_tot[j] = coord_num_tot[j] + coord_num_i[j]
 
     linecache.clearcache()
 
     for i in range(len(atoms_type)):
-      print ('Atom type %s is: %d' %(atoms_type[i], int(coord_num_tot[i]/frames_num_stat)), flush=True)
+      print ('The coordination number of atom type %s is: %d' %(atoms_type[i], int(coord_num_tot[i]/frames_num_stat)), flush=True)
 
     cmd = 'rm %s' %(center_file)
     call.call_simple_shell(work_dir, cmd)
@@ -939,4 +939,3 @@ if __name__ == '__main__':
   b_vec = [0.0,18.898,0.0]
   c_vec = [0.0,0.0,18.898]
   geometry.order_struct(atoms_num, frames_num, pre_base_block, end_base_block, pre_base, group_tot, traj_file, a_vec, b_vec, c_vec)
-

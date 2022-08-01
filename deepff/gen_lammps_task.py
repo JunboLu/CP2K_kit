@@ -190,6 +190,8 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, atom_mass_dic, tot_atoms_type_dic
       work_dir is workding directory.
     iter_id: int
       iter_id is current iteration number.
+    atom_mass_dic: dictionary
+      atom_mass_dic is atoms mass dictionary
     tot_atoms_type_dic: dictionary
       tot_atoms_type_dic is the atoms type dictionary.
   Returns:

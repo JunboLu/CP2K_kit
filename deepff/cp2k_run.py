@@ -9,6 +9,7 @@ def run_cp2kfrc(work_dir, iter_id, cp2k_exe, parallel_exe, cp2k_env_file, cp2k_j
 
   '''
   run_force: perform cp2k force calculation
+
   Args:
     work_dir: string
       work_dir is the workding directory of CP2K_kit.

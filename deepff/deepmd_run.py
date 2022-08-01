@@ -16,6 +16,9 @@ def deepmd_parallel_cycle(work_dir, deepmd_train_dir, dp_path, cuda_dir, dp_cmd,
                           device_num_str, device_start_str, dp_job_per_node, parallel_exe, host, ssh):
 
   '''
+  deepmd_parallel_cycle: run deepmd training in parallel
+
+  Args:
     work_dir: string
       work_dir is the working directory of CP2K_kit.
     deepmd_train_dir: string
@@ -42,6 +45,8 @@ def deepmd_parallel_cycle(work_dir, deepmd_train_dir, dp_path, cuda_dir, dp_cmd,
       host is the name of computational nodes.
     ssh: bool
       ssh is whether to ssh to computational node.
+  Returns:
+    none
   '''
 
   host_info = data_op.comb_list_2_str(host, ',')

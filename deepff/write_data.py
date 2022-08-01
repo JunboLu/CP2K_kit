@@ -261,17 +261,17 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir):
   frames_num = len(energy_cp2k)
   atoms_num = len(frc_cp2k[0])
 
-  rmsd_energy = []
+  devi_energy = []
   rmsd_frc_x = []
   rmsd_frc_y = []
   rmsd_frc_z = []
   for i in range(frames_num):
-    rmsd_energy.append(abs(energy_cp2k[i]-energy_lmp[i]))
+    devi_energy.append(abs(energy_cp2k[i]-energy_lmp[i]))
     rmsd_frc_x.append(numeric.get_euclid_dist([x[0] for x in frc_cp2k[i]], [x[0] for x in frc_lmp[i]]))
     rmsd_frc_y.append(numeric.get_euclid_dist([x[1] for x in frc_cp2k[i]], [x[1] for x in frc_lmp[i]]))
     rmsd_frc_z.append(numeric.get_euclid_dist([x[2] for x in frc_cp2k[i]], [x[2] for x in frc_lmp[i]]))
 
-  rmsd_energy_avg = sum(rmsd_energy)/len(rmsd_energy)
+  rmsd_energy = np.sqrt(np.sum(np.square(np.array(devi_energy)))/len(devi_energy))
   rmsd_frc_x_avg = sum(rmsd_frc_x)/len(rmsd_frc_x)
   rmsd_frc_y_avg = sum(rmsd_frc_y)/len(rmsd_frc_y)
   rmsd_frc_z_avg = sum(rmsd_frc_z)/len(rmsd_frc_z)
@@ -283,7 +283,7 @@ def write_file(energy_cp2k, energy_lmp, frc_cp2k, frc_lmp, work_dir):
       writer.writerow([energy_cp2k[i], energy_lmp[i]])
 
   str_print = 'Success: cp2k energy vs lammps energy is written in %s. Averaged RMSD between cp2k and lammps is %f eV/atom.' \
-               %(energy_file_name, rmsd_energy_avg)
+               %(energy_file_name, rmsd_energy)
   str_print = data_op.str_wrap(str_print, 80, '  ')
   print (str_print, flush=True)
 
