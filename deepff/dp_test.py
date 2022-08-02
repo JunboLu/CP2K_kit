@@ -223,9 +223,9 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
       if ( not os.path.exists(dp_test_sys_task_dir) ):
         cmd = "mkdir %s" %(''.join(('task_', str(j))))
         call.call_simple_shell(dp_test_sys_dir, cmd)
-      dp_test_file_name_abs = ''.join((dp_test_sys_task_dir, '/model_devi.out'))
+      dp_test_file_name_abs = ''.join((dp_test_sys_task_dir, '/dp_test.out'))
       dp_test_file = open(dp_test_file_name_abs, 'w')
-      dp_test_file.write('Frame     DEVI_E(eV)     MAX_F(eV/A)     MIN_F(eV/A)     AVG_F(eV/A)\n')
+      dp_test_file.write('Frame     DEVI_E(eV/atom)     MAX_F(eV/A)     MIN_F(eV/A)     AVG_F(eV/A)\n')
 
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
       lmp_log_file = ''.join((lmp_sys_task_dir, '/lammps.out'))
@@ -308,7 +308,7 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
         max_frc = max(force_devi)
         min_frc = min(force_devi)
         avg_frc = sum(force_devi)/len(force_devi)
-        dp_test_file.write('%-10d%-14.6f%-16.6f%-16.6f%-16.6f\n' \
+        dp_test_file.write('%-10d%-20.6f%-16.6f%-16.6f%-16.6f\n' \
                            %(k*each, ene_devi, max_frc, min_frc, avg_frc))
 
         #Different from model_devi, we use mean value of deviation of force.
