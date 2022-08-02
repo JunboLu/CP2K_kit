@@ -550,7 +550,10 @@ def kernel(work_dir, inp_file, deepff_type):
 
   print (data_op.str_wrap('DEEPFF| DEEPMD-KIT EXECUTABLE FILE IS %s' %(dp_path+'/dp'), 80), flush=True)
   print (data_op.str_wrap('DEEPFF| LAMMPS EXECUTABLE FILE IS %s' %(lmp_exe), 80), flush=True)
-  print (data_op.str_wrap('DEEPFF| CP2K EXECUTABLE FILE IS %s' %(cp2k_exe), 80), flush=True)
+  if ( deepff_type == 'active_model_devi' ):
+    print (data_op.str_wrap('DEEPFF| CP2K EXECUTABLE FILE IS %s' %(cp2k_exe), 80), flush=True)
+  elif ( deepff_type == 'active_dp_test' ):
+    print (data_op.str_wrap('DEEPFF| CP2K EXECUTABLE FILE IS %s\n' %(cp2k_exe), 80), flush=True)
 
   if ( deepff_type == 'active_model_devi' ):
     if ( 'set_data_dir' not in deepmd_dic['training'].keys() ):

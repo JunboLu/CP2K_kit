@@ -223,6 +223,10 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
       if ( not os.path.exists(dp_test_sys_task_dir) ):
         cmd = "mkdir %s" %(''.join(('task_', str(j))))
         call.call_simple_shell(dp_test_sys_dir, cmd)
+      dp_test_file_name_abs = ''.join((dp_test_sys_task_dir, '/model_devi.out'))
+      dp_test_file = open(dp_test_file_name_abs, 'w')
+      dp_test_file.write('Frame     DEVI_E(eV)     MAX_F(eV/A)     MIN_F(eV/A)     AVG_F(eV/A)\n')
+
       lmp_sys_task_dir = ''.join((lmp_sys_dir, '/task_', str(j)))
       lmp_log_file = ''.join((lmp_sys_task_dir, '/lammps.out'))
       lmp_traj_file = ''.join((lmp_sys_task_dir, '/atom.dump'))
@@ -300,9 +304,15 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
         min_dist_index = dist.index(min_dist)
         atom_type_pair = atom_type_pair_tot[min_dist_index]
 
+        ene_devi = abs(energy_cp2k_final[k]-energy_lmp_final[k])
+        max_frc = max(force_devi)
+        min_frc = min(force_devi)
+        avg_frc = sum(force_devi)/len(force_devi)
+        dp_test_file.write('%-10d%-14.6f%-16.6f%-16.6f%-16.6f\n' \
+                           %(k*each, ene_devi, max_frc, min_frc, avg_frc))
+
         #Different from model_devi, we use mean value of deviation of force.
-        mean_force = sum(force_devi)/len(force_devi)
-        if ( mean_force < success_force_conv and abs(energy_cp2k_final[k]-energy_lmp_final[k]) < energy_conv):
+        if ( avg_frc < success_force_conv and ene_devi < energy_conv):
           success_frames_ij = success_frames_ij+1
         else:
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
@@ -311,6 +321,8 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
             choosed_index.append(index_final[k])
       success_frames_i.append(success_frames_ij)
       struct_index_i[j] = choosed_index
+      dp_test_file.close()
+
     tot_frames.append(tot_frames_i)
     success_frames.append(success_frames_i)
     struct_index[i] = struct_index_i
