@@ -645,6 +645,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
           traj_num = process.get_traj_num(model_dir)
 
           calculated_id = 0
+          undo_task = []
           for l in range(traj_num):
             traj_dir = ''.join((model_dir, '/traj_', str(l)))
             dump_file_name_abs = ''.join((traj_dir, '/atom.dump'))
@@ -654,29 +655,23 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
                  os.path.exists(log_file_name_abs) and \
                  file_tools.grep_line_num("'Step'", log_file_name_abs, traj_dir) != 0 and \
                  file_tools.grep_line_num("'Loop time'", log_file_name_abs, traj_dir) != 0 ):
-              calculated_id = l
+              pass
             else:
-              break
+              undo_task.append(l)
 
-          if ( calculated_id != traj_num-1 ):
-            start = calculated_id
-            end = min(traj_num-1, start+int(sum(proc_num_per_node)/2)-1)
-            cycle = math.ceil((traj_num-start)/int(sum(proc_num_per_node)/2))
+          start = 0
+          end = min(len(undo_task), start+int(sum(proc_num_per_node)/2))
+          cycle = math.ceil(len(undo_task)/int(sum(proc_num_per_node)/2))
 
-            for l in range(cycle):
-              if ( use_mtd_tot[i] or k != 0 ):
-                task_index = range(start, end+1, 1)
-                lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
-                                mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
-              start = min(traj_num-1, start+int(sum(proc_num_per_node)/2))
-              end = min(traj_num-1, end+int(sum(proc_num_per_node)/2))
-          else:
+          for l in range(cycle):
             if ( use_mtd_tot[i] or k != 0 ):
-              task_index = range(traj_num-1, traj_num, 1)
-              lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, \
-                              lmp_exe, mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+              task_index = undo_task[start:end]
+              lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
+                                mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
+            start = min(len(undo_task)-1, start+int(sum(proc_num_per_node)/2))
+            end = min(len(undo_task), end+int(sum(proc_num_per_node)/2))
 
-  while True:
+  for cycle_run in range(100):
     check_lmp_frc_run = check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot)
     lmp_frc_statu = []
     for i in range(sys_num):
@@ -693,18 +688,30 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
               model_dir = ''.join((lmp_dir, '/sys_', str(i), '/task_', str(j), '/model_', str(k)))
               cycle = math.ceil(len(failure_task_id)/int(sum(proc_num_per_node)/2))
               start = 0
-              end = min(len(failure_task_id)-1, int(sum(proc_num_per_node)/2)-1)
+              end = min(len(failure_task_id), int(sum(proc_num_per_node)/2))
               for l in range(cycle):
-                task_index = failure_task_id[start:(end+1)]
+                task_index = failure_task_id[start:end]
                 lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
                                 mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
                 start = min(len(failure_task_id)-1, start+int(sum(proc_num_per_node)/2))
-                end = min(len(failure_task_id)-1, end+int(sum(proc_num_per_node)/2))
+                end = min(len(failure_task_id), end+int(sum(proc_num_per_node)/2))
       else:
         for j in range(task_num):
           lmp_frc_statu.append(0)
     if ( len(lmp_frc_statu) !=0 and all(i == 0 for i in lmp_frc_statu) ):
       break
+    if ( cycle_run == 99 and not all(i == 0 for i in lmp_frc_statu) ):
+      lmp_sys_dir = ''.join((lmp_dir, '/sys_', str(i)))
+      task_num = process.get_task_num(lmp_sys_dir)
+      for j in range(task_num):
+        for k in range(model_num):
+          failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
+          if ( len(failure_task_id) != 0 ):
+            failure_task_id_str = data_op.comb_list_2_str(failure_task_id, ' ')
+            str_print = '  Warning: force calculations fail for tasks %s in system %d in task %d by model %d' %(failure_task_id_str, i, j, k)
+            str_print = data_op.str_wrap(str_print, 80, '  ')
+            print (str_print, flush=True)
+      exit()
 
   print ('  Success: lammps force calculations for %d systems by lammps' %(sys_num), flush=True)
 

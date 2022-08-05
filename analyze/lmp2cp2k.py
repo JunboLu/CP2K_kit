@@ -85,14 +85,18 @@ def lmp2cp2k(work_dir, lmp_log_file, lmp_traj_file, lmp_unit, atom_label, time_s
   for i in range(frames_num):
     line = linecache.getline(lmp_log_file, i+log_item_line_num+1)
     line_split = data_op.split_str(line, ' ', '\n')
-    if ( 'Step' in log_item_id.keys() ):
-      step.append(int(line_split[log_item_id['Step']]))
-    if ( 'Temp' in log_item_id.keys() ):
-      temp.append(line_split[log_item_id['Temp']])
-    if ( 'PotEng' in log_item_id.keys() ):
-      pot_e.append(float(line_split[log_item_id['PotEng']])*ene_lmp2cp2k)
-    if ( 'KinEng' in log_item_id.keys() ):
-      kin_e.append(float(line_split[log_item_id['KinEng']])*ene_lmp2cp2k)
+    if ( line_split[0] == 'WARNING:' ):
+      log_info.log_error('There is WARNING in output file. The MD may crash, please check!')
+      exit()      
+    else:
+      if ( 'Step' in log_item_id.keys() ):
+        step.append(int(line_split[log_item_id['Step']]))
+      if ( 'Temp' in log_item_id.keys() ):
+        temp.append(line_split[log_item_id['Temp']])
+      if ( 'PotEng' in log_item_id.keys() ):
+        pot_e.append(float(line_split[log_item_id['PotEng']])*ene_lmp2cp2k)
+      if ( 'KinEng' in log_item_id.keys() ):
+        kin_e.append(float(line_split[log_item_id['KinEng']])*ene_lmp2cp2k)
 
   if ( 'Step' in log_item_id.keys() and 'Temp' in log_item_id.keys()  and \
        'PotEng' in log_item_id.keys() and 'KinEng' in log_item_id.keys() ):
