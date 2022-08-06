@@ -36,7 +36,7 @@
   &active_learn
     choose_new_data_num_limit 500
     judge_freq 100
-    force_conv 0.05
+    success_force_conv 0.05
     energy_conv 0.005
     max_iter 20
     data_num 6000
