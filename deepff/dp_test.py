@@ -317,7 +317,7 @@ def active_learning_test(work_dir, iter_id, atoms_type_multi_sys, use_mtd_tot, s
         else:
           atom_cov_radii_plus = atom.get_atom_cov_radius(atom_type_pair[0]) + \
                                 atom.get_atom_cov_radius(atom_type_pair[1])
-          if ( min_dist > atom_cov_radii_plus*0.7 and mean_force < max_force_conv ):
+          if ( min_dist > atom_cov_radii_plus*0.7 and avg_frc < max_force_conv ):
             choosed_index.append(index_final[k])
       success_frames_i.append(success_frames_ij)
       struct_index_i[j] = choosed_index

@@ -180,6 +180,21 @@ def rdf_run(rdf_param, work_dir):
   atom_1 = atom_type_pair[0]
   atom_2 = atom_type_pair[1]
 
+  atoms = []
+  for i in range(atoms_num):
+    line_i = linecache.getline(traj_coord_file, pre_base_block+pre_base+i+1)
+    line_i_split = data_op.split_str(line_i, ' ', '\n')
+    atoms.append(line_i_split[0])
+  atom_type = data_op.list_replicate(atoms)
+
+  if atom_1 not in atom_type:
+    log_info.log_error('Input error: %s atom type is not in the system' %(atom_1))
+    exit()
+
+  if atom_2 not in atom_type:
+    log_info.log_error('Input error: %s atom type is not in the system' %(atom_2))
+    exit()
+
   a_vec = rdf_param['box']['A']
   b_vec = rdf_param['box']['B']
   c_vec = rdf_param['box']['C']

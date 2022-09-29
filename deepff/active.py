@@ -429,6 +429,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
                                   conv_new_data_num, choose_new_data_num_limit, train_stress, 'dp_test')
       cp2k_run.run_cp2kfrc(work_dir, i, cp2k_exe, parallel_exe, cp2k_env_file, \
                            cp2k_job_per_node, proc_num_per_node, host, ssh, atoms_num_tot)
+      write_data.write_restart_inp(inp_file, i, 4, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 or restart_stage == 4 ):
       print ('Step 4: deep potential test', flush=True)

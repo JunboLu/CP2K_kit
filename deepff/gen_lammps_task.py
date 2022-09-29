@@ -567,9 +567,22 @@ def combine_frag_traj_file(lmp_task_dir):
         exit()
       else:
         step_line_num = line_num[0]
+
+      line = linecache.getline(log_file_name_abs, step_line_num)
+      line_split = data_op.split_str(line, ' ', '\n')
+      log_id_num = len(line_split)
+
+      frames_num_stat = 0
       for j in range(frames_num_fic):
         line = linecache.getline(log_file_name_abs, step_line_num+j+1)
-        tot_log_file.write(line)
+        line_split = data_op.split_str(line, ' ', '\n')
+        if ( len(line_split) == log_id_num and data_op.eval_str(line_split[0]) == 1 ):
+          frames_num_stat = frames_num_stat + 1
+        if ( frames_num_stat > frames_num ):
+          break
+        else:
+          if ( line_split[0] == 'WARNING:' or (len(line_split) == log_id_num and data_op.eval_str(line_split[0]) == 1) ):
+            tot_log_file.write(line)
       for j in range(frames_num):
         for k in range(atoms_num+9):
           line = linecache.getline(dump_file_name_abs, (atoms_num+9)*j+k+1)

@@ -77,6 +77,68 @@ def get_coord_num(atoms, coord, a_vec, b_vec, c_vec, r_cut):
 
   return atoms_type, coord_num_avg
 
+def get_neighbor(atoms, coord, a_vec, b_vec, c_vec, r_cut):
+
+  '''
+  get_neighbor: get neighbor list for atoms
+
+  Args:
+    atoms: 1-d string list
+      atoms is the list of atom names.
+      Example: ['O', 'H', 'H', 'O', 'H', 'H']
+    coord: 2-d float list, dim = (atoms_num)*3
+      coord is the coordinations of atoms.
+    a_vec: 1-d float list, dim = 3
+      a_vec is the cell vector a.
+      Example: [12.42, 0.0, 0.0]
+    b_vec: 1-d float list, dim = 3
+      b_vec is the cell vector b.
+      Example: [0.0, 12.42, 0.0]
+    c_vec: 1-d float list, dim = 3
+      c_vec is the cell vector c.
+      Example: [0.0, 0.0, 12.42]
+    r_cut: float
+      r_cut is the cutoff value.
+  Returns:
+    atoms_type: 1-d string list
+      atoms_type is the list of atom types.
+    coord_num_avg: 1-d int list, dim = len(atoms_type)
+      coord_num_avg contains the averaged coordination number for each atom type.
+  '''
+
+  atoms_type = data_op.list_replicate(atoms)
+
+  neighbor = []
+
+  for i in range(len(atoms)):
+    neighbor_i = []
+    for j in range(len(atoms_type)):
+      coord_1 = []
+      coord_2 = []
+      for k in range(len(atoms)):
+        if ( i != k and atoms[k] == atoms_type[j] ):
+          coord_1.append(coord[i])
+          coord_2.append(coord[k])
+
+      if ( coord_1 != [] ):
+        dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
+                                                        np.asfortranarray(coord_2, dtype='float32'), \
+                                                        np.asfortranarray(a_vec, dtype='float32'), \
+                                                        np.asfortranarray(b_vec, dtype='float32'), \
+                                                        np.asfortranarray(c_vec, dtype='float32'))
+        coord_num_tmp = data_op.list_num_stat(dist, r_cut, 'less')
+        neighbor_i.append(coord_num_tmp)
+    neighbor.append(neighbor_i)
+
+  neighbor_max = []
+  for i in range(len(atoms_type)):
+    neighbor_i = []
+    for j in range(len(atoms)):
+      neighbor_i.append(neighbor[j][i])
+    neighbor_max.append(max(neighbor_i))
+
+  return atoms_type, neighbor_max
+
 def expand_cell(atoms_num, pre_base_block, end_base_block, pre_base, file_name, a_vec, b_vec, c_vec, a_exp, b_exp, c_exp, work_dir):
 
   '''
@@ -676,6 +738,67 @@ def geometry_run(geometry_param, work_dir):
 
     cmd = 'rm %s' %(center_file)
     call.call_simple_shell(work_dir, cmd)
+
+  if ( 'neighbor' in geometry_param ):
+    neighbor_param = geometry_param['neighbor']
+
+    traj_coord_file = neighbor_param['traj_coord_file']
+    r_cut = neighbor_param['r_cut']
+    init_step = neighbor_param['init_step']
+    end_step = neighbor_param['end_step']
+    a_vec = neighbor_param['box']['A']
+    b_vec = neighbor_param['box']['B']
+    c_vec = neighbor_param['box']['C']
+
+    atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+    traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
+
+    log_info.log_traj_info(atoms_num, frames_num, each, start_frame_id, end_frame_id, time_step)
+
+    center_file = center.center(atoms_num, pre_base_block, end_base_block, pre_base, frames_num, \
+                                a_vec, b_vec, c_vec, 'center_box', 0, traj_coord_file, work_dir, 'center.xyz')
+
+    print ('GEOMETRY'.center(80, '*'), flush=True)
+    print ('Analyze neighbor list of each atom type', flush=True)
+
+    frames_num_stat = int((end_step-init_step)/each+1)
+
+    atoms = []
+    for i in range(atoms_num):
+      line_i = linecache.getline(center_file, pre_base+pre_base_block+i+1)
+      line_i_split = data_op.split_str(line_i, ' ')
+      atoms.append(line_i_split[0])
+
+    atoms_type = data_op.list_replicate(atoms)
+    neighbor_list_tot = []
+
+    for i in range(frames_num_stat):
+      atoms = []
+      coord = []
+      for j in range(atoms_num):
+        line_ij_num = (pre_base_block+atoms_num+end_base_block)*(int((init_step-start_frame_id)/each)+i)+pre_base+pre_base_block+j+1
+        line_ij = linecache.getline(center_file, line_ij_num)
+        line_ij_split = data_op.split_str(line_ij, ' ', '\n')
+        atoms.append(line_ij_split[0])
+        coord.append([float(line_ij_split[1]), float(line_ij_split[2]), float(line_ij_split[3])])
+      atoms_type_i, neighbor_list_i = get_neighbor(atoms, coord, a_vec, b_vec, c_vec, r_cut)
+      neighbor_list_tot.append(neighbor_list_i)
+
+    neighbor_list = []
+    for i in range(len(atoms_type)):
+      neighbor_list_i = []
+      for j in range(frames_num_stat):
+        neighbor_list_i.append(neighbor_list_tot[j][i])
+      neighbor_list.append(max(neighbor_list_i))
+    linecache.clearcache()
+
+    for i in range(len(atoms_type)):
+      print ('The max neighbors of atom type %s is: %d' %(atoms_type[i], neighbor_list[i]), flush=True)
+
+    cmd = 'rm %s' %(center_file)
+    call.call_simple_shell(work_dir, cmd)
+
+    linecache.clearcache()
 
   elif ( 'bond_length' in geometry_param ):
     bond_length_param = geometry_param['bond_length']

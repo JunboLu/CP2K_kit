@@ -275,17 +275,18 @@ def check_deepmd_model(deepmd_dic):
             log_info.log_error('Input error: traj_type should be md or mtd, please check and reset deepff/deepmd_model/training/system/traj_type')
         else:
           deepmd_dic['training'][i]['traj_type'] = 'md'
-        if ( 'traj_coord_file' in deepmd_dic['training'][i] ):
-          traj_coord_file = deepmd_dic['training'][i]['traj_coord_file']
-          if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-            deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(traj_coord_file)
-          else:
-            log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_coord_file' %(traj_coord_file))
-            exit()
-        else:
-          log_info.log_error('Input error: no coordination trajectory file, please check deepff/deepmd_model/training/system/traj_coord_file')
-          exit()
         if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
+          if ( 'traj_coord_file' in deepmd_dic['training'][i] ):
+            traj_coord_file = deepmd_dic['training'][i]['traj_coord_file']
+            if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
+              deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(traj_coord_file)
+            else:
+              log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_coord_file' %(traj_coord_file))
+              exit()
+          else:
+            log_info.log_error('Input error: no coordination trajectory file, please check deepff/deepmd_model/training/system/traj_coord_file')
+            exit()
+
           if ( 'traj_frc_file' in deepmd_dic['training'][i] ):
             traj_frc_file = deepmd_dic['training'][i]['traj_frc_file']
             if ( os.path.exists(os.path.abspath(traj_frc_file)) ):

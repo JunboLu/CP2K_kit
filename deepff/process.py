@@ -177,23 +177,36 @@ def get_atoms_type(deepmd_dic):
   train_dic = deepmd_dic['training']
   for key in train_dic:
     if ( 'system' in key ):
-      traj_coord_file = train_dic[key]['traj_coord_file']
-      line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file, os.getcwd())
-      if ( line_num == 0 ):
-        coord_file_type = 'coord_xyz'
-      else:
-        coord_file_type = 'coord_pdb'
-      atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
-      traj_info.get_traj_info(traj_coord_file, coord_file_type)
-      atoms = []
-      for i in range(atoms_num):
-        line_i = linecache.getline(traj_coord_file, pre_base+pre_base_block+i+1)
-        line_i_split = data_op.split_str(line_i, ' ', '\n')
-        if ( coord_file_type == 'coord_xyz' ):
+      traj_type = train_dic[key]['traj_type']
+      if ( traj_type == 'md' ):
+        traj_coord_file = train_dic[key]['traj_coord_file']
+        line_num = file_tools.grep_line_num("'PDB file'", traj_coord_file, os.getcwd())
+        if ( line_num == 0 ):
+          coord_file_type = 'coord_xyz'
+        else:
+          coord_file_type = 'coord_pdb'
+
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_id, end_id, time_step = \
+        traj_info.get_traj_info(traj_coord_file, coord_file_type)
+        atoms = []
+        for i in range(atoms_num):
+          line_i = linecache.getline(traj_coord_file, pre_base+pre_base_block+i+1)
+          line_i_split = data_op.split_str(line_i, ' ', '\n')
+          if ( coord_file_type == 'coord_xyz' ):
+            atoms.append(line_i_split[0])
+          elif ( coord_file_type == 'coord_pdb' ):
+            atoms.append(line_i_split[len(line_i_split)-1])
+        linecache.clearcache()
+      elif ( traj_type == 'mtd' ):
+        data_dir = train_dic[key]['data_dir']
+        task_dir_prefix = train_dic[key]['task_dir_prefix']
+        start_frame = train_dic[key]['start_frame']
+        coord_file = ''.join((data_dir, '/', task_dir_prefix, str(start_frame), '/coord'))
+        atoms_num = len(open(coord_file).readlines())
+        for i in range(atoms_num):
+          line_i = linecache.getline(coord_file, i+1)
+          line_i_split = data_op.split_str(line_i, ' ', '\n')
           atoms.append(line_i_split[0])
-        elif ( coord_file_type == 'coord_pdb' ):
-          atoms.append(line_i_split[len(line_i_split)-1])
-      linecache.clearcache()
       atoms_type.append(data_op.list_replicate(atoms))
 
   tot_atoms_type = data_op.list_reshape(atoms_type)

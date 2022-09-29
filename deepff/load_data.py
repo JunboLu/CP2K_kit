@@ -163,7 +163,9 @@ def load_data_from_sepfile(file_dir, save_dir, file_prefix, proj_name, tot_atoms
 
           frame_str = ''.join((frame_str, '\n'))
           virial_file.write(frame_str)
-
+    else:
+      log_info.log_error('The output file or force file may not exist in task %d in %s' %(i, file_dir))
+      exit()
   box_file.close()
   frc_file.close()
   coord_file.close()

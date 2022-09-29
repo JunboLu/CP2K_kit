@@ -475,6 +475,91 @@ def check_geometry_inp(geometry_dic):
 
     return geometry_dic
 
+  if ( 'neighbor' in geometry_dic ):
+    neighbor_dic = geometry_dic['neighbor']
+
+    if ( 'traj_coord_file' in neighbor_dic.keys() ):
+      traj_coord_file = neighbor_dic['traj_coord_file']
+      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
+        geometry_dic['neighbor']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+        atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
+        traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+      else:
+        log_info.log_error('Input error: %s does not exist' %(traj_coord_file))
+        exit()
+    else:
+      log_info.log_error('Input error: no coordination trajectory file, please set analyze/geometry/neighbor/traj_coord_file')
+      exit()
+
+    if ( 'init_step' in neighbor_dic.keys() ):
+      init_step = neighbor_dic['init_step']
+      if ( data_op.eval_str(init_step) == 1 ):
+        geometry_dic['neighbor']['init_step'] = int(init_step)
+      else:
+        log_info.log_error('Input error: init_step should be integer, please check or reset analyze/geometry/neighbor/init_step')
+        exit()
+    else:
+      geometry_dic['neighbor']['init_step'] = start_frame_id
+
+    if ( 'end_step' in neighbor_dic.keys() ):
+      end_step = neighbor_dic['end_step']
+      if ( data_op.eval_str(end_step) == 1 ):
+        geometry_dic['neighbor']['end_step'] = int(end_step)
+      else:
+        log_info.log_error('Input error: end_step should be integer, please check or reset analyze/geometry/neighbor/end_step')
+        exit()
+    else:
+      geometry_dic['neighbor']['end_step'] = end_frame_id
+
+    init_step = geometry_dic['neighbor']['init_step']
+    end_step = geometry_dic['neighbor']['end_step']
+    check_step(init_step, end_step, start_frame_id, end_frame_id)
+
+    if ( 'r_cut' in neighbor_dic.keys() ):
+      r_cut = neighbor_dic['r_cut']
+      if ( data_op.eval_str(r_cut) == 1 or data_op.eval_str(r_cut) ==2 ):
+        geometry_dic['neighbor']['r_cut'] = float(r_cut)
+      else:
+        log_info.log_error('Input error: r_cut must be float, please check or reset analyze/geometry/neighbor/r_cut')
+    else:
+      geometry_dic['neighbor']['r_cut'] = 6.0
+
+    if ( 'box' in neighbor_dic.keys() ):
+      A_exist = 'A' in neighbor_dic['box'].keys()
+      B_exist = 'B' in neighbor_dic['box'].keys()
+      C_exist = 'C' in neighbor_dic['box'].keys()
+    else:
+      log_info.log_error('Input error: no box, please set analyze/geometry/neighbor/box')
+      exit()
+
+    if ( A_exist and B_exist and C_exist ):
+      box_A = neighbor_dic['box']['A']
+      box_B = neighbor_dic['box']['B']
+      box_C = neighbor_dic['box']['C']
+    else:
+      log_info.log_error('Input error: box setting error, please check analyze/geometry/neighbor/box')
+      exit()
+
+    if ( len(box_A) == 3 and all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in box_A) ):
+      geometry_dic['neighbor']['box']['A'] = [float(x) for x in box_A]
+    else:
+      log_info.log_error('Input error: A vector of box wrong, please check analyze/geometry/neighbor//box/A')
+      exit()
+
+    if ( len(box_B) == 3 and all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in box_B) ):
+      geometry_dic['neighbor']['box']['B'] = [float(x) for x in box_B]
+    else:
+      log_info.log_error('Input error: B vector of box wrong, please check analyze/geometry/neighbor/box/B')
+      exit()
+
+    if ( len(box_C) == 3 and all(data_op.eval_str(i) == 1 or data_op.eval_str(i) == 2 for i in box_C) ):
+      geometry_dic['neighbor']['box']['C'] = [float(x) for x in box_C]
+    else:
+      log_info.log_error('Input error: C vector of box wrong, please check analyze/geometry/neighbor/box/C')
+      exit()
+
+    return geometry_dic
+
   elif ( 'bond_length' in geometry_dic ):
     bond_length_dic = geometry_dic['bond_length']
 
