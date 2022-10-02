@@ -342,7 +342,13 @@ def gen_lmpmd_task(lmp_dic, work_dir, iter_id, atom_mass_dic, tot_atoms_type_dic
             md_in_file.write('fix             1 all %s temp ${TEMP} ${TEMP} ${TAU_T} iso ${PRES} ${PRES} ${TAU_P}\n' % (md_type))
         md_in_file.write('restart  %d  tmp.restart\n' %(write_restart_freq))
         md_in_file.write('run             ${NSTEPS}\n')
+        if 'plumed_file' in lmp_dic[sys]:
+          md_in_file.write('unfix             1\n')
+          md_in_file.write('unfix             2\n')
+        else:
+          md_in_file.write('unfix             1\n')
 
+        md_in_file.write('write_data             data.final\n')
         md_in_file.close()
 
 def gen_lmpfrc_file(work_dir, iter_id, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, active_type):

@@ -120,7 +120,7 @@ def get_neighbor(atoms, coord, a_vec, b_vec, c_vec, r_cut):
           coord_1.append(coord[i])
           coord_2.append(coord[k])
 
-      if ( coord_1 != [] ):
+      if ( len(coord_1) != 0 ):
         dist = geometry_mod.geometry.calculate_distance(np.asfortranarray(coord_1, dtype='float32'), \
                                                         np.asfortranarray(coord_2, dtype='float32'), \
                                                         np.asfortranarray(a_vec, dtype='float32'), \
@@ -128,6 +128,8 @@ def get_neighbor(atoms, coord, a_vec, b_vec, c_vec, r_cut):
                                                         np.asfortranarray(c_vec, dtype='float32'))
         coord_num_tmp = data_op.list_num_stat(dist, r_cut, 'less')
         neighbor_i.append(coord_num_tmp)
+      else:
+        neighbor_i.append(0)
     neighbor.append(neighbor_i)
 
   neighbor_max = []

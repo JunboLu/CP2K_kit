@@ -1,0 +1,20 @@
+&global
+  run_type analyze
+  analyze_job geometry
+&end global
+
+&analyze
+  &geometry
+    &neighbor
+      traj_coord_file ../NaCl-pos-1.xyz
+      r_cut 6
+      init_step 9000
+      end_step 10000
+      &box
+        A 12.42 0.0 0.0
+        B 0.0 12.42 0.0
+        C 0.0 0.0 12.42
+      &end box
+    &end neighbor
+  &end geometry
+&end analyze
