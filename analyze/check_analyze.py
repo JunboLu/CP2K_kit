@@ -78,8 +78,8 @@ def check_center_inp(center_dic):
 
   if ( 'traj_coord_file' in new_center_dic.keys() ):
     traj_coord_file = new_center_dic['traj_coord_file']
-    if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-      new_center_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+      new_center_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
     else:
       log_info.log_error('%s file does not exist' %(traj_coord_file))
       exit()
@@ -185,8 +185,8 @@ def check_diffusion_inp(diffusion_dic):
   if ( method == 'einstein_sum' ):
     if ( 'traj_coord_file' in diffusion_dic.keys() ):
       traj_coord_file = diffusion_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        diffusion_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        diffusion_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
       else:
@@ -208,8 +208,8 @@ def check_diffusion_inp(diffusion_dic):
   elif ( method == 'green_kubo' ):
     if ( 'traj_vel_file' in diffusion_dic.keys() ):
       traj_vel_file = diffusion_dic['traj_vel_file']
-      if ( os.path.exists(os.path.abspath(traj_vel_file)) ):
-        diffusion_dic['traj_vel_file'] = os.path.abspath(traj_vel_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_vel_file))) ):
+        diffusion_dic['traj_vel_file'] = os.path.abspath(os.path.expanduser(traj_vel_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_vel_file, 'vel')
       else:
@@ -281,8 +281,8 @@ def check_file_trans_inp(file_trans_dic):
 
   if ( 'transd_file' in file_trans_dic.keys() ):
     transd_file = file_trans_dic['transd_file']
-    if ( os.path.exists(os.path.abspath(transd_file)) ):
-      file_trans_dic['transd_file'] = os.path.abspath(transd_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(transd_file))) ):
+      file_trans_dic['transd_file'] = os.path.abspath(os.path.expanduser(transd_file))
     else:
       log_info.log_error('Input error: %s does not exist' %(transd_file))
       exit()
@@ -316,8 +316,8 @@ def check_file_trans_inp(file_trans_dic):
 
     if ( 'box_file' in file_trans_dic.keys() ):
       box_file = file_trans_dic['box_file']
-      if ( os.path.exists(os.path.abspath(box_file)) ):
-        file_trans_dic['box_file'] = os.path.abspath(box_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(box_file))) ):
+        file_trans_dic['box_file'] = os.path.abspath(os.path.expanduser(box_file))
       else:
         log_info.log_error('Input error: %s does not exist' %(box_file))
         exit()
@@ -395,10 +395,10 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in coord_num_dic.keys() ):
       traj_coord_file = coord_num_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        geometry_dic['coord_num']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        geometry_dic['coord_num']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+        traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
       else:
         log_info.log_error('Input error: %s does not exist' %(traj_coord_file))
         exit()
@@ -480,10 +480,10 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in neighbor_dic.keys() ):
       traj_coord_file = neighbor_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        geometry_dic['neighbor']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        geometry_dic['neighbor']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+        traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
       else:
         log_info.log_error('Input error: %s does not exist' %(traj_coord_file))
         exit()
@@ -565,10 +565,10 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in bond_length_dic.keys() ):
       traj_coord_file = bond_length_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        geometry_dic['bond_length']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        geometry_dic['bond_length']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+        traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
         exit()
@@ -665,8 +665,8 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in bond_angle_dic.keys() ):
       traj_coord_file = bond_angle_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        geometry_dic['bond_angle']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        geometry_dic['bond_angle']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_coord_file, 'coord_xyz')
       else:
@@ -730,10 +730,10 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in first_shell_dic.keys() ):
       traj_coord_file = first_shell_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        geometry_dic['first_shell']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        geometry_dic['first_shell']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+        traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
       else:
         log_info.log_error('Input error: %s does not exist' %(traj_coord_file))
         exit()
@@ -847,8 +847,8 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_file' in choose_str_dic.keys() ):
       traj_file = choose_str_dic['traj_file']
-      if ( os.path.exists(os.path.abspath(traj_file)) ):
-        geometry_dic['choose_structure']['traj_file'] = os.path.abspath(traj_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_file))) ):
+        geometry_dic['choose_structure']['traj_file'] = os.path.abspath(os.path.expanduser(traj_file))
         atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
         traj_info.get_traj_info(traj_file, 'coord_xyz')
       else:
@@ -894,8 +894,8 @@ def check_geometry_inp(geometry_dic):
 
     if ( 'traj_coord_file' in order_str_dic.keys() ):
       traj_coord_file = order_str_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        new_geometry_dic['order_structure']['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        new_geometry_dic['order_structure']['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
         exit()
@@ -993,8 +993,8 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
 
   if ( 'lmp_log_file' in lmp2cp2k_dic.keys() ):
     lmp_log_file = lmp2cp2k_dic['lmp_log_file']
-    if ( os.path.exists(os.path.abspath(lmp_log_file)) ):
-      lmp2cp2k_dic['lmp_log_file'] = os.path.abspath(lmp_log_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(lmp_log_file))) ):
+      lmp2cp2k_dic['lmp_log_file'] = os.path.abspath(os.path.expanduser(lmp_log_file))
     else:
       log_info.log_error('Input error: %s file does not exist' %(lmp_log_file))
       exit()
@@ -1004,8 +1004,8 @@ def check_lmp2cp2k_inp(lmp2cp2k_dic):
 
   if ( 'lmp_traj_file' in lmp2cp2k_dic.keys() ):
     lmp_traj_file = lmp2cp2k_dic['lmp_traj_file']
-    if ( os.path.exists(os.path.abspath(lmp_traj_file)) ):
-      lmp2cp2k_dic['lmp_traj_file'] = os.path.abspath(lmp_traj_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(lmp_traj_file))) ):
+      lmp2cp2k_dic['lmp_traj_file'] = os.path.abspath(os.path.expanduser(lmp_traj_file))
     else:
       log_info.log_error('Input error: %s file does not exist' %(lmp_traj_file))
       exit()
@@ -1110,10 +1110,10 @@ def check_rdf_inp(rdf_dic):
 
   if ( 'traj_coord_file' in rdf_dic.keys() ):
     traj_coord_file = rdf_dic['traj_coord_file']
-    if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-      rdf_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+      rdf_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
       atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+      traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
     else:
       log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
       exit()
@@ -1216,10 +1216,10 @@ def check_adf_inp(adf_dic):
 
   if ( 'traj_coord_file' in adf_dic.keys() ):
     traj_coord_file = adf_dic['traj_coord_file']
-    if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-      adf_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+      adf_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
       atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(os.path.abspath(traj_coord_file), 'coord_xyz')
+      traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_coord_file)), 'coord_xyz')
     else:
       log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
       exit()
@@ -1298,10 +1298,10 @@ def check_spectrum_inp(spectrum_dic):
 
   if ( 'traj_vel_file' in spectrum_dic.keys() ):
     traj_vel_file = spectrum_dic['traj_vel_file']
-    if ( os.path.exists(os.path.abspath(traj_vel_file)) ):
-      spectrum_dic['traj_vel_file'] = os.path.abspath(traj_vel_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_vel_file))) ):
+      spectrum_dic['traj_vel_file'] = os.path.abspath(os.path.expanduser(traj_vel_file))
       atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(os.path.abspath(traj_vel_file), 'vel')
+      traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_vel_file)), 'vel')
     else:
       log_info.log_error('Input error: %s file does not exist' %(traj_vel_file))
       exit()
@@ -1313,8 +1313,8 @@ def check_spectrum_inp(spectrum_dic):
   if ( spec_type == 'water_mode' or spec_type == 'hydration_mode' ):
     if ( 'traj_coord_file' in spectrum_dic.keys() ):
       traj_coord_file = spectrum_dic['traj_coord_file']
-      if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-        spectrum_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+        spectrum_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
         exit()
@@ -1484,8 +1484,8 @@ def check_v_hartree_inp(v_hartree_dic):
 
   if ( 'cube_file' in v_hartree_dic.keys() ):
     cube_file = v_hartree_dic['cube_file']
-    if ( os.path.exists(os.path.abspath(cube_file)) ):
-      v_hartree_dic['cube_file'] = os.path.abspath(cube_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(cube_file))) ):
+      v_hartree_dic['cube_file'] = os.path.abspath(os.path.expanduser(cube_file))
     else:
       log_info.log_error('Input error: %s file does not exist' %(cube_file))
       exit()
@@ -1524,8 +1524,8 @@ def check_arrange_data_inp(arrange_data_dic):
 
     if ( 'traj_ener_file' in temp_dic.keys() ):
       traj_ener_file = temp_dic['traj_ener_file']
-      if ( os.path.exists(os.path.abspath(traj_ener_file)) ):
-        arrange_data_dic['temperature']['traj_ener_file'] = os.path.abspath(traj_ener_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_ener_file))) ):
+        arrange_data_dic['temperature']['traj_ener_file'] = os.path.abspath(os.path.expanduser(traj_ener_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_ener_file))
         exit()
@@ -1539,8 +1539,8 @@ def check_arrange_data_inp(arrange_data_dic):
 
     if ( 'traj_ener_file' in pot_dic.keys() ):
       traj_ener_file = pot_dic['traj_ener_file']
-      if ( os.path.exists(os.path.abspath(traj_ener_file)) ):
-        arrange_data_dic['potential']['traj_ener_file'] = os.path.abspath(traj_ener_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_ener_file))) ):
+        arrange_data_dic['potential']['traj_ener_file'] = os.path.abspath(os.path.expanduser(traj_ener_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_ener_file))
         exit()
@@ -1554,8 +1554,8 @@ def check_arrange_data_inp(arrange_data_dic):
 
     if ( 'traj_mul_file' in mulliken_dic.keys() ):
       traj_mul_file = mulliken_dic['traj_mul_file']
-      if ( os.path.exists(os.path.abspath(traj_mul_file)) ):
-        arrange_data_dic['mulliken']['traj_mul_file'] = os.path.abspath(traj_mul_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_mul_file))) ):
+        arrange_data_dic['mulliken']['traj_mul_file'] = os.path.abspath(os.path.expanduser(traj_mul_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_mul_file))
         exit()
@@ -1595,10 +1595,10 @@ def check_arrange_data_inp(arrange_data_dic):
 
     if ( 'traj_mix_ener_file' in vert_ene_dic.keys() ):
       traj_mix_ener_file = vert_ene_dic['traj_mix_ener_file']
-      if ( os.path.exists(os.path.abspath(traj_mix_ener_file)) ):
-        arrange_data_dic['vertical_energy']['traj_mix_ener_file'] = os.path.abspath(traj_mix_ener_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_mix_ener_file))) ):
+        arrange_data_dic['vertical_energy']['traj_mix_ener_file'] = os.path.abspath(os.path.expanduser(traj_mix_ener_file))
         blocks_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-        traj_info.get_traj_info(os.path.abspath(traj_mix_ener_file), 'mix_ener')
+        traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_mix_ener_file)), 'mix_ener')
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_mix_ener_file))
         exit()
@@ -1705,8 +1705,8 @@ def check_arrange_data_inp(arrange_data_dic):
 
     if ( 'traj_lag_file' in ti_force_dic.keys() ):
       traj_lag_file = ti_force_dic['traj_lag_file']
-      if ( os.path.exists(os.path.abspath(traj_lag_file)) ):
-        arrange_data_dic['ti_force']['traj_lag_file'] = os.path.abspath(traj_lag_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_lag_file))) ):
+        arrange_data_dic['ti_force']['traj_lag_file'] = os.path.abspath(os.path.expanduser(traj_lag_file))
       else:
         log_info.log_error('Input error: %s file does not exist' %(traj_lag_file))
         exit()
@@ -1750,8 +1750,8 @@ def check_free_energy_inp(free_energy_dic):
   if ( method == 'ti' ):
     if ( 'ti_file' in free_energy_dic.keys() ):
       ti_file = free_energy_dic['ti_file']
-      if ( os.path.exists(os.path.abspath(ti_file)) ):
-        free_energy_dic['ti_file'] = os.path.abspath(ti_file)
+      if ( os.path.exists(os.path.abspath(os.path.expanduser(ti_file))) ):
+        free_energy_dic['ti_file'] = os.path.abspath(os.path.expanduser(ti_file))
       else:
         log_info.log_error('Input error: %s does not exist' %(ti_file))
         exit()
@@ -1776,8 +1776,8 @@ def check_rmsd_inp(rmsd_dic):
 
   if ( 'traj_coord_file' in rmsd_dic.keys() ):
     traj_coord_file = rmsd_dic['traj_coord_file']
-    if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
-      rmsd_dic['traj_coord_file'] = os.path.abspath(traj_coord_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
+      rmsd_dic['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
     else:
       log_info.log_error('Input error: %s file does not exist' %(traj_coord_file))
       exit()
@@ -1826,10 +1826,10 @@ def check_time_correlation_inp(time_corr_dic):
 
   if ( 'traj_file' in time_corr_dic.keys() ):
     traj_file = time_corr_dic['traj_file']
-    if ( os.path.exists(os.path.abspath(traj_file)) ):
-      time_corr_dic['traj_file'] = os.path.abspath(traj_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_file))) ):
+      time_corr_dic['traj_file'] = os.path.abspath(os.path.expanduser(traj_file))
       atoms_num, pre_base_block, end_base_block, pre_base, frames_num, each, start_frame_id, end_frame_id, time_step = \
-      traj_info.get_traj_info(os.path.abspath(traj_file), 'coord_xyz')
+      traj_info.get_traj_info(os.path.abspath(os.path.expanduser(traj_file)), 'coord_xyz')
     else:
       log_info.log_error('Input error: %s file does not exists' %(traj_file))
       exit()

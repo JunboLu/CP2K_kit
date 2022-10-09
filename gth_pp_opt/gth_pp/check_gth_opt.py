@@ -122,8 +122,8 @@ def check_gth_opt(gth_opt_param):
 
   if ( 'cp2k_exe' in gth_opt_param.keys() ):
     cp2k_exe = gth_opt_param['cp2k_exe']
-    if ( os.path.exists(os.path.abspath(cp2k_exe)) ):
-      gth_opt_param['cp2k_exe'] = os.path.abspath(cp2k_exe)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_exe))) ):
+      gth_opt_param['cp2k_exe'] = os.path.abspath(os.path.expanduser(cp2k_exe))
     else:
       log_info.log_error('Input error: cp2k executable file does not exist, please check or reset gth_pp_opt/cp2k_exe')
       exit()
@@ -133,8 +133,8 @@ def check_gth_opt(gth_opt_param):
 
   if ( 'parallel_exe' in gth_opt_param.keys() ):
     parallel_exe = gth_opt_param['parallel_exe']
-    if ( os.path.exists(os.path.abspath(parallel_exe)) ):
-      gth_opt_param['parallel_exe'] = os.path.abspath(parallel_exe)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(parallel_exe))) ):
+      gth_opt_param['parallel_exe'] = os.path.abspath(os.path.expanduser(parallel_exe))
     else:
       log_info.log_error('Input error: parallel executable file does not exist, please check or reset gth_pp_opt/parallel_exe')
       exit()
@@ -144,8 +144,8 @@ def check_gth_opt(gth_opt_param):
 
   if ( 'init_gth_pp_file' in gth_opt_param.keys() ):
     init_gth_pp_file = gth_opt_param['init_gth_pp_file']
-    if ( os.path.exists(os.path.abspath(init_gth_pp_file)) ):
-      gth_opt_param['init_gth_pp_file'] = os.path.abspath(init_gth_pp_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(init_gth_pp_file))) ):
+      gth_opt_param['init_gth_pp_file'] = os.path.abspath(os.path.expanduser(init_gth_pp_file))
     else:
       log_info.log_error('Input error: initial gth pp file does not exist, please check or reset gth_pp_opt/init_gth_pp_file')
       exit()

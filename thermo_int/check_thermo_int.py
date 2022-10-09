@@ -38,8 +38,8 @@ def check_constraint_md_inp(cmd_dic):
 
   if ( 'cp2k_inp_file' in cmd_dic.keys() ):
     cp2k_inp_file = cmd_dic['cp2k_inp_file']
-    if ( os.path.exists(os.path.abspath(cp2k_inp_file)) ):
-      cmd_dic['cp2k_inp_file'] = os.path.abspath(cp2k_inp_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_inp_file))) ):
+      cmd_dic['cp2k_inp_file'] = os.path.abspath(os.path.expanduser(cp2k_inp_file))
     else:
       log_info.log_error('Input error: %s does not exist' %(cp2k_inp_file))
       exit()
@@ -135,8 +135,8 @@ def check_mix_force_eval_inp(mix_dic):
 
   if ( 'mix_inp_file' in mix_dic.keys() ):
     mix_inp_file = mix_dic['mix_inp_file']
-    if ( os.path.exists(os.path.abspath(mix_inp_file)) ):
-      mix_dic['mix_inp_file'] = os.path.abspath(mix_inp_file)
+    if ( os.path.exists(os.path.abspath(os.path.expanduser(mix_inp_file))) ):
+      mix_dic['mix_inp_file'] = os.path.abspath(os.path.expanduser(mix_inp_file))
     else:
       log_info.log_error('Input error: %s does not exist' %(mix_inp_file))
       exit()

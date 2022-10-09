@@ -313,8 +313,8 @@ def dump_init_data(work_dir, deepmd_dic, train_stress, tot_atoms_type_dic):
       i = i+1
 
   if ( 'set_data_dir' in train_dic.keys() ):
-    init_train_data.append(os.path.abspath(train_dic['set_data_dir']))
-    energy_npy_file = ''.join((os.path.abspath(train_dic['set_data_dir']), '/set.000/energy.npy'))
+    init_train_data.append(os.path.abspath(os.path.expanduser(train_dic['set_data_dir'])))
+    energy_npy_file = ''.join((os.path.abspath(os.path.expanduser(train_dic['set_data_dir'])), '/set.000/energy.npy'))
     set_data_num = len(np.load(energy_npy_file))
     init_data_num = init_data_num+set_data_num
 
