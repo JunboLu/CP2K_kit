@@ -221,7 +221,7 @@ seq 1 $initial_total_step | $parallel_exe -j $initial_parallel_num produce {} $i
 elif [[ $i == 2 || $kk == 1 ]]; then
 ((k=$i-1))
 cd $direc/restart$k
-grep -H "Final value of function" step*/atom.out > kk
+grep -H --text "Final value of function" step*/atom.out > kk
 m=`$python_exe $get_index_py $direc/restart$k $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 for j in $(seq 1 $initial_total_step)
@@ -234,7 +234,7 @@ seq 1 $initial_total_step | $parallel_exe -j $initial_parallel_num produce {} $i
 elif [[ $i != 1 && $i != 2 ]]; then
 k_1=$kk
 cd $direc/restart$k_1
-grep -H "Final value of function" step*/atom.out > kk
+grep -H --text "Final value of function" step*/atom.out > kk
 m=`$python_exe $get_index_py $direc/restart$k_1 $consider_charge`
 sed -ie '1s/.*/'$element' GTH-'$method'-q'$elec_num'/' step_$m/GTH-PARAMETER
 if [ $check_direc == new ]; then
@@ -266,9 +266,9 @@ seq 1 $total_step | $parallel_exe -j $parallel_num produce {} $i $direc
 fi
 
 cd $direc/restart$i
-for z in {1..20}; do grep -H "Final value of function" step_$z/atom.out; done > kk
+for z in {1..20}; do grep -H --text "Final value of function" step_$z/atom.out; done > kk
 m=`$python_exe $get_index_py $direc/restart$i $consider_charge`
-str=`grep -H "Final value of function" step_$m/atom.out`
+str=`grep -H --text "Final value of function" step_$m/atom.out`
 value=`echo ${str:20:100} | tr -cd "[0-9,.]"`
 echo $value
 cd $direc
