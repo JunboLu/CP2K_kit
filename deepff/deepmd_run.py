@@ -146,7 +146,7 @@ cd %s
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, deepmd_train_dir))
     exit()
 
-def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node):
+def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node, base):
 
   '''
   deepmd_parallel: run deepmd calculation in parallel.
@@ -232,7 +232,7 @@ def deepmd_parallel(work_dir, iter_id, use_prev_model, start, end, parallel_exe,
     elif ( dp_version == '2.0.0' ):
       dp_cmd = 'dp train --mpi-log=workers --restart model.ckpt input.json 1>> log.out 2>> log.err'
   else:
-    if ( use_prev_model and iter_id>0 ):
+    if ( use_prev_model and iter_id>base ):
       for i in range(model_num):
         model_dir = ''.join((deepmd_train_dir, '/', str(i)))
         prev_model_dir = ''.join((work_dir, '/iter_', str(iter_id-1), '/01.train/', str(i)))
@@ -419,7 +419,7 @@ dp freeze -o frozen_model.pb 1>> log.err 2>> log.err
       run_start = 0
       run_end = run_start+len(device[0])-1
 
-def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node):
+def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node, base):
 
   '''
   run_deepmd: kernel function to run deepmd.
@@ -477,7 +477,7 @@ def run_deepmd(work_dir, iter_id, use_prev_model, parallel_exe, dp_path, host, s
     log_info.log_error('Input error: there are gpu devices in nodes, but cuda_dir is none, please set cuda directory in deepff/environ/cuda_dir')
     exit()
   #Run deepmd-kit tasks
-  deepmd_parallel(work_dir, iter_id, use_prev_model, 0, model_num-1, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node)
+  deepmd_parallel(work_dir, iter_id, use_prev_model, 0, model_num-1, parallel_exe, dp_path, host, ssh, device, cuda_dir, dp_version, dp_job_per_node, base)
 
   #Check the deepmd tasks.
   check_deepmd_run = []

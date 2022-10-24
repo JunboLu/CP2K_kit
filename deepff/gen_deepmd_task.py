@@ -61,7 +61,7 @@ def assign_data_dir(work_dir, init_train_data, iter_id, numb_test):
 
   return data_dir, final_data_dir
 
-def assign_prob(data_dir, final_data_dir, data_num, iter_id):
+def assign_prob(data_dir, final_data_dir, data_num, iter_id, base=0):
 
   '''
   assign_prob: assign probability of systems.
@@ -75,6 +75,8 @@ def assign_prob(data_dir, final_data_dir, data_num, iter_id):
       data_num is the numbers of training data for each system.
     iter_id: int
       iter_id is the iteration id.
+    base: int
+      base is the starting iter_id
   Returns:
     prob_sys_1: string
       prob_sys_1 is the probability of system 1.
@@ -83,7 +85,7 @@ def assign_prob(data_dir, final_data_dir, data_num, iter_id):
   '''
 
   data_num_1 = data_num[0:(len(data_dir)-len(final_data_dir))]
-  prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/(iter_id+1))
+  prob_data_num_1 = math.erf(sum(data_num_1)/sum(data_num)*2)/2**(1/(iter_id+1-base))
   prob_data_num_2 = 1.0-prob_data_num_1
   prob_sys_1 = '0:%d:%f' %(len(data_dir)-len(final_data_dir), prob_data_num_1)
   prob_sys_2 = '%d:%d:%f' %(len(data_dir)-len(final_data_dir), len(data_dir), prob_data_num_2)
@@ -295,7 +297,9 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms
     use_prev_model = deepmd_test_dic['use_prev_model']
     lr_scale = deepmd_test_dic['lr_scale']
     start_lr = deepmd_test_dic['start_lr']
+    stop_batch = deepmd_test_dic['stop_batch']
     batch_size = deepmd_dic['training']['batch_size']
+    
     if not fix_stop_batch:
       epoch_num = deepmd_test_dic['epoch_num']
       stop_batch = math.ceil(epoch_num*int(sum(data_num)/batch_size[0])/10000)*10000
@@ -310,15 +314,20 @@ def gen_deepmd_test_task(deepmd_test_dic, work_dir, iter_id, data_num, tot_atoms
     deepmd_dic['training']['systems'] = data_dir
     deepmd_dic['training']['batch_size'] = [batch_size[0]]*len(data_dir)
 
-    if use_prev_model:
+    if ( iter_id > 1 and use_prev_model ):
+      print (iter_id, use_prev_model, flush=True)
       if ( lr_scale**iter_id > 100.0 ):
         deepmd_dic['learning_rate']['start_lr'] = start_lr/(100.0)
       else:
         deepmd_dic['learning_rate']['start_lr'] = start_lr/(lr_scale**iter_id)
       deepmd_dic['training']['stop_batch'] = int(deepmd_test_dic['stop_batch']/2)
-      prob_sys_1, prob_sys_2 = assign_prob(data_dir, final_data_dir, data_num, iter_id)
+      prob_sys_1, prob_sys_2 = assign_prob(data_dir, final_data_dir, data_num, iter_id, 1)
       auto_prob_style = data_op.comb_list_2_str(['prob_sys_size', prob_sys_1, prob_sys_2], ';')
       deepmd_dic['training']['auto_prob_style'] = auto_prob_style
+    else:
+      deepmd_dic['learning_rate']['start_lr'] = start_lr
+      deepmd_dic['training']['stop_batch'] = stop_batch
+      deepmd_dic['training'].pop('auto_prob_style')
 
     descr_seed = np.random.randint(10000000000)
     deepmd_dic['model']['descriptor']['seed'] = descr_seed
