@@ -278,8 +278,8 @@ def check_deepmd_model(deepmd_dic):
         if ( deepmd_dic['training'][i]['traj_type'] == 'md' ):
           if ( 'traj_coord_file' in deepmd_dic['training'][i] ):
             traj_coord_file = deepmd_dic['training'][i]['traj_coord_file']
-            if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_coord_file))) ):
-              deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(os.path.expanduser(traj_coord_file))
+            if ( os.path.exists(os.path.abspath(traj_coord_file)) ):
+              deepmd_dic['training'][i]['traj_coord_file'] = os.path.abspath(traj_coord_file)
             else:
               log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_coord_file' %(traj_coord_file))
               exit()
@@ -289,8 +289,8 @@ def check_deepmd_model(deepmd_dic):
 
           if ( 'traj_frc_file' in deepmd_dic['training'][i] ):
             traj_frc_file = deepmd_dic['training'][i]['traj_frc_file']
-            if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_frc_file))) ):
-              deepmd_dic['training'][i]['traj_frc_file'] = os.path.abspath(os.path.expanduser(traj_frc_file))
+            if ( os.path.exists(os.path.abspath(traj_frc_file)) ):
+              deepmd_dic['training'][i]['traj_frc_file'] = os.path.abspath(traj_frc_file)
             else:
               log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_frc_file' %(traj_frc_file))
               exit()
@@ -305,8 +305,8 @@ def check_deepmd_model(deepmd_dic):
           if ( coord_file_type == 'coord_xyz' ):
             if ( 'traj_cell_file' in deepmd_dic['training'][i] ):
               traj_cell_file = deepmd_dic['training'][i]['traj_cell_file']
-              if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_cell_file))) ):
-                deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(os.path.expanduser(traj_cell_file))
+              if ( os.path.exists(os.path.abspath(traj_cell_file)) ):
+                deepmd_dic['training'][i]['traj_cell_file'] = os.path.abspath(traj_cell_file)
               else:
                 log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_cell_file' %(traj_cell_file))
                 exit()
@@ -317,8 +317,8 @@ def check_deepmd_model(deepmd_dic):
             deepmd_dic['training'][i]['traj_cell_file'] = 'none'
           if ( 'traj_stress_file' in deepmd_dic['training'][i] ):
             traj_stress_file = deepmd_dic['training'][i]['traj_stress_file']
-            if ( os.path.exists(os.path.abspath(os.path.expanduser(traj_stress_file))) ):
-              deepmd_dic['training'][i]['traj_stress_file'] = os.path.abspath(os.path.expanduser(traj_stress_file))
+            if ( os.path.exists(os.path.abspath(traj_stress_file)) ):
+              deepmd_dic['training'][i]['traj_stress_file'] = os.path.abspath(traj_stress_file)
             else:
               log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/traj_stress_file' %(traj_stress_file))
               exit()
@@ -329,8 +329,8 @@ def check_deepmd_model(deepmd_dic):
         elif ( deepmd_dic['training'][i]['traj_type'] == 'mtd' ):
           if ( 'data_dir' in deepmd_dic['training'][i] ):
             data_dir = deepmd_dic['training'][i]['data_dir']
-            if ( os.path.exists(os.path.abspath(os.path.expanduser(data_dir))) ):
-              deepmd_dic['training'][i]['data_dir'] = os.path.abspath(os.path.expanduser(data_dir))
+            if ( os.path.exists(os.path.abspath(data_dir)) ):
+              deepmd_dic['training'][i]['data_dir'] = os.path.abspath(data_dir)
             else:
               log_info.log_error('Input error: %s does not exist, please check deepff/deepmd_model/training/system/data_dir' %(data_dir))
               exit()
@@ -431,8 +431,8 @@ def check_deepmd_model(deepmd_dic):
 
     if ( 'set_data_dir' in deepmd_dic['training'].keys() ):
       set_data_dir = deepmd_dic['training']['set_data_dir']
-      if ( os.path.exists(os.path.abspath(os.path.expanduser(set_data_dir))) ):
-        deepmd_dic['training']['set_data_dir'] = os.path.abspath(os.path.expanduser(set_data_dir))
+      if ( os.path.exists(os.path.abspath(set_data_dir)) ):
+        deepmd_dic['training']['set_data_dir'] = os.path.abspath(set_data_dir)
       else:
         log_info.log_error('Input error: %s directory does not exist, please check or reset deepff/deepmd_model/training/set_data_dir')
         exit()
@@ -608,8 +608,8 @@ def check_deepmd_test(deepmd_dic):
 
   if ( 'init_dpff_dir' in deepmd_dic.keys() ):
     init_dpff_dir = deepmd_dic['init_dpff_dir']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(init_dpff_dir))) ):
-      deepmd_dic['init_dpff_dir'] = os.path.abspath(os.path.expanduser(init_dpff_dir))
+    if ( os.path.exists(os.path.abspath(init_dpff_dir)) ):
+      deepmd_dic['init_dpff_dir'] = os.path.abspath(init_dpff_dir)
     else:
       log_info.log_error('Input error: %s file does not exist, please check or reset deepff/deepmd_test/init_dpff_dir' %(init_dpff_dir))
       exit()
@@ -855,16 +855,16 @@ def check_lammps(lmp_dic, active_learn_dic):
 
       if ( 'box' in lmp_dic[key].keys() ):
         box_file = lmp_dic[key]['box']
-        if ( os.path.exists(os.path.abspath(os.path.expanduser(box_file))) ):
-          lmp_dic[key]['box'] = os.path.abspath(os.path.expanduser(box_file))
+        if ( os.path.exists(os.path.abspath(box_file)) ):
+          lmp_dic[key]['box'] = os.path.abspath(box_file)
         else:
           log_info.log_error('Input error: %s file does not exist' %(box_file))
           exit()
 
       if ( 'coord' in lmp_dic[key].keys() ):
         coord_file = lmp_dic[key]['coord']
-        if ( os.path.exists(os.path.abspath(os.path.expanduser(coord_file))) ):
-          lmp_dic[key]['coord'] = os.path.abspath(os.path.expanduser(coord_file))
+        if ( os.path.exists(os.path.abspath(coord_file)) ):
+          lmp_dic[key]['coord'] = os.path.abspath(coord_file)
         else:
           log_info.log_error('Input error: %s file does not exist' %(coord_file))
           exit()
@@ -894,8 +894,8 @@ def check_lammps(lmp_dic, active_learn_dic):
       if lmp_dic[key]['use_mtd'] :
         if ( 'plumed_file' in lmp_dic[key].keys() ):
           plumed_file = lmp_dic[key]['plumed_file']
-          if ( os.path.exists(os.path.abspath(os.path.expanduser(plumed_file))) ):
-            lmp_dic[key]['plumed_file'] = os.path.abspath(os.path.expanduser(plumed_file))
+          if ( os.path.exists(os.path.abspath(plumed_file)) ):
+            lmp_dic[key]['plumed_file'] = os.path.abspath(plumed_file)
           else:
             log_info.log_error('Input error: %s file does not exist, please check deepff/lammps/system/plumed_file' %(plumed_file))
             exit()
@@ -1048,14 +1048,14 @@ def check_cp2k(cp2k_dic):
         exit()
       else:
         for inp_file in cp2k_inp_file:
-          if ( os.path.exists(os.path.abspath(os.path.expanduser(inp_file))) ):
-            cp2k_inp_file_tot.append(os.path.abspath(os.path.expanduser(inp_file)))
+          if ( os.path.exists(os.path.abspath(inp_file)) ):
+            cp2k_inp_file_tot.append(os.path.abspath(inp_file))
           else:
             log_info.log_error('%s file does not exist' %(inp_file))
             exit()
     elif ( isinstance(cp2k_inp_file, str) ):
-      if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_inp_file))) ):
-        cp2k_inp_file_tot.append(os.path.abspath(os.path.expanduser(cp2k_inp_file)))
+      if ( os.path.exists(os.path.abspath(cp2k_inp_file)) ):
+        cp2k_inp_file_tot.append(os.path.abspath(cp2k_inp_file))
       else:
         log_info.log_error('%s file does not exist' %(cp2k_inp_file))
         exit()
@@ -1066,8 +1066,8 @@ def check_cp2k(cp2k_dic):
     cp2k_dic['cp2k_inp_file'] = cp2k_inp_file_tot
     if ( 'basis_set_file_name' in cp2k_dic.keys() ):
       basis_set_file_name = cp2k_dic['basis_set_file_name']
-      if ( os.path.exists(os.path.abspath(os.path.expanduser(basis_set_file_name))) ):
-        cp2k_dic['basis_set_file_name'] = os.path.abspath(os.path.expanduser(basis_set_file_name))
+      if ( os.path.exists(os.path.abspath(basis_set_file_name)) ):
+        cp2k_dic['basis_set_file_name'] = os.path.abspath(basis_set_file_name)
       else:
         log_info.log_error('%s file does not exist' %(basis_set_file_name))
         exit()
@@ -1077,8 +1077,8 @@ def check_cp2k(cp2k_dic):
 
     if ( 'potential_file_name' in cp2k_dic.keys() ):
       potential_file_name = cp2k_dic['potential_file_name']
-      if ( os.path.exists(os.path.abspath(os.path.expanduser(potential_file_name))) ):
-        cp2k_dic['potential_file_name'] = os.path.abspath(os.path.expanduser(potential_file_name))
+      if ( os.path.exists(os.path.abspath(potential_file_name)) ):
+        cp2k_dic['potential_file_name'] = os.path.abspath(potential_file_name)
       else:
         log_info.log_error('%s file does not exist' %(potential_file_name))
         exit()
@@ -1183,10 +1183,10 @@ def check_cp2k(cp2k_dic):
     if cp2k_dic['dftd3']:
       if ( 'dftd3_file' in cp2k_dic.keys() ):
         dftd3_file = cp2k_dic['dftd3_file']
-        if ( os.path.exists(os.path.abspath(os.path.expanduser(dftd3_file))) ):
-          cp2k_dic['dftd3_file'] = os.path.abspath(os.path.expanduser(dftd3_file))
+        if ( os.path.exists(os.path.abspath(dftd3_file)) ):
+          cp2k_dic['dftd3_file'] = os.path.abspath(dftd3_file)
         else:
-          log_info.log_error('%s file does not exist' %(os.path.abspath(os.path.expanduser(dftd3_file))))
+          log_info.log_error('%s file does not exist' %(os.path.abspath(dftd3_file)))
           exit()
       else:
         log_info.log_error('Input error: no dftd3 file, please set deepff/cp2k/dftd3_file')
@@ -1219,8 +1219,9 @@ def check_environ(environ_dic, proc_num_one_node):
       environ_dic is the revised environ_dic.
   '''
 
-  environ_valid_key = ['cp2k_exe', 'cp2k_env_file', 'parallel_exe', 'cuda_dir', 'lmp_job_per_node', \
-                       'lmp_mpi_num_per_job', 'lmp_omp_num_per_job', 'cp2k_job_per_node', 'dp_version', 'dp_job_per_node']
+  environ_valid_key = ['cp2k_exe', 'cp2k_env_file', 'parallel_exe', 'cuda_dir', 'lmp_md_job_per_node', \
+                       'lmp_mpi_num_per_job', 'lmp_omp_num_per_job', 'cp2k_job_per_node', 'dp_version', \
+                       'lmp_frc_job_per_node', 'dp_job_per_node']
   for key in environ_dic.keys():
     if key not in environ_valid_key:
       log_info.log_error('Input error: %s is invalid key, please check or reset deepff/environ' %(key))
@@ -1228,8 +1229,8 @@ def check_environ(environ_dic, proc_num_one_node):
 
   if ( 'cp2k_exe' in environ_dic.keys() ):
     cp2k_exe = environ_dic['cp2k_exe']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_exe))) ):
-      environ_dic['cp2k_exe'] = os.path.abspath(os.path.expanduser(cp2k_exe))
+    if ( os.path.exists(os.path.abspath(cp2k_exe)) ):
+      environ_dic['cp2k_exe'] = os.path.abspath(cp2k_exe)
     else:
       log_info.log_error('Input error: cp2k executable file does not exist, please check or set deepff/environ/cp2k_exe')
       exit()
@@ -1239,8 +1240,8 @@ def check_environ(environ_dic, proc_num_one_node):
 
   if ( 'cp2k_env_file' in environ_dic.keys() ):
     cp2k_env_file = environ_dic['cp2k_env_file']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_env_file))) ):
-      environ_dic['cp2k_env_file'] = os.path.abspath(os.path.expanduser(cp2k_env_file))
+    if ( os.path.exists(os.path.abspath(cp2k_env_file)) ):
+      environ_dic['cp2k_env_file'] = os.path.abspath(cp2k_env_file)
     else:
       log_info.log_error('Input error: cp2k environment file does not exist, please check or set deepff/environ/cp2k_env_file')
       exit()
@@ -1263,16 +1264,16 @@ def check_environ(environ_dic, proc_num_one_node):
     environ_dic['dp_version'] = '1.3.3'
 
   if ( environ_dic['cuda_dir'] != 'none' ):
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cuda_dir))) ):
-      environ_dic['cuda_dir'] = os.path.abspath(os.path.expanduser(cuda_dir))
+    if ( os.path.exists(os.path.abspath(cuda_dir)) ):
+      environ_dic['cuda_dir'] = os.path.abspath(cuda_dir)
     else:
       log_info.log_error('Input error: cuda directory does not exist, please check or set deepff/environ/cuda_dir')
       exit()
 
   if ( 'parallel_exe' in environ_dic.keys() ):
     parallel_exe = environ_dic['parallel_exe']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(parallel_exe))) ):
-      environ_dic['parallel_exe'] = os.path.abspath(os.path.expanduser(parallel_exe))
+    if ( os.path.exists(os.path.abspath(parallel_exe)) ):
+      environ_dic['parallel_exe'] = os.path.abspath(parallel_exe)
     else:
       log_info.log_error('Input error: parallel executable file does not exist, please check or set deepff/environ/parallel_exe')
       exit()
@@ -1290,15 +1291,25 @@ def check_environ(environ_dic, proc_num_one_node):
   else:
     environ_dic['cp2k_job_per_node'] = 1
 
-  if ( 'lmp_job_per_node' in environ_dic.keys() ):
-    lmp_job_per_node = environ_dic['lmp_job_per_node']
-    if ( data_op.eval_str(lmp_job_per_node) == 1 ):
-      environ_dic['lmp_job_per_node'] = int(lmp_job_per_node)
+  if ( 'lmp_md_job_per_node' in environ_dic.keys() ):
+    lmp_md_job_per_node = environ_dic['lmp_md_job_per_node']
+    if ( data_op.eval_str(lmp_md_job_per_node) == 1 ):
+      environ_dic['lmp_md_job_per_node'] = int(lmp_md_job_per_node)
     else:
-      log_info.log_error('Input error: lmp_job_per_node should be integer, please check or reset deepff/environ/lmp_job_per_node')
+      log_info.log_error('Input error: lmp_md_job_per_node should be integer, please check or reset deepff/environ/lmp_md_job_per_node')
       exit()
   else:
-    environ_dic['lmp_job_per_node'] = 1
+    environ_dic['lmp_md_job_per_node'] = 1
+
+  if ( 'lmp_frc_job_per_node' in environ_dic.keys() ):
+    lmp_frc_job_per_node = environ_dic['lmp_frc_job_per_node']
+    if ( data_op.eval_str(lmp_frc_job_per_node) == 1 ):
+      environ_dic['lmp_frc_job_per_node'] = int(lmp_frc_job_per_node)
+    else:
+      log_info.log_error('Input error: lmp_frc_job_per_node should be integer, please check or reset deepff/environ/lmp_frc_job_per_node')
+      exit()
+  else:
+    environ_dic['lmp_frc_job_per_node'] = int(proc_num_one_node/2)
 
   if ( 'dp_job_per_node' in environ_dic.keys() ):
     dp_job_per_node = environ_dic['dp_job_per_node']
@@ -1328,7 +1339,7 @@ def check_environ(environ_dic, proc_num_one_node):
       log_info.log_error('Input error: lmp_mpi_num_per_job should be integer, please check or reset deepff/environ/lmp_mpi_num_per_job')
       exit()
   else:
-    lmp_mpi_num_per_job = int(proc_num_one_node/environ_dic['lmp_job_per_node'])
+    lmp_mpi_num_per_job = int(proc_num_one_node/environ_dic['lmp_md_job_per_node'])
     if ( lmp_mpi_num_per_job%2 != 0 ):
       lmp_mpi_num_per_job = lmp_mpi_num_per_job-1
     environ_dic['lmp_mpi_num_per_job'] = lmp_mpi_num_per_job
@@ -1350,8 +1361,8 @@ def check_dp_test(dp_test_dic):
 
   if ( 'cp2k_frc_file' in dp_test_dic.keys() ):
     cp2k_frc_file = dp_test_dic['cp2k_frc_file']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_frc_file))) ):
-      dp_test_dic['cp2k_frc_file'] = os.path.abspath(os.path.expanduser(cp2k_frc_file))
+    if ( os.path.exists(os.path.abspath(cp2k_frc_file)) ):
+      dp_test_dic['cp2k_frc_file'] = os.path.abspath(cp2k_frc_file)
     else:
       log_info.log_error('Input error: %s file does not exist' %(cp2k_frc_file))
       exit()
@@ -1361,8 +1372,8 @@ def check_dp_test(dp_test_dic):
 
   if ( 'cp2k_pos_file' in dp_test_dic.keys() ):
     cp2k_pos_file = dp_test_dic['cp2k_pos_file']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_pos_file))) ):
-      dp_test_dic['cp2k_pos_file'] = os.path.abspath(os.path.expanduser(cp2k_pos_file))
+    if ( os.path.exists(os.path.abspath(cp2k_pos_file)) ):
+      dp_test_dic['cp2k_pos_file'] = os.path.abspath(cp2k_pos_file)
     else:
       log_info.log_error('Input error: %s file does not exist' %(cp2k_pos_file))
       exit()
@@ -1372,8 +1383,8 @@ def check_dp_test(dp_test_dic):
 
   if ( 'cp2k_cell_file' in dp_test_dic.keys() ):
     cp2k_cell_file = dp_test_dic['cp2k_cell_file']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(cp2k_cell_file))) ):
-      dp_test_dic['cp2k_cell_file'] = os.path.abspath(os.path.expanduser(cp2k_cell_file))
+    if ( os.path.exists(os.path.abspath(cp2k_cell_file)) ):
+      dp_test_dic['cp2k_cell_file'] = os.path.abspath(cp2k_cell_file)
     else:
       log_info.log_error('Input error: %s file does not exist' %(cp2k_cell_file))
       exit()
@@ -1383,8 +1394,8 @@ def check_dp_test(dp_test_dic):
 
   if ( 'dpff_file' in dp_test_dic.keys() ):
     dpff_file = dp_test_dic['dpff_file']
-    if ( os.path.exists(os.path.abspath(os.path.expanduser(dpff_file))) ):
-      dp_test_dic['dpff_file'] = os.path.abspath(os.path.expanduser(dpff_file))
+    if ( os.path.exists(os.path.abspath(dpff_file)) ):
+      dp_test_dic['dpff_file'] = os.path.abspath(dpff_file)
     else:
       log_info.log_error('Input error: %s file does not exist' %(dpff_file))
       exit()

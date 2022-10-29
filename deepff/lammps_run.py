@@ -98,7 +98,7 @@ mpirun -np %d %s < ./md_in.lammps 1> %s 2> lammps.err
 
 def lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index_str, \
                    task_index_str, mpi_num_str, device_num_str, device_id_start_str, \
-                   lmp_omp_num_per_job, lmp_job_per_node, proc_num_per_node, ssh, host):
+                   lmp_omp_num_per_job, lmp_md_job_per_node, proc_num_per_node, ssh, host):
 
   '''
   lmpmd_parallel: run lammps molecular dynamics calculation in parallel.
@@ -126,8 +126,8 @@ def lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index
       device_id_start_str is the string containing staring gpu device id.
     lmp_omp_num_per_job: int
       lmp_omp_num_per_job is the openmp number for each lammps job.
-    lmp_job_per_node: int
-      lmp_job_per_node is the number of lammps job in one node.
+    lmp_md_job_per_node: int
+      lmp_md_job_per_node is the number of lammps job in one node.
     proc_num_per_node: 1-d int list
       proc_num_per_node is the number of processors in each node.
     ssh: bool
@@ -170,11 +170,11 @@ done
   if ssh:
     run_2 = '''
 for i in "${sys_task_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d --controlmaster -S %s --sshdelay 0.2 $direc/produce.sh {} $direc
-''' %(lmp_job_per_node, host_info)
+''' %(lmp_md_job_per_node, host_info)
   else:
     run_2 = '''
 for i in "${sys_task_mpi_num_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d --delay 0.2 $direc/produce.sh {} $direc
-''' %(lmp_job_per_node)
+''' %(lmp_md_job_per_node)
 
   produce = '''
 #! /bin/bash
@@ -245,7 +245,7 @@ cd $direc
     log_info.log_error('Running error: %s command running error in %s' %(err.cmd, lmp_dir))
     exit()
 
-def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
+def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_md_job_per_node, \
               lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device):
 
   '''
@@ -264,8 +264,8 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
       parallel_exe is the parallel executable file.
     mpi_path: string
       mpi_path is the path of mpi.
-    lmp_job_per_node: int
-      lmp_job_per_node is the number of lammps job in one node.
+    lmp_md_job_per_node: int
+      lmp_md_job_per_node is the number of lammps job in one node.
     lmp_mpi_num_per_job: int
       lmp_mpi_num_per_job is the mpi number for each lammps job.
     lmp_omp_num_per_job: int
@@ -335,16 +335,16 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
     device_num_per_node = [len(device_per_node) for device_per_node in device]
     device_num_min = min(device_num_per_node)
     if ( device_num_min == 1 ):
-      lmp_job_per_node = 1
+      lmp_md_job_per_node = 1
 
     if ( calculated_id != total_task_num-1 ):
       run_start = calculated_id
-      run_end = run_start+lmp_job_per_node*len(host)-1
+      run_end = run_start+lmp_md_job_per_node*len(host)-1
       if ( run_end > total_task_num-1 ):
         run_end=total_task_num-1
-      cycle = math.ceil((total_task_num-run_start)/(lmp_job_per_node*len(host)))
+      cycle = math.ceil((total_task_num-run_start)/(lmp_md_job_per_node*len(host)))
       for i in range(cycle):
-        device_num_list = data_op.int_split(device_num_min, lmp_job_per_node)
+        device_num_list = data_op.int_split(device_num_min, lmp_md_job_per_node)
         device_id_start = [0]
         for j in range(len(device_num_list)-1):
           device_id_start.append(device_id_start[j]+device_num_list[j])
@@ -353,7 +353,7 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
 
         tot_mpi_num_list = []
         for proc_num in proc_num_per_node:
-          mpi_num_list = [lmp_mpi_num_per_job]*lmp_job_per_node
+          mpi_num_list = [lmp_mpi_num_per_job]*lmp_md_job_per_node
           tot_mpi_num_list.append(mpi_num_list)
         tot_mpi_num_list = data_op.list_reshape(tot_mpi_num_list)[0:(run_end-run_start+1)]
         mpi_num_str = data_op.comb_list_2_str(tot_mpi_num_list, ' ')
@@ -364,13 +364,13 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
         task_index_str = data_op.comb_list_2_str(task_index, ' ')
 
         lmpmd_parallel(lmp_dir, lmp_path, mpi_path, lmp_exe, parallel_exe, sys_index_str, task_index_str, mpi_num_str, \
-                       device_num_str, device_id_start_str, lmp_omp_num_per_job, lmp_job_per_node, proc_num_per_node, ssh, host)
+                       device_num_str, device_id_start_str, lmp_omp_num_per_job, lmp_md_job_per_node, proc_num_per_node, ssh, host)
         for j in range(run_start, run_end+1, 1):
           lmp_sys_task_dir_j = ''.join((lmp_dir, '/sys_', str(sys_task_index[j][0]), '/task_', str(sys_task_index[j][1])))
           gen_lammps_task.combine_frag_traj_file(lmp_sys_task_dir_j)
 
-        run_start = run_start + lmp_job_per_node*len(host)
-        run_end = run_end + lmp_job_per_node*len(host)
+        run_start = run_start + lmp_md_job_per_node*len(host)
+        run_end = run_end + lmp_md_job_per_node*len(host)
         if ( run_end > total_task_num-1):
           run_end = total_task_num-1
     else:
@@ -404,7 +404,7 @@ def run_lmpmd(work_dir, iter_id, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_
     exit()
 
 def lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, \
-                    lmp_exe, mpi_path, lmp_job_per_node, host_name, ssh):
+                    lmp_exe, mpi_path, lmp_md_job_per_node, host_name, ssh):
 
   '''
   lmpfrc_parallel: run lammps force calculation in parallel.
@@ -424,8 +424,8 @@ def lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, \
       lmp_exe is the lammps executable file.
     mpi_path: string
       mpi_path is the path of mpi.
-    lmp_job_per_node: int
-      lmp_job_per_node is the number lammps job in each node.
+    lmp_md_job_per_node: int
+      lmp_md_job_per_node is the number lammps job in each node.
     host_name: string
       host_name is the string host name.
     ssh: bool
@@ -445,6 +445,8 @@ direc=%s
 task_index="%s"
 parallel_exe=%s
 
+ulimit -u 65535
+
 task_index_arr=(${task_index///})
 num=${#task_index_arr[*]}
 ''' %(model_dir, task_index_str, parallel_exe)
@@ -452,11 +454,11 @@ num=${#task_index_arr[*]}
   if ssh:
     run_2 ='''
 for i in "${task_index_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d --controlmaster -S %s --sshdelay 0.2  $direc/produce.sh {} $direc
-''' %(lmp_job_per_node, host_name)
+''' %(lmp_md_job_per_node, host_name)
   else:
     run_2 ='''
 for i in "${task_index_arr[@]}"; do echo "$i"; done | $parallel_exe -j %d --delay 0.2 $direc/produce.sh {} $direc
-''' %(lmp_job_per_node)
+''' %(lmp_md_job_per_node)
 
   produce = '''
 #! /bin/bash
@@ -472,15 +474,7 @@ x=$1
 direc=$2
 new_direc=$direc/traj_$x
 cd $new_direc
-while true
-do
 %s < $new_direc/frc_in.lammps 1> $new_direc/lammps.out 2> $new_direc/lammps.err
-grep "Loop time" $new_direc/lammps.out 1> /dev/null 2> /dev/null
-if [[ $? -eq 0 && -f $new_direc/atom.dump ]]
-then
-break
-fi
-done
 cd %s
 ''' %(lmp_path, mpi_path, lmp_exe, work_dir)
 
@@ -555,7 +549,7 @@ def check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot):
   return check_lmp_frc_run
 
 def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
-               proc_num_per_node, host, ssh, atoms_num_tot, use_mtd_tot, active_type):
+               lmp_frc_job_per_node, host, ssh, atoms_num_tot, use_mtd_tot, active_type):
 
   '''
   rum_lmpfrc: kernel function to run lammps force calculation.
@@ -573,8 +567,8 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
       mpi_path is the path of mpi.
     parallel_exe: string
       parallel_exe is parallel exacutable file.
-    proc_num_per_node: 1-d int list
-      proc_num_per_node is the number of processors in each node.
+    lmp_frc_job_per_node: int
+      lmp_frc_job_per_node is the number of lammps force jobs.
     host: 1-d string list
       host is the name of computational nodes.
     ssh: bool
@@ -640,7 +634,7 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
           model_dir = ''.join((lmp_sys_task_dir, '/model_', str(k)))
           host_name_proc = []
           for l in range(len(host)):
-            host_name_proc.append(''.join((str(proc_num_per_node[l]), '/', host[l])))
+            host_name_proc.append(''.join((str(lmp_frc_job_per_node), '/', host[l])))
           host_info = data_op.comb_list_2_str(host_name_proc, ',')
           traj_num = process.get_traj_num(model_dir)
 
@@ -660,16 +654,16 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
               undo_task.append(l)
 
           start = 0
-          end = min(len(undo_task), start+int(sum(proc_num_per_node)/2))
-          cycle = math.ceil(len(undo_task)/int(sum(proc_num_per_node)/2))
+          end = min(len(undo_task), start+lmp_frc_job_per_node*len(host))
+          cycle = math.ceil(len(undo_task)/(lmp_frc_job_per_node*len(host)))
 
           for l in range(cycle):
             if ( use_mtd_tot[i] or k != 0 ):
               task_index = undo_task[start:end]
               lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
-                                mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
-            start = min(len(undo_task)-1, start+int(sum(proc_num_per_node)/2))
-            end = min(len(undo_task), end+int(sum(proc_num_per_node)/2))
+                                mpi_path, lmp_frc_job_per_node, host_info, ssh)
+            start = min(len(undo_task)-1, start+lmp_frc_job_per_node*len(host))
+            end = min(len(undo_task), end+lmp_frc_job_per_node*len(host))
 
   for cycle_run in range(100):
     check_lmp_frc_run = check_lmpfrc(lmp_dir, sys_num, use_mtd_tot, atoms_num_tot)
@@ -686,15 +680,15 @@ def run_lmpfrc(work_dir, iter_id, lmp_path, lmp_exe, mpi_path, parallel_exe, \
               lmp_frc_statu.append(1)
               failure_task_id = [index for (index,value) in enumerate(check_lmp_frc_run[i][j][k]) if value==1]
               model_dir = ''.join((lmp_dir, '/sys_', str(i), '/task_', str(j), '/model_', str(k)))
-              cycle = math.ceil(len(failure_task_id)/int(sum(proc_num_per_node)/2))
+              cycle = math.ceil(len(failure_task_id)/(lmp_frc_job_per_node*len(host)))
               start = 0
-              end = min(len(failure_task_id), int(sum(proc_num_per_node)/2))
+              end = min(len(failure_task_id), lmp_frc_job_per_node*len(host))
               for l in range(cycle):
                 task_index = failure_task_id[start:end]
                 lmpfrc_parallel(model_dir, work_dir, task_index, parallel_exe, lmp_path, lmp_exe, \
-                                mpi_path, int(proc_num_per_node[0]/2), host_info, ssh)
-                start = min(len(failure_task_id)-1, start+int(sum(proc_num_per_node)/2))
-                end = min(len(failure_task_id), end+int(sum(proc_num_per_node)/2))
+                                mpi_path, lmp_frc_job_per_node, host_info, ssh)
+                start = min(len(failure_task_id)-1, start+lmp_frc_job_per_node*len(host))
+                end = min(len(failure_task_id), end+lmp_frc_job_per_node*len(host))
       else:
         for j in range(task_num):
           lmp_frc_statu.append(0)

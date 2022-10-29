@@ -103,7 +103,8 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
   cuda_dir = environ_dic['cuda_dir']
   dp_version = environ_dic['dp_version']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
-  lmp_job_per_node = environ_dic['lmp_job_per_node']
+  lmp_md_job_per_node = environ_dic['lmp_md_job_per_node']
+  lmp_frc_job_per_node = environ_dic['lmp_frc_job_per_node']
   dp_job_per_node = environ_dic['dp_job_per_node']
   lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
   lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
@@ -175,7 +176,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       print ('Step 2: lammps tasks', flush=True)
 
       gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, atom_mass_dic, tot_atoms_type_dic)
-      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
+      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_md_job_per_node, \
                            lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
       write_data.write_restart_inp(inp_file, i, 2, data_num, work_dir)
 
@@ -186,7 +187,7 @@ def model_devi_iter(work_dir, inp_file, deepmd_dic, lammps_dic, cp2k_dic, active
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       gen_lammps_task.gen_lmpfrc_file(work_dir, i, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'model_devi')
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, lmp_exe, mpi_path, parallel_exe, \
-                            proc_num_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'model_devi')
+                            lmp_frc_job_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'model_devi')
       write_data.write_restart_inp(inp_file, i, 3, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
@@ -346,7 +347,8 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
   cuda_dir = environ_dic['cuda_dir']
   dp_version = environ_dic['dp_version']
   cp2k_job_per_node = environ_dic['cp2k_job_per_node']
-  lmp_job_per_node = environ_dic['lmp_job_per_node']
+  lmp_md_job_per_node = environ_dic['lmp_md_job_per_node']
+  lmp_frc_job_per_node = environ_dic['lmp_frc_job_per_node']
   dp_job_per_node = environ_dic['dp_job_per_node']
   lmp_mpi_num_per_job = environ_dic['lmp_mpi_num_per_job']
   lmp_omp_num_per_job = environ_dic['lmp_omp_num_per_job']
@@ -396,7 +398,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       #Perform lammps calculations
       print ('Step 2: lammps tasks', flush=True)
       gen_lammps_task.gen_lmpmd_task(lammps_dic, work_dir, i, atom_mass_dic, tot_atoms_type_dic)
-      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_job_per_node, \
+      lammps_run.run_lmpmd(work_dir, i, lmp_path, lmp_exe, parallel_exe, mpi_path, lmp_md_job_per_node, \
                            lmp_mpi_num_per_job, lmp_omp_num_per_job, proc_num_per_node, host, ssh, device)
       write_data.write_restart_inp(inp_file, i, 2, data_num, work_dir)
 
@@ -408,7 +410,7 @@ def dp_test_iter(work_dir, inp_file, deepmd_dic, lammps_dic, active_learn_dic, c
       sys_num, atoms_type_multi_sys, atoms_num_tot, use_mtd_tot = process.get_md_sys_info(lammps_dic, tot_atoms_type_dic)
       gen_lammps_task.gen_lmpfrc_file(work_dir, i, atom_mass_dic, atoms_num_tot, atoms_type_multi_sys, use_mtd_tot, 'dp_test')
       lammps_run.run_lmpfrc(work_dir, i, lmp_path, lmp_exe, mpi_path, parallel_exe, \
-                            proc_num_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'dp_test')
+                            lmp_frc_job_per_node, host, ssh, atoms_num_tot, use_mtd_tot, 'dp_test')
       write_data.write_restart_inp(inp_file, i, 3, data_num, work_dir)
 
     if ( restart_stage == 0 or restart_stage == 1 or restart_stage == 2 or restart_stage == 3 ):
