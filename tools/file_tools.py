@@ -82,7 +82,7 @@ def grep_line_num(choosed_str, file_name, work_dir):
   '''
 
   line_num = []
-  cmd = "grep -n %s %s" %(choosed_str, file_name)
+  cmd = "grep -n '%s' %s" %(choosed_str, file_name)
   line = call.call_returns_shell(work_dir, cmd)
   if ( len(line) != 0 ):
     for i in range(len(line)):
